@@ -149,9 +149,22 @@ Namespace Theme
         End Sub
 
         ''' <summary>
+        ''' Estiliza un botón de eliminación / peligro en color rojo suave.
+        ''' </summary>
+        Public Sub EstilizarBotonEliminar(btn As Button)
+            btn.FlatStyle = FlatStyle.Flat
+            btn.FlatAppearance.BorderSize = 0
+            btn.BackColor = Color.FromArgb(190, 60, 60)
+            btn.ForeColor = Color.White
+            btn.Font = ObtenerFuenteCuerpo(9.0F, FontStyle.Bold)
+            btn.Cursor = Cursors.Hand
+        End Sub
+
+        ''' <summary>
         ''' Estiliza un Label como Badge / Pill.
         ''' </summary>
         Public Sub EstilizarBadge(lbl As Label, fondo As Color, texto As Color)
+
             lbl.BackColor = fondo
             lbl.ForeColor = texto
             lbl.Font = ObtenerFuenteCuerpo(8.5F, FontStyle.Bold)

@@ -15,9 +15,21 @@ Namespace Views
         ''' <summary> Botón de navegación actualmente seleccionado </summary>
         Private _botonMenuSeleccionado As Button = Nothing
 
+        ''' <summary> Rol del usuario autenticado en la sesión </summary>
+        Private _rolUsuario As String = "👑 Administrador"
+
+        ''' <summary> Nombre del usuario autenticado </summary>
+        Private _nombreUsuario As String = "admin"
+
         Public Sub New()
             InitializeComponent()
             ThemeConfig.HabilitarDobleBuffer(Me)
+        End Sub
+
+        Public Sub New(rolUsuario As String, nombreUsuario As String)
+            Me.New()
+            _rolUsuario = rolUsuario
+            _nombreUsuario = nombreUsuario
         End Sub
 
         Private Sub FrmHome_Load(sender As Object, e As EventArgs) Handles MyBase.Load
@@ -27,10 +39,74 @@ Namespace Views
             ' 2. Actualizar reloj inicial
             ActualizarRelojSistema()
 
-            ' 3. Cargar por defecto el Dashboard General al iniciar
-            SeleccionarBotonNavegacion(btnNavDashboard, "Dashboard General")
-            AbrirFormularioEnPanel(Of Dashboards.FrmDashboardGeneral)()
+            ' 3. Aplicar permisos y visibilidad estricta del Sidebar según el ROL
+            AplicarPermisosPorRol()
+
+            ' 4. Cargar la vista inicial según el ROL del usuario
+            If _rolUsuario.Contains("Cliente") Then
+                lblTituloModuloTop.Text = $"📲 Menú Digital de Pedidos (Cliente: {_nombreUsuario})"
+                SeleccionarBotonNavegacion(btnNavPedidos, "Toma de Pedidos & Menú Digital")
+                AbrirFormularioEnPanel(Of Pedidos.FrmPedidos)()
+            ElseIf _rolUsuario.Contains("Cocina") Then
+                SeleccionarBotonNavegacion(btnNavCocina, "Monitor de Cocina (KDS)")
+                MostrarMensajeModulo("Monitor de Cocina (KDS)", "Recepción FIFO de comandas en tiempo real (RF-008, RF-009, RF-010).")
+            Else
+                ' Administrador / Cajero por defecto en Dashboard
+                SeleccionarBotonNavegacion(btnNavDashboard, "Dashboard General")
+                AbrirFormularioEnPanel(Of Dashboards.FrmDashboardGeneral)()
+            End If
         End Sub
+
+        ''' <summary>
+        ''' Restringe y oculta las opciones del menú lateral según el ROL del usuario autenticado.
+        ''' </summary>
+        Private Sub AplicarPermisosPorRol()
+            ' Actualizar etiqueta de pie de sidebar con el usuario y rol
+            lblEstadoBaseDatos.Text = $"🟢 ROL: {_rolUsuario.Replace("👑 ", "").Replace("💵 ", "").Replace("🍳 ", "").Replace("📲 ", "")}"
+
+            If _rolUsuario.Contains("Cliente") Then
+                ' EL CLIENTE ÚNICAMENTE ACCEDE A SU VISTA DE PEDIDOS / MENÚ DIGITAL
+                btnNavDashboard.Visible = False
+                btnNavCatalogo.Visible = False
+                btnNavCocina.Visible = False
+                btnNavCaja.Visible = False
+                btnNavFacturacion.Visible = False
+                btnNavReportes.Visible = False
+                
+                btnNavPedidos.Visible = True
+                btnNavPedidos.Text = "  📲 Mi Pedido / Menú Digital"
+                btnNavPedidos.Location = New Point(0, 70)
+            ElseIf _rolUsuario.Contains("Cocina") Then
+                ' PERSONAL DE COCINA ÚNICAMENTE ACCEDE A KDS Y CONSULTA DE PEDIDOS
+                btnNavDashboard.Visible = False
+                btnNavCatalogo.Visible = False
+                btnNavCocina.Visible = True
+                btnNavCaja.Visible = False
+                btnNavFacturacion.Visible = False
+                btnNavReportes.Visible = False
+                btnNavPedidos.Visible = True
+            ElseIf _rolUsuario.Contains("Cajero") Then
+                ' CAJERO ACCEDE A PEDIDOS, CAJA Y FACTURACIÓN
+                btnNavDashboard.Visible = True
+                btnNavCatalogo.Visible = False
+                btnNavCocina.Visible = False
+                btnNavCaja.Visible = True
+                btnNavFacturacion.Visible = True
+                btnNavReportes.Visible = False
+                btnNavPedidos.Visible = True
+            Else
+                ' ADMINISTRADOR TIENE ACCESO COMPLETO
+                btnNavDashboard.Visible = True
+                btnNavCatalogo.Visible = True
+                btnNavCocina.Visible = True
+                btnNavCaja.Visible = True
+                btnNavFacturacion.Visible = True
+                btnNavReportes.Visible = True
+                btnNavPedidos.Visible = True
+            End If
+        End Sub
+
+
 
         ' =========================================================================
         ' MÉTODOS DE ARQUITECTURA: CARGA DESACOPLADA DE FORMULARIOS HIJOS
@@ -116,11 +192,17 @@ Namespace Views
             pnlSidebarFooter.BackColor = ThemeConfig.ColorBackgroundSidebar
             lblEstadoBaseDatos.ForeColor = ThemeConfig.ColorTertiarySuccess
 
+            lblNombreUsuario.Text = _nombreUsuario
+            lblRolUsuario.Text = _rolUsuario.Replace("👑 ", "").Replace("💵 ", "").Replace("🍳 ", "").Replace("📲 ", "")
+
+            ThemeConfig.EstilizarBotonEliminar(btnCerrarSesion)
+
             Dim botonesNav = {btnNavDashboard, btnNavCatalogo, btnNavPedidos, btnNavCocina, btnNavCaja, btnNavFacturacion, btnNavReportes}
             For Each btn In botonesNav
                 ThemeConfig.EstilizarBotonNavegacion(btn, False)
             Next
         End Sub
+
 
         Private Sub SeleccionarBotonNavegacion(btnSeleccionado As Button, tituloModulo As String)
             If btnSeleccionado Is Nothing Then Return
@@ -153,9 +235,10 @@ Namespace Views
         End Sub
 
         Private Sub btnNavPedidos_Click(sender As Object, e As EventArgs) Handles btnNavPedidos.Click
-            SeleccionarBotonNavegacion(btnNavPedidos, "Toma de Pedidos & Carrito")
-            MostrarMensajeModulo("Toma de Pedidos", "Selección de modalidad (En Mesa / Para Llevar), escaneo QR y captura de datos del cliente (RF-001, RF-004, RF-005).")
+            SeleccionarBotonNavegacion(btnNavPedidos, "Gestión de Pedidos (RestauranteDB)")
+            AbrirFormularioEnPanel(Of Pedidos.FrmPedidos)()
         End Sub
+
 
         Private Sub btnNavCocina_Click(sender As Object, e As EventArgs) Handles btnNavCocina.Click
             SeleccionarBotonNavegacion(btnNavCocina, "Monitor de Cocina (KDS)")
@@ -214,5 +297,19 @@ Namespace Views
             pnlContenedorPrincipal.Controls.Add(pnlPlaceholder)
         End Sub
 
+        ''' <summary>
+        ''' Cierra la sesión activa del usuario y regresa al formulario de Inicio de Sesión (FrmLogin).
+        ''' </summary>
+        Private Sub btnCerrarSesion_Click(sender As Object, e As EventArgs) Handles btnCerrarSesion.Click
+            Dim confirmacion = MessageBox.Show("¿Está seguro de que desea cerrar la sesión actual y regresar al inicio de sesión?", "Cerrar Sesión", MessageBoxButtons.YesNo, MessageBoxIcon.Question)
+            If confirmacion = DialogResult.Yes Then
+                Dim frmLog As New Auth.FrmLogin()
+                Me.Hide()
+                frmLog.ShowDialog()
+                Me.Close()
+            End If
+        End Sub
+
     End Class
+
 End Namespace

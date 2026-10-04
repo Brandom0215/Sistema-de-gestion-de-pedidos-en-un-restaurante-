@@ -80,7 +80,9 @@ Namespace Views
             Me.lblNombreUsuario = New System.Windows.Forms.Label()
             Me.lblRolUsuario = New System.Windows.Forms.Label()
             
+            Me.btnCerrarSesion = New System.Windows.Forms.Button()
             Me.tmrRelojSistema = New System.Windows.Forms.Timer(Me.components)
+
             
             Me.pnlSidebar.SuspendLayout()
             Me.pnlLogoContainer.SuspendLayout()
@@ -92,6 +94,7 @@ Namespace Views
             ' 
             ' pnlSidebar
             ' 
+            Me.pnlSidebar.Controls.Add(Me.btnCerrarSesion)
             Me.pnlSidebar.Controls.Add(Me.btnNavReportes)
             Me.pnlSidebar.Controls.Add(Me.btnNavFacturacion)
             Me.pnlSidebar.Controls.Add(Me.btnNavCaja)
@@ -107,6 +110,7 @@ Namespace Views
             Me.pnlSidebar.Name = "pnlSidebar"
             Me.pnlSidebar.Size = New System.Drawing.Size(250, 750)
             Me.pnlSidebar.TabIndex = 0
+
 
             ' 
             ' pnlLogoContainer
@@ -124,10 +128,10 @@ Namespace Views
             ' 
             Me.lblNombreRestaurante.AutoSize = True
             Me.lblNombreRestaurante.Font = New System.Drawing.Font("Segoe UI", 13.5F, System.Drawing.FontStyle.Bold)
-            Me.lblNombreRestaurante.Location = New System.Drawing.Point(20, 22)
+            Me.lblNombreRestaurante.Location = New System.Drawing.Point(20, 20)
             Me.lblNombreRestaurante.Name = "lblNombreRestaurante"
-            Me.lblNombreRestaurante.Size = New System.Drawing.Size(185, 31)
-            Me.lblNombreRestaurante.Text = "Sistema Pedidos"
+            Me.lblNombreRestaurante.Size = New System.Drawing.Size(195, 31)
+            Me.lblNombreRestaurante.Text = "EL BUEN SAZÓN"
             Me.lblNombreRestaurante.UseMnemonic = False
 
             ' 
@@ -136,11 +140,12 @@ Namespace Views
             Me.lblEsloganRestaurante.AutoSize = True
             Me.lblEsloganRestaurante.Font = New System.Drawing.Font("Segoe UI", 8.0F, System.Drawing.FontStyle.Bold)
             Me.lblEsloganRestaurante.ForeColor = System.Drawing.Color.Gray
-            Me.lblEsloganRestaurante.Location = New System.Drawing.Point(22, 54)
+            Me.lblEsloganRestaurante.Location = New System.Drawing.Point(22, 53)
             Me.lblEsloganRestaurante.Name = "lblEsloganRestaurante"
             Me.lblEsloganRestaurante.Size = New System.Drawing.Size(180, 19)
-            Me.lblEsloganRestaurante.Text = "GESTIÓN DE RESTAURANTE"
+            Me.lblEsloganRestaurante.Text = "GASTRONOMÍA & SABOR"
             Me.lblEsloganRestaurante.UseMnemonic = False
+
 
             ' 
             ' pnlBarraIndicadorMenu
@@ -228,6 +233,18 @@ Namespace Views
             Me.btnNavReportes.UseMnemonic = False
 
             ' 
+            ' btnCerrarSesion
+            ' 
+            Me.btnCerrarSesion.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Left), System.Windows.Forms.AnchorStyles)
+            Me.btnCerrarSesion.Location = New System.Drawing.Point(6, 640)
+            Me.btnCerrarSesion.Name = "btnCerrarSesion"
+            Me.btnCerrarSesion.Size = New System.Drawing.Size(238, 42)
+            Me.btnCerrarSesion.TabIndex = 10
+            Me.btnCerrarSesion.Text = "  🚪 Cerrar Sesión"
+            Me.btnCerrarSesion.UseVisualStyleBackColor = True
+            Me.btnCerrarSesion.UseMnemonic = False
+
+            ' 
             ' pnlSidebarFooter
             ' 
             Me.pnlSidebarFooter.Controls.Add(Me.lblEstadoBaseDatos)
@@ -259,8 +276,8 @@ Namespace Views
             Me.pnlTopBar.Name = "pnlTopBar"
             Me.pnlTopBar.Size = New System.Drawing.Size(1000, 75)
             Me.pnlTopBar.TabIndex = 1
-
             ' 
+
             ' lblTituloModuloTop
             ' 
             Me.lblTituloModuloTop.AutoSize = True
@@ -352,5 +369,9 @@ Namespace Views
             Me.ResumeLayout(False)
 
         End Sub
+
+        Friend WithEvents btnCerrarSesion As Button
     End Class
+
+
 End Namespace
