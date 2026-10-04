@@ -1,12 +1,15 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net10.0-windows</TargetFramework>
     <RootNamespace>Sistema_de_gestion_de_pedidos_para_un_restaurante</RootNamespace>
-    <StartupObject>Sub Main</StartupObject>
+    <StartupObject>Sistema_de_gestion_de_pedidos_para_un_restaurante.Program</StartupObject>
     <UseWindowsForms>true</UseWindowsForms>
     <MyType>WindowsForms</MyType>
+    <AssemblyName>SistemaRestaurante</AssemblyName>
+    <GenerateExecutable>true</GenerateExecutable>
+    <UseAppHost>true</UseAppHost>
   </PropertyGroup>
 
   <ItemGroup>
