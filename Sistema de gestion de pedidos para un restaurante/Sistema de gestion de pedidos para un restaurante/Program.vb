@@ -11,7 +11,8 @@ Namespace Global.Sistema_de_gestion_de_pedidos_para_un_restaurante
         Public Sub Main()
             Application.EnableVisualStyles()
             Application.SetCompatibleTextRenderingDefault(False)
-            Application.Run(New FrmHome())
+            Application.Run(New Auth.FrmLogin())
         End Sub
+
     End Module
 End Namespace
