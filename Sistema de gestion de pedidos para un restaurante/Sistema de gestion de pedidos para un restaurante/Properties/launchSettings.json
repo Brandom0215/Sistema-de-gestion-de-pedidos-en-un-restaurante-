@@ -1,0 +1,9 @@
+{
+  "profiles": {
+    "SistemaRestaurante": {
+      "commandName": "Executable",
+      "executablePath": "bin\\Debug\\net10.0-windows\\SistemaRestaurante.exe",
+      "workingDirectory": "$(ProjectDir)"
+    }
+  }
+}

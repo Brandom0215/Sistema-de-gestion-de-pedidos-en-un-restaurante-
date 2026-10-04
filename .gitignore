@@ -76,3 +76,9 @@ appsettings.Local.json
 
 *.bak
 *.old
+
+# Documentación y Reglas de Agentes
+Documentacion.md
+AGENTS.md
+agent.md
+.agents/
