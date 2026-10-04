@@ -1,0 +1,78 @@
+# Visual Studio / .NET
+
+# Carpetas de compilación
+
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Aa]rtifacts/
+
+# Visual Studio
+
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.rsuser
+
+# Archivos temporales
+
+*.tmp
+*.temp
+*.log
+*.cache
+
+# NuGet
+
+*.nupkg
+*.snupkg
+.nuget/packages/
+
+# Cobertura de pruebas
+
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+coverage/
+coverage.*
+
+# Publicación
+
+publish/
+[Pp]ublishOutputs/
+
+# Archivos del sistema
+
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Rider / JetBrains
+
+.idea/
+*.sln.iml
+
+# Configuraciones locales
+
+appsettings.Development.json
+appsettings.Local.json
+.env
+.env.*
+
+# Certificados y claves
+
+*.pfx
+*.p12
+*.key
+
+# Azure
+
+.azure/
+
+# Archivos de respaldo
+
+*.bak
+*.old
