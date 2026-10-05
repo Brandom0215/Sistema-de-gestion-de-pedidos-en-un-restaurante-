@@ -257,7 +257,7 @@ Namespace Views
 
         Private Sub btnNavReportes_Click(sender As Object, e As EventArgs) Handles btnNavReportes.Click
             SeleccionarBotonNavegacion(btnNavReportes, "Reportes de Ventas & Cierre")
-            MostrarMensajeModulo("Reportes & Ventas", "Generación de métricas diarias, reporte de platos más vendidos y cierre de caja (RF-013).")
+            AbrirFormularioEnPanel(Of Reportes.FrmReportesVentas)()
         End Sub
 
         Private Sub tmrRelojSistema_Tick(sender As Object, e As EventArgs) Handles tmrRelojSistema.Tick
