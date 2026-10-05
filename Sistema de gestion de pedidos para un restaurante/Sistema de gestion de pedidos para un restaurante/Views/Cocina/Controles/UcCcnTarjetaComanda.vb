@@ -2,12 +2,14 @@ Imports System
 Imports System.Drawing
 Imports System.Windows.Forms
 Imports Sistema_de_gestion_de_pedidos_para_un_restaurante.Models
+Imports Sistema_de_gestion_de_pedidos_para_un_restaurante.Services
 Imports Sistema_de_gestion_de_pedidos_para_un_restaurante.Theme
 
 Namespace Views.Cocina.Controles
     ''' <summary>
-    ''' Control de usuario que representa una tarjeta de comanda en el Monitor de Cocina (KDS).
-    ''' Aplica principios de encapsulación, notación húngara y paleta oficial.
+    ''' Control de usuario unificado para la comanda de cocina.
+    ''' Muestra: Nombre del cliente, imagen del plato, detalle de pedidos, estado de pago, total
+    ''' y modalidad de servicio (Comer en el sitio con mesa o Para llevar).
     ''' Prefijo de módulo: Ccn
     ''' </summary>
     Public Class UcCcnTarjetaComanda
@@ -21,10 +23,11 @@ Namespace Views.Cocina.Controles
         Public Sub New()
             InitializeComponent()
             ThemeConfig.HabilitarDobleBuffer(Me)
+            ThemeConfig.HabilitarDobleBuffer(pnlCcnCuerpoPlatos)
         End Sub
 
         ''' <summary>
-        ''' Enlaza y renderiza visualmente un modelo de pedido en la tarjeta.
+        ''' Enlaza y renderiza visualmente un modelo de pedido en la comanda.
         ''' </summary>
         ''' <param name="objPedido">Instancia del modelo de comanda de cocina</param>
         Public Sub CargarComanda(ByVal objPedido As CcnPedidoModel)
@@ -32,17 +35,24 @@ Namespace Views.Cocina.Controles
 
             _objPedidoModel = objPedido
 
-            ' 1. Configuración de identificador y etiquetas principales
-            If objPedido.StrTipoServicio.IndexOf("Entrega", StringComparison.OrdinalIgnoreCase) >= 0 OrElse
-               objPedido.StrTipoServicio.IndexOf("Llevar", StringComparison.OrdinalIgnoreCase) >= 0 Then
-                lblCcnTagMesa.Text = $"🛍 ENTREGAS  {objPedido.StrCodigoComanda}"
-                lblCcnMozoOCliente.Text = $"Cliente: {objPedido.StrNombreCliente}"
+            ' 1. Identificador de comanda en cabecera
+            If objPedido.StrTipoServicio.IndexOf("Llevar", StringComparison.OrdinalIgnoreCase) >= 0 OrElse
+               objPedido.StrTipoServicio.IndexOf("Entrega", StringComparison.OrdinalIgnoreCase) >= 0 Then
+                lblCcnTagMesa.Text = $"🛍 LLEVAR  {objPedido.StrCodigoComanda}"
             Else
-                lblCcnTagMesa.Text = $"{objPedido.StrMesaCliente.ToUpper()}  {objPedido.StrCodigoComanda}"
-                lblCcnMozoOCliente.Text = If(Not String.IsNullOrWhiteSpace(objPedido.StrNombreMozo), $"Mozo: {objPedido.StrNombreMozo}", $"Cliente: {objPedido.StrNombreCliente}")
+                Dim strMesa As String = If(String.IsNullOrWhiteSpace(objPedido.StrMesaCliente), "MESA", objPedido.StrMesaCliente.ToUpper())
+                lblCcnTagMesa.Text = $"{strMesa}  {objPedido.StrCodigoComanda}"
             End If
 
-            ' 2. Tiempo transcurrido con alerta de semaforización
+            ' 2. Imagen del plato principal gastronómico
+            Dim strPlatoPrincipal As String = objPedido.ObtenerPlatoPrincipalNombre()
+            picCcnMiniaturaPlato.Image = CcnImagenPlatoHelper.GenerarImagenPlato(strPlatoPrincipal, picCcnMiniaturaPlato.Width, picCcnMiniaturaPlato.Height)
+
+            ' 3. Metadatos unificados: Cliente, Servicio y Tiempo
+            lblCcnNombreCliente.Text = $"👤 Cliente: {If(String.IsNullOrWhiteSpace(objPedido.StrNombreCliente), "Cliente General", objPedido.StrNombreCliente)}"
+            lblCcnTipoServicioMesa.Text = objPedido.ObtenerEtiquetaServicioMesa()
+
+            ' Tiempo transcurrido con alerta de semaforización
             Dim intMinutos As Integer = objPedido.ObtenerMinutosTranscurridos()
             lblCcnTiempoTranscurrido.Text = $"⏱ {objPedido.FormatearTiempoTranscurrido()}"
 
@@ -54,14 +64,27 @@ Namespace Views.Cocina.Controles
                 lblCcnTiempoTranscurrido.Font = ThemeConfig.ObtenerFuenteCuerpo(8.0F, FontStyle.Regular)
             End If
 
-            ' 3. Estado visual, badges de semáforo y configuración del botón de acción
+            ' 4. Estado de Preparación y Badge
             ConfigurarEstadoVisual(objPedido.EnumEstado)
 
-            ' 4. Métodos de pago y total económico
-            lblCcnMetodoPago.Text = $"💳 {objPedido.StrMetodoPago}"
+            ' 5. Estado de Pago (Pagado / No Pagado) y Facturación
+            If objPedido.BlnEstaPagado Then
+                Dim strDetallePago As String = If(Not String.IsNullOrWhiteSpace(objPedido.StrMetodoPago), $"🟢 PAGADO ({objPedido.StrMetodoPago})", "🟢 PAGADO")
+                If objPedido.BlnFacturado AndAlso Not String.IsNullOrWhiteSpace(objPedido.StrNumeroFactura) Then
+                    strDetallePago &= $" • 🧾 {objPedido.StrNumeroFactura}"
+                End If
+                lblCcnBadgePago.Text = strDetallePago
+                lblCcnBadgePago.BackColor = ThemeConfig.ColorTertiaryLight
+                lblCcnBadgePago.ForeColor = ThemeConfig.ColorTertiarySuccess
+            Else
+                lblCcnBadgePago.Text = "🔴 NO PAGADO (Cobrar en Caja)"
+                lblCcnBadgePago.BackColor = Color.FromArgb(252, 235, 235)
+                lblCcnBadgePago.ForeColor = ThemeConfig.ColorDanger
+            End If
+
             lblCcnMontoTotal.Text = $"Total: ${objPedido.CalcularTotal():N2}"
 
-            ' 5. Renderizado desacoplado de la lista de platos
+            ' 6. Renderizado del detalle de platos del pedido
             RenderizarItemsComanda(objPedido.LstDetallePlatos)
         End Sub
 
@@ -104,80 +127,96 @@ Namespace Views.Cocina.Controles
         End Sub
 
         ''' <summary>
-        ''' Dibuja cada plato de la comanda dentro del panel de flujo.
+        ''' Dibuja cada plato de la comanda dentro del panel vertical garantizando 100% de visibilidad del texto.
         ''' </summary>
         Private Sub RenderizarItemsComanda(ByVal lstPlatos As List(Of CcnItemPedidoModel))
-            flpCcnPlatos.SuspendLayout()
-            flpCcnPlatos.Controls.Clear()
+            pnlCcnCuerpoPlatos.SuspendLayout()
+            pnlCcnCuerpoPlatos.Controls.Clear()
 
-            If lstPlatos IsNot Nothing Then
-                For Each objItem As CcnItemPedidoModel In lstPlatos
-                    Dim pnlItemFila As New Panel With {
-                        .Width = 300,
+            If lstPlatos IsNot Nothing AndAlso lstPlatos.Count > 0 Then
+                ' Iteramos en reversa para que al apilar con Dock = DockStyle.Top se muestren de arriba hacia abajo
+                For intIdx As Integer = lstPlatos.Count - 1 To 0 Step -1
+                    Dim objItem As CcnItemPedidoModel = lstPlatos(intIdx)
+
+                    Dim pnlFilaPlato As New Panel With {
+                        .Dock = DockStyle.Top,
                         .AutoSize = True,
-                        .Margin = New Padding(0, 0, 0, 8),
+                        .AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                        .Padding = New Padding(0, 3, 0, 8),
                         .BackColor = Color.Transparent
                     }
 
-                    ' Encabezado del plato con cantidad y precio
-                    Dim lblNombreFila As New Label With {
-                        .Text = $"{objItem.IntCantidad}x  {objItem.StrNombrePlato}",
-                        .Font = ThemeConfig.ObtenerFuenteCuerpo(9.0F, FontStyle.Bold),
-                        .ForeColor = ThemeConfig.ColorNeutralDark,
+                    ' 1. Fila de Encabezado del Plato (Nombre a la izquierda, Precio a la derecha)
+                    Dim pnlHeaderPlato As New Panel With {
                         .Dock = DockStyle.Top,
-                        .AutoSize = True
+                        .Height = 24,
+                        .BackColor = Color.Transparent
                     }
-                    pnlItemFila.Controls.Add(lblNombreFila)
 
-                    ' Precio a la derecha opcional
                     Dim lblPrecioFila As New Label With {
                         .Text = $"${objItem.CalcularSubtotal():N2}",
-                        .Font = ThemeConfig.ObtenerFuenteCuerpo(8.5F, FontStyle.Regular),
+                        .Font = ThemeConfig.ObtenerFuenteCuerpo(9.0F, FontStyle.Regular),
                         .ForeColor = ThemeConfig.ColorTextMuted,
                         .Dock = DockStyle.Right,
-                        .AutoSize = True
+                        .Width = 65,
+                        .TextAlign = ContentAlignment.TopRight,
+                        .UseMnemonic = False
                     }
-                    pnlItemFila.Controls.Add(lblPrecioFila)
+                    pnlHeaderPlato.Controls.Add(lblPrecioFila)
 
-                    ' Notas / acompañamientos
+                    Dim lblNombreFila As New Label With {
+                        .Text = $"{objItem.IntCantidad}x  {objItem.StrNombrePlato}",
+                        .Font = ThemeConfig.ObtenerFuenteCuerpo(9.5F, FontStyle.Bold),
+                        .ForeColor = ThemeConfig.ColorNeutralDark,
+                        .Dock = DockStyle.Fill,
+                        .TextAlign = ContentAlignment.MiddleLeft,
+                        .UseMnemonic = False
+                    }
+                    pnlHeaderPlato.Controls.Add(lblNombreFila)
+
+                    pnlFilaPlato.Controls.Add(pnlHeaderPlato)
+
+                    ' 2. Fila de Notas culinarias y acompañamientos
                     If Not String.IsNullOrWhiteSpace(objItem.StrNotasAcompanamiento) Then
                         Dim lblNotasFila As New Label With {
                             .Text = $"   {objItem.StrNotasAcompanamiento}",
-                            .Font = ThemeConfig.ObtenerFuenteCuerpo(8.0F, FontStyle.Regular),
+                            .Font = ThemeConfig.ObtenerFuenteCuerpo(8.5F, FontStyle.Regular),
                             .ForeColor = ThemeConfig.ColorTextMuted,
-                            .Dock = DockStyle.Bottom,
-                            .AutoSize = True
+                            .Dock = DockStyle.Top,
+                            .AutoSize = True,
+                            .Padding = New Padding(10, 1, 0, 2),
+                            .UseMnemonic = False
                         }
-                        pnlItemFila.Controls.Add(lblNotasFila)
+                        pnlFilaPlato.Controls.Add(lblNotasFila)
                     End If
 
-                    ' Alerta de celíaco / alergia si aplica
+                    ' 3. Tarjeta de advertencia especial (ej. Alergias, Celíacos)
                     If objItem.BlnEsAlertaCeliaco Then
                         Dim pnlAlerta As New Panel With {
                             .BackColor = Color.FromArgb(255, 248, 230),
                             .BorderStyle = BorderStyle.FixedSingle,
-                            .Dock = DockStyle.Bottom,
+                            .Dock = DockStyle.Top,
                             .Height = 26,
                             .Margin = New Padding(0, 4, 0, 4)
                         }
 
                         Dim lblAlerta As New Label With {
-                            .Text = If(Not String.IsNullOrWhiteSpace(objItem.StrMensajeAlerta), $"⚠ {objItem.StrMensajeAlerta}", "⚠ CELÍACO: Estrictamente Sin Gluten"),
+                            .Text = If(Not String.IsNullOrWhiteSpace(objItem.StrMensajeAlerta), $" ⚠ {objItem.StrMensajeAlerta}", " ⚠ CELÍACO: Estrictamente Sin Gluten"),
                             .ForeColor = Color.FromArgb(180, 100, 20),
-                            .Font = ThemeConfig.ObtenerFuenteCuerpo(7.8F, FontStyle.Bold),
+                            .Font = ThemeConfig.ObtenerFuenteCuerpo(8.2F, FontStyle.Bold),
                             .Dock = DockStyle.Fill,
                             .TextAlign = ContentAlignment.MiddleLeft,
-                            .Padding = New Padding(4, 0, 0, 0)
+                            .UseMnemonic = False
                         }
                         pnlAlerta.Controls.Add(lblAlerta)
-                        pnlItemFila.Controls.Add(pnlAlerta)
+                        pnlFilaPlato.Controls.Add(pnlAlerta)
                     End If
 
-                    flpCcnPlatos.Controls.Add(pnlItemFila)
+                    pnlCcnCuerpoPlatos.Controls.Add(pnlFilaPlato)
                 Next
             End If
 
-            flpCcnPlatos.ResumeLayout(True)
+            pnlCcnCuerpoPlatos.ResumeLayout(True)
         End Sub
 
         ''' <summary>
@@ -200,6 +239,50 @@ Namespace Views.Cocina.Controles
             End Select
 
             RaiseEvent CcnCambioEstadoSolicitado(Me, _objPedidoModel.IntIdPedido, enumProximoEstado)
+        End Sub
+
+        ''' <summary>
+        ''' Clic en la miniatura para visualizar la imagen ampliada del plato.
+        ''' </summary>
+        Private Sub picCcnMiniaturaPlato_Click(ByVal sender As Object, ByVal e As EventArgs) Handles picCcnMiniaturaPlato.Click
+            If _objPedidoModel Is Nothing Then Return
+            Dim strPlato As String = _objPedidoModel.ObtenerPlatoPrincipalNombre()
+
+            Using frmZoom As New Form With {
+                .Text = $"Plato: {strPlato}",
+                .Size = New Size(380, 320),
+                .StartPosition = FormStartPosition.CenterParent,
+                .FormBorderStyle = FormBorderStyle.FixedDialog,
+                .MaximizeBox = False,
+                .MinimizeBox = False,
+                .BackColor = ThemeConfig.ColorBackgroundCard
+            }
+                Dim picGrande As New PictureBox With {
+                    .Dock = DockStyle.Fill,
+                    .SizeMode = PictureBoxSizeMode.CenterImage,
+                    .Image = CcnImagenPlatoHelper.GenerarImagenPlato(strPlato, 340, 260)
+                }
+                frmZoom.Controls.Add(picGrande)
+                frmZoom.ShowDialog(Me)
+            End Using
+        End Sub
+
+        ''' <summary>
+        ''' Actualiza el cronómetro y la semaforización de la comanda sin reconstruir los controles.
+        ''' </summary>
+        Public Sub ActualizarCronometro()
+            If _objPedidoModel Is Nothing Then Return
+
+            Dim intMinutos As Integer = _objPedidoModel.ObtenerMinutosTranscurridos()
+            lblCcnTiempoTranscurrido.Text = $"⏱ {_objPedidoModel.FormatearTiempoTranscurrido()}"
+
+            If intMinutos >= 15 AndAlso _objPedidoModel.EnumEstado <> CcnEstadoPedidoEnum.Listo Then
+                lblCcnTiempoTranscurrido.ForeColor = ThemeConfig.ColorDanger
+                lblCcnTiempoTranscurrido.Font = ThemeConfig.ObtenerFuenteCuerpo(8.5F, FontStyle.Bold)
+            Else
+                lblCcnTiempoTranscurrido.ForeColor = ThemeConfig.ColorTextMuted
+                lblCcnTiempoTranscurrido.Font = ThemeConfig.ObtenerFuenteCuerpo(8.0F, FontStyle.Regular)
+            End If
         End Sub
 
     End Class

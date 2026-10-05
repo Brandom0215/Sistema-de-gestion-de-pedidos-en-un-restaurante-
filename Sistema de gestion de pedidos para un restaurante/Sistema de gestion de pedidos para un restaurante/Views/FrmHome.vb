@@ -45,8 +45,8 @@ Namespace Views
             ' 4. Cargar la vista inicial según el ROL del usuario
             If _rolUsuario.Contains("Cliente") Then
                 lblTituloModuloTop.Text = $"📲 Menú Digital de Pedidos (Cliente: {_nombreUsuario})"
-                SeleccionarBotonNavegacion(btnNavPedidos, "Toma de Pedidos & Menú Digital")
-                AbrirFormularioEnPanel(Of Pedidos.FrmPedidos)()
+                SeleccionarBotonNavegacion(btnNavCocina, "Monitor de Pedidos & Menú")
+                AbrirFormularioEnPanel(New Cocina.FrmCcnMonitorCocina(_nombreUsuario))
             ElseIf _rolUsuario.Contains("Cocina") Then
                 SeleccionarBotonNavegacion(btnNavCocina, "Monitor de Cocina (KDS)")
                 AbrirFormularioEnPanel(Of Cocina.FrmCcnMonitorCocina)()
@@ -68,42 +68,55 @@ Namespace Views
                 ' EL CLIENTE ÚNICAMENTE ACCEDE A SU VISTA DE PEDIDOS / MENÚ DIGITAL
                 btnNavDashboard.Visible = False
                 btnNavCatalogo.Visible = False
-                btnNavCocina.Visible = False
+                btnNavCocina.Visible = True
+                btnNavCocina.Text = "  📲 Mi Pedido / Menú Digital"
                 btnNavCaja.Visible = False
                 btnNavFacturacion.Visible = False
                 btnNavReportes.Visible = False
-                
-                btnNavPedidos.Visible = True
-                btnNavPedidos.Text = "  📲 Mi Pedido / Menú Digital"
-                btnNavPedidos.Location = New Point(0, 70)
             ElseIf _rolUsuario.Contains("Cocina") Then
-                ' PERSONAL DE COCINA ÚNICAMENTE ACCEDE A KDS Y CONSULTA DE PEDIDOS
+                ' PERSONAL DE COCINA ÚNICAMENTE ACCEDE AL MONITOR KDS UNIFICADO
                 btnNavDashboard.Visible = False
                 btnNavCatalogo.Visible = False
                 btnNavCocina.Visible = True
+                btnNavCocina.Text = "  👨‍🍳 Monitor Cocina KDS"
                 btnNavCaja.Visible = False
                 btnNavFacturacion.Visible = False
                 btnNavReportes.Visible = False
-                btnNavPedidos.Visible = True
             ElseIf _rolUsuario.Contains("Cajero") Then
-                ' CAJERO ACCEDE A PEDIDOS, CAJA Y FACTURACIÓN
+                ' CAJERO ACCEDE A COCINA/PEDIDOS, CAJA Y FACTURACIÓN
                 btnNavDashboard.Visible = True
                 btnNavCatalogo.Visible = False
-                btnNavCocina.Visible = False
+                btnNavCocina.Visible = True
+                btnNavCocina.Text = "  👨‍🍳 Monitor de Cocina"
                 btnNavCaja.Visible = True
                 btnNavFacturacion.Visible = True
                 btnNavReportes.Visible = False
-                btnNavPedidos.Visible = True
             Else
                 ' ADMINISTRADOR TIENE ACCESO COMPLETO
                 btnNavDashboard.Visible = True
                 btnNavCatalogo.Visible = True
                 btnNavCocina.Visible = True
+                btnNavCocina.Text = "  👨‍🍳 Monitor Cocina KDS"
                 btnNavCaja.Visible = True
                 btnNavFacturacion.Visible = True
                 btnNavReportes.Visible = True
-                btnNavPedidos.Visible = True
             End If
+
+            ReorganizarBotonesMenu()
+        End Sub
+
+        ''' <summary>
+        ''' Distribuye verticalmente de forma ordenada los botones visibles del sidebar para evitar huecos.
+        ''' </summary>
+        Private Sub ReorganizarBotonesMenu()
+            Dim intPosicionY As Integer = 100
+            Dim arrBotones = {btnNavDashboard, btnNavCatalogo, btnNavCocina, btnNavCaja, btnNavFacturacion, btnNavReportes}
+            For Each btn In arrBotones
+                If btn.Visible Then
+                    btn.Location = New Point(6, intPosicionY)
+                    intPosicionY += 50
+                End If
+            Next
         End Sub
 
 
@@ -197,7 +210,7 @@ Namespace Views
 
             ThemeConfig.EstilizarBotonEliminar(btnCerrarSesion)
 
-            Dim botonesNav = {btnNavDashboard, btnNavCatalogo, btnNavPedidos, btnNavCocina, btnNavCaja, btnNavFacturacion, btnNavReportes}
+            Dim botonesNav = {btnNavDashboard, btnNavCatalogo, btnNavCocina, btnNavCaja, btnNavFacturacion, btnNavReportes}
             For Each btn In botonesNav
                 ThemeConfig.EstilizarBotonNavegacion(btn, False)
             Next
@@ -207,7 +220,7 @@ Namespace Views
         Private Sub SeleccionarBotonNavegacion(btnSeleccionado As Button, tituloModulo As String)
             If btnSeleccionado Is Nothing Then Return
 
-            Dim botonesNav = {btnNavDashboard, btnNavCatalogo, btnNavPedidos, btnNavCocina, btnNavCaja, btnNavFacturacion, btnNavReportes}
+            Dim botonesNav = {btnNavDashboard, btnNavCatalogo, btnNavCocina, btnNavCaja, btnNavFacturacion, btnNavReportes}
             For Each btn In botonesNav
                 ThemeConfig.EstilizarBotonNavegacion(btn, False)
             Next
@@ -234,15 +247,14 @@ Namespace Views
             MostrarMensajeModulo("Menú & Catálogo", "Gestión de platos, categorías, precios e insumos de disponibilidad (RF-002, RF-003, RF-012).")
         End Sub
 
-        Private Sub btnNavPedidos_Click(sender As Object, e As EventArgs) Handles btnNavPedidos.Click
-            SeleccionarBotonNavegacion(btnNavPedidos, "Gestión de Pedidos (RestauranteDB)")
-            AbrirFormularioEnPanel(Of Pedidos.FrmPedidos)()
-        End Sub
-
-
         Private Sub btnNavCocina_Click(sender As Object, e As EventArgs) Handles btnNavCocina.Click
-            SeleccionarBotonNavegacion(btnNavCocina, "Monitor de Cocina (KDS)")
-            AbrirFormularioEnPanel(Of Cocina.FrmCcnMonitorCocina)()
+            If _rolUsuario.Contains("Cliente") Then
+                SeleccionarBotonNavegacion(btnNavCocina, "Monitor de Pedidos & Menú")
+                AbrirFormularioEnPanel(New Cocina.FrmCcnMonitorCocina(_nombreUsuario))
+            Else
+                SeleccionarBotonNavegacion(btnNavCocina, "Monitor de Cocina (KDS)")
+                AbrirFormularioEnPanel(Of Cocina.FrmCcnMonitorCocina)()
+            End If
         End Sub
 
         Private Sub btnNavCaja_Click(sender As Object, e As EventArgs) Handles btnNavCaja.Click

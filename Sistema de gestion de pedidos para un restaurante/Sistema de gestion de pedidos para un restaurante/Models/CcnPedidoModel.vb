@@ -30,6 +30,9 @@ Namespace Models
         ''' <summary> Método de pago (Tarjeta Crédito, Efectivo pendiente, Pagado Web) </summary>
         Public Property StrMetodoPago As String
 
+        ''' <summary> Indicador estricto de si el pedido ya fue pagado o está pendiente de cobro </summary>
+        Public Property BlnEstaPagado As Boolean
+
         ''' <summary> Fecha y hora exacta de registro de la comanda </summary>
         Public Property DtHoraRegistro As DateTime
 
@@ -39,14 +42,23 @@ Namespace Models
         ''' <summary> Lista de platos o productos pertenecientes a la comanda </summary>
         Public Property LstDetallePlatos As List(Of CcnItemPedidoModel)
 
+        ''' <summary> Indicador de si el pedido cuenta con comprobante fiscal generado en Facturación </summary>
+        Public Property BlnFacturado As Boolean
+
+        ''' <summary> Número fiscal de factura asignado (ej. FAC-2026-1001) </summary>
+        Public Property StrNumeroFactura As String
+
         Public Sub New()
             Me.IntIdPedido = 0
             Me.StrCodigoComanda = String.Empty
             Me.StrMesaCliente = String.Empty
             Me.StrNombreMozo = String.Empty
             Me.StrNombreCliente = String.Empty
-            Me.StrTipoServicio = "Mesa / Salón"
+            Me.StrTipoServicio = "Comer en el Sitio"
             Me.StrMetodoPago = "Pendiente"
+            Me.BlnEstaPagado = False
+            Me.BlnFacturado = False
+            Me.StrNumeroFactura = String.Empty
             Me.DtHoraRegistro = DateTime.Now
             Me.EnumEstado = CcnEstadoPedidoEnum.Recibido
             Me.LstDetallePlatos = New List(Of CcnItemPedidoModel)()
@@ -59,6 +71,7 @@ Namespace Models
                        ByVal strNombreCliente As String,
                        ByVal strTipoServicio As String,
                        ByVal strMetodoPago As String,
+                       ByVal blnEstaPagado As Boolean,
                        ByVal dtHoraRegistro As DateTime,
                        ByVal enumEstado As CcnEstadoPedidoEnum)
             Me.IntIdPedido = intIdPedido
@@ -68,10 +81,34 @@ Namespace Models
             Me.StrNombreCliente = strNombreCliente
             Me.StrTipoServicio = strTipoServicio
             Me.StrMetodoPago = strMetodoPago
+            Me.BlnEstaPagado = blnEstaPagado
             Me.DtHoraRegistro = dtHoraRegistro
             Me.EnumEstado = enumEstado
             Me.LstDetallePlatos = New List(Of CcnItemPedidoModel)()
         End Sub
+
+        ''' <summary>
+        ''' Obtiene el nombre del primer plato principal para ilustrar o previsualizar.
+        ''' </summary>
+        Public Function ObtenerPlatoPrincipalNombre() As String
+            If Me.LstDetallePlatos IsNot Nothing AndAlso Me.LstDetallePlatos.Count > 0 Then
+                Return Me.LstDetallePlatos(0).StrNombrePlato
+            End If
+            Return "Plato del Día"
+        End Function
+
+        ''' <summary>
+        ''' Retorna el formato descriptivo: '🪑 Comer en el Sitio — Mesa 04' o '🛍 Para Llevar / Entregas'.
+        ''' </summary>
+        Public Function ObtenerEtiquetaServicioMesa() As String
+            If Me.StrTipoServicio.IndexOf("Llevar", StringComparison.OrdinalIgnoreCase) >= 0 OrElse
+               Me.StrTipoServicio.IndexOf("Entrega", StringComparison.OrdinalIgnoreCase) >= 0 Then
+                Return "🛍 Para Llevar"
+            Else
+                Dim strMesa As String = If(String.IsNullOrWhiteSpace(Me.StrMesaCliente), "Mesa 01", Me.StrMesaCliente)
+                Return $"🪑 Comer en Local • {strMesa}"
+            End If
+        End Function
 
         ''' <summary>
         ''' Calcula la sumatoria económica total de la comanda.

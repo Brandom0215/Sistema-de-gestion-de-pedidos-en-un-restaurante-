@@ -30,7 +30,6 @@ Namespace Views
         ' Botones de Navegación del Sistema (Basados en Documentacion.md)
         Friend WithEvents btnNavDashboard As System.Windows.Forms.Button
         Friend WithEvents btnNavCatalogo As System.Windows.Forms.Button
-        Friend WithEvents btnNavPedidos As System.Windows.Forms.Button
         Friend WithEvents btnNavCocina As System.Windows.Forms.Button
         Friend WithEvents btnNavCaja As System.Windows.Forms.Button
         Friend WithEvents btnNavFacturacion As System.Windows.Forms.Button
@@ -65,7 +64,6 @@ Namespace Views
             
             Me.btnNavDashboard = New System.Windows.Forms.Button()
             Me.btnNavCatalogo = New System.Windows.Forms.Button()
-            Me.btnNavPedidos = New System.Windows.Forms.Button()
             Me.btnNavCocina = New System.Windows.Forms.Button()
             Me.btnNavCaja = New System.Windows.Forms.Button()
             Me.btnNavFacturacion = New System.Windows.Forms.Button()
@@ -99,7 +97,6 @@ Namespace Views
             Me.pnlSidebar.Controls.Add(Me.btnNavFacturacion)
             Me.pnlSidebar.Controls.Add(Me.btnNavCaja)
             Me.pnlSidebar.Controls.Add(Me.btnNavCocina)
-            Me.pnlSidebar.Controls.Add(Me.btnNavPedidos)
             Me.pnlSidebar.Controls.Add(Me.btnNavCatalogo)
             Me.pnlSidebar.Controls.Add(Me.btnNavDashboard)
             Me.pnlSidebar.Controls.Add(Me.pnlBarraIndicadorMenu)
@@ -176,17 +173,6 @@ Namespace Views
             Me.btnNavCatalogo.Text = "  🍽 Menú & Catálogo"
             Me.btnNavCatalogo.UseVisualStyleBackColor = True
             Me.btnNavCatalogo.UseMnemonic = False
-
-            ' 
-            ' btnNavPedidos
-            ' 
-            Me.btnNavPedidos.Location = New System.Drawing.Point(6, 200)
-            Me.btnNavPedidos.Name = "btnNavPedidos"
-            Me.btnNavPedidos.Size = New System.Drawing.Size(238, 45)
-            Me.btnNavPedidos.TabIndex = 4
-            Me.btnNavPedidos.Text = "  🛒 Toma de Pedidos"
-            Me.btnNavPedidos.UseVisualStyleBackColor = True
-            Me.btnNavPedidos.UseMnemonic = False
 
             ' 
             ' btnNavCocina

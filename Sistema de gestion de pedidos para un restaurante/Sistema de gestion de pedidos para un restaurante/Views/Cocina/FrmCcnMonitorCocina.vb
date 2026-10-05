@@ -3,6 +3,7 @@ Imports System.Collections.Generic
 Imports System.Drawing
 Imports System.Linq
 Imports System.Windows.Forms
+Imports Sistema_de_gestion_de_pedidos_para_un_restaurante.Data
 Imports Sistema_de_gestion_de_pedidos_para_un_restaurante.Models
 Imports Sistema_de_gestion_de_pedidos_para_un_restaurante.Theme
 Imports Sistema_de_gestion_de_pedidos_para_un_restaurante.Views.Cocina.Controles
@@ -11,9 +12,10 @@ Namespace Views.Cocina
     ''' <summary>
     ''' Formulario de Monitor de Cocina (KDS - Kitchen Display System).
     ''' Permite al personal de cocina recibir comandas en tiempo real, monitorear tiempos FIFO,
-    ''' gestionar transiciones de estado (Recibido -> En Preparación -> Listo) y filtrar por canal.
+    ''' gestionar transiciones de estado (Recibido -> En Preparación -> Listo -> Entregado) y filtrar por canal.
+    ''' Conectado bidireccionalmente con el repositorio DAO para reflejar pedidos de clientes,
+    ''' pagos realizados en Caja y facturación electrónica PDF.
     ''' Prefijo de módulo: Ccn
-    ''' Cumple con notación húngara, diseño consistente y código fuertemente tipado.
     ''' </summary>
     Public Class FrmCcnMonitorCocina
 
@@ -26,8 +28,16 @@ Namespace Views.Cocina
         ''' <summary> Indicador de sonido de alerta habilitado </summary>
         Private _blnCcnSonidoHabilitado As Boolean = True
 
+        ''' <summary> Nombre del usuario cliente si la sesión pertenece a un cliente autenticado </summary>
+        Private ReadOnly _strClienteLogueado As String = String.Empty
+
         Public Sub New()
+            Me.New(String.Empty)
+        End Sub
+
+        Public Sub New(ByVal strClienteLogueado As String)
             InitializeComponent()
+            _strClienteLogueado = strClienteLogueado
             ThemeConfig.HabilitarDobleBuffer(Me)
             ThemeConfig.HabilitarDobleBuffer(flpCcnContenedorComandas)
         End Sub
@@ -35,7 +45,13 @@ Namespace Views.Cocina
         Private Sub FrmCcnMonitorCocina_Load(ByVal sender As Object, ByVal e As EventArgs) Handles MyBase.Load
             AplicarTemaVisual()
             InicializarCriteriosOrdenamiento()
-            CargarComandasInicialesDemostracion()
+
+            If Not String.IsNullOrWhiteSpace(_strClienteLogueado) Then
+                lblCcnTituloPrincipal.Text = $"Menú Digital & Comandas ({_strClienteLogueado})"
+                btnCcnNuevoPedido.Text = "➕ Realizar Pedido"
+            End If
+
+            SincronizarComandasDesdeDAO()
             RefrescarMonitorComandas()
 
             ' Iniciar temporizador en tiempo real
@@ -54,18 +70,20 @@ Namespace Views.Cocina
             flpCcnContenedorComandas.BackColor = ThemeConfig.ColorBackgroundApp
 
             ' Tipografías y colores de títulos
-            lblCcnTituloPrincipal.Font = ThemeConfig.ObtenerFuenteTitulo(15.0F, FontStyle.Bold)
+            lblCcnTituloPrincipal.Font = ThemeConfig.ObtenerFuenteTitulo(16.5F, FontStyle.Bold)
             lblCcnTituloPrincipal.ForeColor = ThemeConfig.ColorNeutralDark
+            lblCcnSubtituloVivo.Font = ThemeConfig.ObtenerFuenteSubtitulo(9.0F, FontStyle.Bold)
             lblCcnSubtituloVivo.ForeColor = ThemeConfig.ColorPrimary
 
-            ' Estilizado de tarjetas KPI superiores
-            ThemeConfig.AplicarEstiloTarjeta(pnlCcnKpiActivos)
-            ThemeConfig.AplicarEstiloTarjeta(pnlCcnKpiEnCocina)
-            ThemeConfig.AplicarEstiloTarjeta(pnlCcnKpiListos)
-            ThemeConfig.AplicarEstiloTarjeta(pnlCcnKpiTMedio)
+            ' Estilizado de tarjetas KPI superiores con espaciado óptimo (sin Padding de 16px)
+            Dim arrKpis = {pnlCcnKpiActivos, pnlCcnKpiEnCocina, pnlCcnKpiListos, pnlCcnKpiTMedio}
+            For Each pnl In arrKpis
+                pnl.BackColor = Color.White
+                pnl.Padding = New Padding(4)
+            Next
 
             pnlCcnKpiVentas.BackColor = ThemeConfig.ColorPrimaryLight
-            pnlCcnKpiVentas.Padding = New Padding(8, 6, 8, 6)
+            pnlCcnKpiVentas.Padding = New Padding(4)
 
             lblCcnKpiActivosValor.ForeColor = ThemeConfig.ColorNeutralDark
             lblCcnKpiEnCocinaValor.ForeColor = ThemeConfig.ColorPrimary
@@ -74,6 +92,7 @@ Namespace Views.Cocina
             lblCcnKpiVentasValor.ForeColor = ThemeConfig.ColorPrimaryDark
 
             ' Estilizado de botones y controles de filtro
+            ThemeConfig.EstilizarBotonPrimario(btnCcnNuevoPedido)
             ThemeConfig.EstilizarBotonSecundario(btnCcnAlertaSonora)
             ThemeConfig.EstilizarBotonSecundario(btnCcnRefrescarManual)
 
@@ -88,39 +107,18 @@ Namespace Views.Cocina
         End Sub
 
         ' =========================================================================
-        ' CARGA DE DATOS DEMOSTRATIVOS (ALINEADOS AL MOCKUP)
+        ' SINCRONIZACIÓN DE COMANDAS DESDE EL REPOSITORIO DAO (CLIENTE, CAJA, FACTURACIÓN)
         ' =========================================================================
 
-        Private Sub CargarComandasInicialesDemostracion()
+        ''' <summary>
+        ''' Carga y sincroniza las órdenes en tiempo real desde el repositorio DAO centralizado.
+        ''' </summary>
+        Public Sub SincronizarComandasDesdeDAO()
             _lstCcnComandas.Clear()
-
-            ' 1. Comanda Mesa 04 (En Cocina)
-            Dim objComanda1 As New CcnPedidoModel(
-                1, "#08-1042", "MESA 04", "Mateo R.", "Carlos Mendoza", "Mesa / Salón",
-                "Tarjeta Crédito", DateTime.Now.AddMinutes(-8), CcnEstadoPedidoEnum.EnPreparacion
-            )
-            objComanda1.LstDetallePlatos.Add(New CcnItemPedidoModel(2, "Bife de Chorizo a la Brasa", "Término medio, papas rústicas al romero", 24.0D))
-            objComanda1.LstDetallePlatos.Add(New CcnItemPedidoModel(1, "Ensalada Oliva & Burrata", "Aceite virgen extra cosecha temprana", 12.5D))
-            objComanda1.LstDetallePlatos.Add(New CcnItemPedidoModel(1, "Vino Malbec Reserva (Copa)", "Copa 150ml temperatura bodega", 8.0D))
-            _lstCcnComandas.Add(objComanda1)
-
-            ' 2. Comanda Mesa 09 (Pendiente / Celíaco)
-            Dim objComanda2 As New CcnPedidoModel(
-                2, "#08-1045", "MESA 09", "Elena G.", "María Fernández", "Mesa / Salón",
-                "Efectivo pendiente", DateTime.Now.AddMinutes(-2), CcnEstadoPedidoEnum.Recibido
-            )
-            objComanda2.LstDetallePlatos.Add(New CcnItemPedidoModel(1, "Risotto de Hongos Silvestres", "Con reducción de parmesano", 24.0D, True, "CELÍACO: Estrictamente Sin Gluten"))
-            objComanda2.LstDetallePlatos.Add(New CcnItemPedidoModel(1, "Pasta Fresca al Pesto de Pistacho", "Parmesano reggiano rallado al momento", 18.0D))
-            _lstCcnComandas.Add(objComanda2)
-
-            ' 3. Comanda Entregas (Listo para Entrega)
-            Dim objComanda3 As New CcnPedidoModel(
-                3, "#08-1039", "ENTREGAS", "", "Sofía Alarcón", "Entregas",
-                "Pagado Web (Stripe)", DateTime.Now.AddMinutes(-23), CcnEstadoPedidoEnum.Listo
-            )
-            objComanda3.LstDetallePlatos.Add(New CcnItemPedidoModel(1, "Pollo al Limón y Romero a la Leña", "Empacado en contenedor térmico kraft", 26.0D))
-            objComanda3.LstDetallePlatos.Add(New CcnItemPedidoModel(1, "Focaccia Artesanal de Romero & Sal Gruesa", "Porción individual dorada", 8.0D))
-            _lstCcnComandas.Add(objComanda3)
+            Dim lstDesdeDAO As List(Of CcnPedidoModel) = PedidoDAO.ObtenerComandasCocina()
+            If lstDesdeDAO IsNot Nothing AndAlso lstDesdeDAO.Count > 0 Then
+                _lstCcnComandas.AddRange(lstDesdeDAO)
+            End If
         End Sub
 
         ' =========================================================================
@@ -172,6 +170,20 @@ Namespace Views.Cocina
 
             If objPedidoObjetivo IsNot Nothing Then
                 objPedidoObjetivo.EnumEstado = enumNuevoEstado
+
+                ' Sincronizar actualización de ciclo de vida con el repositorio centralizado DAO
+                Dim strEstadoDAOCocina As String = "RECIBIDO"
+                Select Case enumNuevoEstado
+                    Case CcnEstadoPedidoEnum.EnPreparacion
+                        strEstadoDAOCocina = "EN_PREPARACION"
+                    Case CcnEstadoPedidoEnum.Listo
+                        strEstadoDAOCocina = "LISTO"
+                    Case CcnEstadoPedidoEnum.Entregado
+                        strEstadoDAOCocina = "ENTREGADO"
+                    Case Else
+                        strEstadoDAOCocina = "RECIBIDO"
+                End Select
+                PedidoDAO.ActualizarEstadoCocina(intIdPedido, strEstadoDAOCocina)
 
                 If enumNuevoEstado = CcnEstadoPedidoEnum.Entregado Then
                     MessageBox.Show($"La comanda {objPedidoObjetivo.StrCodigoComanda} ha sido finalizada y despachada.", "Despacho Completado", MessageBoxButtons.OK, MessageBoxIcon.Information)
@@ -261,7 +273,17 @@ Namespace Views.Cocina
             RefrescarMonitorComandas()
         End Sub
 
+        Private Sub btnCcnNuevoPedido_Click(ByVal sender As Object, ByVal e As EventArgs) Handles btnCcnNuevoPedido.Click
+            Using frmNuevo As New FrmCcnNuevoPedidoDialog(_strClienteLogueado)
+                If frmNuevo.ShowDialog(Me) = DialogResult.OK Then
+                    SincronizarComandasDesdeDAO()
+                    RefrescarMonitorComandas()
+                End If
+            End Using
+        End Sub
+
         Private Sub btnCcnRefrescarManual_Click(ByVal sender As Object, ByVal e As EventArgs) Handles btnCcnRefrescarManual.Click
+            SincronizarComandasDesdeDAO()
             RefrescarMonitorComandas()
         End Sub
 
@@ -271,10 +293,37 @@ Namespace Views.Cocina
         End Sub
 
         Private Sub tmrCcnActualizadorRealTime_Tick(ByVal sender As Object, ByVal e As EventArgs) Handles tmrCcnActualizadorRealTime.Tick
-            ' Actualiza los tiempos transcurridos en pantalla de manera fluida
+            ' 1. Sincronizar en segundo plano cambios de pago (Caja) o facturación (Facturación PDF) desde PedidoDAO
+            Dim lstDAO As List(Of CcnPedidoModel) = PedidoDAO.ObtenerComandasCocina()
+            If lstDAO IsNot Nothing Then
+                Dim blnRequiereRefrescoVisual As Boolean = False
+                For Each itemDAO In lstDAO
+                    Dim actual = _lstCcnComandas.FirstOrDefault(Function(c) c.IntIdPedido = itemDAO.IntIdPedido)
+                    If actual IsNot Nothing Then
+                        If actual.BlnEstaPagado <> itemDAO.BlnEstaPagado OrElse actual.BlnFacturado <> itemDAO.BlnFacturado Then
+                            actual.BlnEstaPagado = itemDAO.BlnEstaPagado
+                            actual.StrMetodoPago = itemDAO.StrMetodoPago
+                            actual.BlnFacturado = itemDAO.BlnFacturado
+                            actual.StrNumeroFactura = itemDAO.StrNumeroFactura
+                            blnRequiereRefrescoVisual = True
+                        End If
+                    Else
+                        ' Nuevo pedido ingresado por cliente o cajero externamente
+                        _lstCcnComandas.Add(itemDAO)
+                        blnRequiereRefrescoVisual = True
+                    End If
+                Next
+
+                If blnRequiereRefrescoVisual Then
+                    RefrescarMonitorComandas()
+                    Return
+                End If
+            End If
+
+            ' 2. Actualiza los tiempos transcurridos en pantalla de manera fluida
             For Each ctl As Control In flpCcnContenedorComandas.Controls
                 If TypeOf ctl Is UcCcnTarjetaComanda Then
-                    ' Cada tarjeta refresca su cronómetro interno
+                    DirectCast(ctl, UcCcnTarjetaComanda).ActualizarCronometro()
                 End If
             Next
             ActualizarMetricasKpi()
