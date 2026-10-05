@@ -4,7 +4,7 @@ Imports System.Windows.Forms
 Namespace Views.Facturacion
     <Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
     Partial Class FrmFacturacionPDF
-        Inherits System.Windows.Forms.Form
+        Inherits Sistema_de_gestion_de_pedidos_para_un_restaurante.Views.Common.FrmBaseForm
 
         Protected Overrides Sub Dispose(ByVal disposing As Boolean)
             Try

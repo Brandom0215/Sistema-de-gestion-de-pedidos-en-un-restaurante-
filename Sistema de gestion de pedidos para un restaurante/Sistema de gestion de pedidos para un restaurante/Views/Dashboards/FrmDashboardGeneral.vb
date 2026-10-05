@@ -13,7 +13,6 @@ Namespace Views.Dashboards
 
         Public Sub New()
             InitializeComponent()
-            ThemeConfig.HabilitarDobleBuffer(Me)
         End Sub
 
         Private Sub FrmDashboardGeneral_Load(sender As Object, e As EventArgs) Handles MyBase.Load
@@ -24,8 +23,8 @@ Namespace Views.Dashboards
         ''' <summary>
         ''' Aplica la paleta visual oficial y fuentes modernas a todos los controles del Dashboard.
         ''' </summary>
-        Private Sub AplicarTemaVisual()
-            Me.BackColor = ThemeConfig.ColorBackgroundApp
+        Protected Overrides Sub AplicarTemaVisual()
+            MyBase.AplicarTemaVisual()
             pnlHeaderContainer.BackColor = ThemeConfig.ColorBackgroundApp
 
             ' Encabezado

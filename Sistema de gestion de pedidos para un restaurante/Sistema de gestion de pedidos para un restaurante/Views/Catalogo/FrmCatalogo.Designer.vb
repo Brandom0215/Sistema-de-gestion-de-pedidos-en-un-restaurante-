@@ -4,7 +4,7 @@ Imports System.Windows.Forms
 Namespace Views.Catalogo
     <Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
     Partial Class FrmCatalogo
-        Inherits System.Windows.Forms.Form
+        Inherits Sistema_de_gestion_de_pedidos_para_un_restaurante.Views.Common.FrmBaseForm
 
         <System.Diagnostics.DebuggerNonUserCode()>
         Protected Overrides Sub Dispose(disposing As Boolean)

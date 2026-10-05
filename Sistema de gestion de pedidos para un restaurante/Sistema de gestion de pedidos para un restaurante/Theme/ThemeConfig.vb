@@ -111,8 +111,8 @@ Namespace Theme
             btn.Cursor = Cursors.Hand
             btn.TextAlign = ContentAlignment.MiddleLeft
             btn.ImageAlign = ContentAlignment.MiddleLeft
-            btn.Padding = New Padding(12, 0, 8, 0)
-            btn.Font = ObtenerFuenteCuerpo(9.0F, If(esActivo, FontStyle.Bold, FontStyle.Regular))
+            btn.Padding = New Padding(16, 0, 8, 0)
+            btn.Font = ObtenerFuenteCuerpo(10.0F, If(esActivo, FontStyle.Bold, FontStyle.Regular))
 
             If esActivo Then
                 btn.BackColor = Color.FromArgb(230, 224, 215)

@@ -15,7 +15,6 @@ Namespace Views.Catalogo
 
         Public Sub New()
             InitializeComponent()
-            ThemeConfig.HabilitarDobleBuffer(Me)
         End Sub
 
         Private Sub FrmCatalogo_Load(sender As Object, e As EventArgs) Handles MyBase.Load
@@ -28,8 +27,8 @@ Namespace Views.Catalogo
         ' ESTILIZADO Y CONFIGURACIÓN VISUAL
         ' =========================================================================
 
-        Private Sub AplicarTemaVisual()
-            Me.BackColor = ThemeConfig.ColorBackgroundApp
+        Protected Overrides Sub AplicarTemaVisual()
+            MyBase.AplicarTemaVisual()
             pnlHeaderContainer.BackColor = ThemeConfig.ColorBackgroundApp
 
             lblTituloCatalogo.ForeColor = ThemeConfig.ColorNeutralDark
@@ -87,14 +86,14 @@ Namespace Views.Catalogo
 
         Private Sub btnGuardarPlato_Click(sender As Object, e As EventArgs) Handles btnGuardarPlato.Click
             If String.IsNullOrWhiteSpace(txtNombrePlato.Text) Then
-                MessageBox.Show("Por favor, ingrese el nombre del plato.", "Validación", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                MostrarMensajeAdvertencia("Por favor, ingrese el nombre del plato.", "Validación")
                 txtNombrePlato.Focus()
                 Return
             End If
 
             Dim precioValido As Decimal = 0D
             If Not Decimal.TryParse(txtPrecio.Text.Trim(), precioValido) OrElse precioValido <= 0 Then
-                MessageBox.Show("Por favor, ingrese un precio válido mayor a 0.", "Validación", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                MostrarMensajeAdvertencia("Por favor, ingrese un precio válido mayor a 0.", "Validación")
                 txtPrecio.Focus()
                 Return
             End If
@@ -107,28 +106,28 @@ Namespace Views.Catalogo
 
             Dim exito As Boolean = Data.PlatoDAO.Guardar(nombre, categoria, precioValido, tiempo, disponible, descripcion)
             If exito Then
-                MessageBox.Show($"¡Plato '{nombre}' guardado exitosamente en el catálogo!", "Catálogo Actualizado", MessageBoxButtons.OK, MessageBoxIcon.Information)
+                MostrarMensajeExito($"¡Plato '{nombre}' guardado exitosamente en el catálogo!", "Catálogo Actualizado")
                 LimpiarFormulario()
                 RefrescarGrilla()
             Else
-                MessageBox.Show("No se pudo guardar el plato en el catálogo.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                MostrarMensajeError("No se pudo guardar el plato en el catálogo.", "Error")
             End If
         End Sub
 
         Private Sub btnActualizarPlato_Click(sender As Object, e As EventArgs) Handles btnActualizarPlato.Click
             If _idPlatoSeleccionado <= 0 Then
-                MessageBox.Show("Seleccione un plato de la lista para actualizar.", "Atención", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                MostrarMensajeAdvertencia("Seleccione un plato de la lista para actualizar.", "Atención")
                 Return
             End If
 
             If String.IsNullOrWhiteSpace(txtNombrePlato.Text) Then
-                MessageBox.Show("El nombre del plato no puede estar vacío.", "Validación", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                MostrarMensajeAdvertencia("El nombre del plato no puede estar vacío.", "Validación")
                 Return
             End If
 
             Dim precioValido As Decimal = 0D
             If Not Decimal.TryParse(txtPrecio.Text.Trim(), precioValido) OrElse precioValido <= 0 Then
-                MessageBox.Show("Ingrese un precio válido.", "Validación", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                MostrarMensajeAdvertencia("Ingrese un precio válido.", "Validación")
                 Return
             End If
 
@@ -140,7 +139,7 @@ Namespace Views.Catalogo
 
             Dim exito As Boolean = Data.PlatoDAO.Actualizar(_idPlatoSeleccionado, nombre, categoria, precioValido, tiempo, disponible, descripcion)
             If exito Then
-                MessageBox.Show("Plato actualizado exitosamente.", "Catálogo Actualizado", MessageBoxButtons.OK, MessageBoxIcon.Information)
+                MostrarMensajeExito("Plato actualizado exitosamente.", "Catálogo Actualizado")
                 LimpiarFormulario()
                 RefrescarGrilla()
             End If
@@ -148,12 +147,11 @@ Namespace Views.Catalogo
 
         Private Sub btnEliminarPlato_Click(sender As Object, e As EventArgs) Handles btnEliminarPlato.Click
             If _idPlatoSeleccionado <= 0 Then
-                MessageBox.Show("Seleccione un plato de la lista para eliminar.", "Atención", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                MostrarMensajeAdvertencia("Seleccione un plato de la lista para eliminar.", "Atención")
                 Return
             End If
 
-            Dim resp As DialogResult = MessageBox.Show($"¿Está seguro de eliminar el plato seleccionado del catálogo?", "Confirmar Eliminación", MessageBoxButtons.YesNo, MessageBoxIcon.Question)
-            If resp = DialogResult.Yes Then
+            If ConfirmarAccion("¿Está seguro de eliminar el plato seleccionado del catálogo?", "Confirmar Eliminación") Then
                 Data.PlatoDAO.Eliminar(_idPlatoSeleccionado)
                 LimpiarFormulario()
                 RefrescarGrilla()

@@ -124,6 +124,66 @@ Namespace Models
         End Function
 
         ''' <summary>
+        ''' Calcula el subtotal gravable antes de impuestos (asumiendo 7% ITBIS).
+        ''' </summary>
+        Public Function CalcularSubtotal() As Decimal
+            Dim decTotal As Decimal = Me.CalcularTotal()
+            Return Math.Round(decTotal / 1.07D, 2)
+        End Function
+
+        ''' <summary>
+        ''' Calcula el valor del impuesto aplicado a la comanda.
+        ''' </summary>
+        Public Function CalcularImpuesto() As Decimal
+            Dim decTotal As Decimal = Me.CalcularTotal()
+            Dim decSubtotal As Decimal = Me.CalcularSubtotal()
+            Return Math.Round(decTotal - decSubtotal, 2)
+        End Function
+
+        ''' <summary>
+        ''' Calcula el cambio o vuelto para el cliente a partir del monto entregado en efectivo.
+        ''' </summary>
+        Public Function CalcularCambio(decMontoRecibido As Decimal) As Decimal
+            Dim decTotal As Decimal = Me.CalcularTotal()
+            If decMontoRecibido > decTotal Then
+                Return Math.Round(decMontoRecibido - decTotal, 2)
+            End If
+            Return 0D
+        End Function
+
+        ''' <summary>
+        ''' Determina si el pedido puede avanzar al siguiente estado operativo en cocina.
+        ''' </summary>
+        Public Function PuedeAvanzarEstado() As Boolean
+            Return Me.EnumEstado < CcnEstadoPedidoEnum.Entregado
+        End Function
+
+        ''' <summary>
+        ''' Obtiene el siguiente estado del ciclo de vida en cocina según la máquina de estados de negocio (POO).
+        ''' </summary>
+        Public Function ObtenerProximoEstado() As CcnEstadoPedidoEnum
+            Select Case Me.EnumEstado
+                Case CcnEstadoPedidoEnum.Recibido
+                    Return CcnEstadoPedidoEnum.EnPreparacion
+                Case CcnEstadoPedidoEnum.EnPreparacion
+                    Return CcnEstadoPedidoEnum.Listo
+                Case CcnEstadoPedidoEnum.Listo
+                    Return CcnEstadoPedidoEnum.Entregado
+                Case Else
+                    Return Me.EnumEstado
+            End Select
+        End Function
+
+        ''' <summary>
+        ''' Avanza la comanda hacia la siguiente fase de su ciclo de vida en cocina (POO).
+        ''' </summary>
+        Public Function AvanzarSiguienteEstado() As Boolean
+            If Not Me.PuedeAvanzarEstado() Then Return False
+            Me.EnumEstado = Me.ObtenerProximoEstado()
+            Return True
+        End Function
+
+        ''' <summary>
         ''' Obtiene la cantidad de minutos transcurridos desde que se emitió el pedido.
         ''' </summary>
         Public Function ObtenerMinutosTranscurridos() As Integer

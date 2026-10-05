@@ -38,7 +38,6 @@ Namespace Views.Cocina
         Public Sub New(ByVal strClienteLogueado As String)
             InitializeComponent()
             _strClienteLogueado = strClienteLogueado
-            ThemeConfig.HabilitarDobleBuffer(Me)
             ThemeConfig.HabilitarDobleBuffer(flpCcnContenedorComandas)
         End Sub
 
@@ -63,8 +62,8 @@ Namespace Views.Cocina
         ' APLICACIÓN DE ESTILOS Y TEMÁTICA VISUAL
         ' =========================================================================
 
-        Private Sub AplicarTemaVisual()
-            Me.BackColor = ThemeConfig.ColorBackgroundApp
+        Protected Overrides Sub AplicarTemaVisual()
+            MyBase.AplicarTemaVisual()
             pnlCcnHeaderPrincipal.BackColor = ThemeConfig.ColorBackgroundApp
             pnlCcnBarraFiltros.BackColor = ThemeConfig.ColorBackgroundApp
             flpCcnContenedorComandas.BackColor = ThemeConfig.ColorBackgroundApp

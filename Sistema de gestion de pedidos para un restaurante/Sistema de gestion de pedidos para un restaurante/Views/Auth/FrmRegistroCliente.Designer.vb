@@ -4,7 +4,7 @@ Imports System.Windows.Forms
 Namespace Views.Auth
     <Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
     Partial Class FrmRegistroCliente
-        Inherits System.Windows.Forms.Form
+        Inherits Sistema_de_gestion_de_pedidos_para_un_restaurante.Views.Common.FrmBaseForm
 
         <System.Diagnostics.DebuggerNonUserCode()>
         Protected Overrides Sub Dispose(ByVal disposing As Boolean)

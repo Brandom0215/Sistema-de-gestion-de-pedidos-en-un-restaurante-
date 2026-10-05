@@ -11,15 +11,14 @@ Namespace Views.Auth
 
         Public Sub New()
             InitializeComponent()
-            ThemeConfig.HabilitarDobleBuffer(Me)
         End Sub
 
         Private Sub FrmRegistroCliente_Load(sender As Object, e As EventArgs) Handles MyBase.Load
             AplicarTemaVisual()
         End Sub
 
-        Private Sub AplicarTemaVisual()
-            Me.BackColor = ThemeConfig.ColorBackgroundApp
+        Protected Overrides Sub AplicarTemaVisual()
+            MyBase.AplicarTemaVisual()
             pnlCardRegistro.BackColor = Color.White
             ThemeConfig.AplicarEstiloTarjeta(pnlCardRegistro)
 
@@ -34,21 +33,25 @@ Namespace Views.Auth
             ThemeConfig.EstilizarBotonSecundario(btnVolverLogin)
         End Sub
 
+        ''' <summary> Nombre del cliente registrado con éxito </summary>
+        <System.ComponentModel.DesignerSerializationVisibility(System.ComponentModel.DesignerSerializationVisibility.Hidden)>
+        Public Property NombreClienteRegistrado As String = String.Empty
+
         Private Sub btnRegistrar_Click(sender As Object, e As EventArgs) Handles btnRegistrar.Click
             If String.IsNullOrWhiteSpace(txtNombreCompleto.Text) Then
-                MessageBox.Show("Por favor, ingrese su nombre completo.", "Registro de Cliente", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                MostrarMensajeAdvertencia("Por favor, ingrese su nombre completo.", "Registro de Cliente")
                 txtNombreCompleto.Focus()
                 Return
             End If
 
             If String.IsNullOrWhiteSpace(txtCorreo.Text) Then
-                MessageBox.Show("Por favor, ingrese su correo electrónico o usuario.", "Registro de Cliente", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                MostrarMensajeAdvertencia("Por favor, ingrese su correo electrónico o usuario.", "Registro de Cliente")
                 txtCorreo.Focus()
                 Return
             End If
 
             If String.IsNullOrWhiteSpace(txtPassword.Text) Then
-                MessageBox.Show("Por favor, cree una contraseña de acceso.", "Registro de Cliente", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                MostrarMensajeAdvertencia("Por favor, cree una contraseña de acceso.", "Registro de Cliente")
                 txtPassword.Focus()
                 Return
             End If
@@ -60,24 +63,19 @@ Namespace Views.Auth
 
             Dim exito As Boolean = Data.UsuarioDAO.RegistrarCliente(nombreCliente, telefonoCliente, correoCliente, passwordCliente)
             If Not exito Then
-                MessageBox.Show("No se pudo registrar la cuenta. Es posible que el correo/usuario ya exista en RestauranteDB.", "Error de Registro", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                MostrarMensajeError("No se pudo registrar la cuenta. Es posible que el correo/usuario ya exista en el sistema.", "Error de Registro")
                 Return
             End If
 
-            MessageBox.Show($"¡Bienvenido {nombreCliente}! Tu cuenta ha sido registrada con éxito en RestauranteDB.", "Registro Exitoso", MessageBoxButtons.OK, MessageBoxIcon.Information)
+            MostrarMensajeExito($"¡Bienvenido {nombreCliente}! Tu cuenta ha sido registrada con éxito.", "Registro Exitoso")
 
-            ' Abrir FrmHome en Modo Cliente pasando sus datos
-            Dim mainHome As New FrmHome("📲 Cliente / Autoatención", nombreCliente)
-            Me.Hide()
-            mainHome.ShowDialog()
+            NombreClienteRegistrado = nombreCliente
+            Me.DialogResult = DialogResult.OK
             Me.Close()
         End Sub
 
-
         Private Sub btnVolverLogin_Click(sender As Object, e As EventArgs) Handles btnVolverLogin.Click
-            Dim frmLog As New FrmLogin()
-            Me.Hide()
-            frmLog.ShowDialog()
+            Me.DialogResult = DialogResult.Cancel
             Me.Close()
         End Sub
 

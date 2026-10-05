@@ -18,22 +18,22 @@ El sistema transforma la experiencia gastronómica tradicional mediante la autom
 
 El sistema opera bajo una arquitectura multi-rol con validación estricta de credenciales en memoria (UsuarioDAO).
 
-### 2.1. Pantalla de Autenticación (FrmLogin)
-- La aplicación se inicia en FrmLogin.vb.
-- El usuario ingresa sus credenciales (usuario/correo y contraseña).
-- El sistema autentica las credenciales en memoria e infiere automáticamente su rol de permisos asignado.
-- Los clientes nuevos disponen de un enlace directo hacia el formulario de registro (FrmRegistroCliente.vb).
+### 2.1. Flujo de Inicio y Autenticación (Guest-First / Fast Checkout)
+- La aplicación se inicia directamente en el **Módulo Cliente** (FrmHome.vb en Modo Invitado/Autoservicio) sin requerir inicio de sesión ni registro previo.
+- El cliente tiene acceso inmediato a explorar los platos y productos.
+- Para el personal del restaurante (Cocina, Caja, Administrador), se dispone del botón **`Acceso Personal`** en la barra superior que despliega el modal de inicio de sesión (`FrmLogin.vb`).
+- Al autenticarse el personal, el sistema conmuta de inmediato sus permisos y paneles. Al presionar "Cerrar Sesión", regresa automáticamente al Menú Digital del Cliente.
 
-### 2.2. Roles y Permisos en el Sistema (FrmHome)
-- **Cliente (Tótem / Autoatención):**
-  - Al autenticarse, el menú lateral izquierdo oculta e inhabilitar completamente todos los accesos administrativos (Dashboard, Catálogo, Cocina, Caja, Facturación, Reportes).
-  - El cliente accede exclusivamente a su módulo de Toma de Pedidos y Menú Digital (FrmPedidos.vb).
-- **Personal de Cocina (KDS):**
-  - Accede directamente al Monitor de Cocina en Tiempo Real (FrmCocinaKDS.vb) y a la consulta de órdenes activas.
-- **Cajero / Personal de Sala:**
-  - Accede a los módulos de Toma de Pedidos, Caja & Cobros y Facturación PDF.
-- **Administrador:**
-  - Posee acceso ilimitado a todos los módulos, reportes de ventas y métricas ejecutivas.
+### 2.2. Roles y Permisos en el Sistema (FrmHome - Arquitectura de 3 Módulos)
+- **1. Módulo Cliente (`btnNavCliente`):**
+  - **Cliente (Tótem / Autoatención / Invitado):** Accede exclusivamente a su Menú Digital y Toma de Pedidos. Los módulos de Cocina y Cobro/Admin quedan completamente ocultos.
+  - **Cajero / Administrador:** También pueden acceder para registrar comandas de clientes en sala o mostrador.
+- **2. Módulo Cocina (`btnNavCocina`):**
+  - **Personal de Cocina (KDS):** Acceso al Monitor de Cocina en Tiempo Real con colas FIFO, alertas visuales y avance de comandas (*Recibido ➔ En Preparación ➔ Listo ➔ Entregado*).
+  - Los módulos de Cliente y Cobro quedan ocultos para el personal de cocina.
+- **3. Módulo Cobro / Admin (`btnNavCobroAdmin`):**
+  - **Cajero:** Procesa pagos en efectivo (con cálculo de vuelto), tarjetas POS y transferencias, liberando comandas a cocina y permitiendo emitir comprobantes.
+  - **Administrador:** Acceso completo a los 3 módulos, con control integral del sistema.
 
 ---
 

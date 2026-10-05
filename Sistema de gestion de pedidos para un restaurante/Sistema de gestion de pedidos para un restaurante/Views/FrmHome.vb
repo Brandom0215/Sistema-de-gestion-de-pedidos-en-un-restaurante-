@@ -16,14 +16,13 @@ Namespace Views
         Private _botonMenuSeleccionado As Button = Nothing
 
         ''' <summary> Rol del usuario autenticado en la sesión </summary>
-        Private _rolUsuario As String = "👑 Administrador"
+        Private _rolUsuario As String = "📲 Cliente (Autoatención)"
 
         ''' <summary> Nombre del usuario autenticado </summary>
-        Private _nombreUsuario As String = "admin"
+        Private _nombreUsuario As String = "Invitado"
 
         Public Sub New()
             InitializeComponent()
-            ThemeConfig.HabilitarDobleBuffer(Me)
         End Sub
 
         Public Sub New(rolUsuario As String, nombreUsuario As String)
@@ -39,83 +38,106 @@ Namespace Views
             ' 2. Actualizar reloj inicial
             ActualizarRelojSistema()
 
-            ' 3. Aplicar permisos y visibilidad estricta del Sidebar según el ROL
+            ' 3. Configurar sesión y cargar vista inicial (inicia en Módulo Cliente)
+            EstablecerSesion(_rolUsuario, _nombreUsuario)
+        End Sub
+
+        ''' <summary>
+        ''' Configura dinámicamente la sesión del sistema entre Modo Cliente (Invitado/Autoservicio) y Acceso Personal (Staff).
+        ''' </summary>
+        Public Sub EstablecerSesion(rol As String, usuario As String)
+            _rolUsuario = rol
+            _nombreUsuario = usuario
+
+            Dim enumRol As Models.RolUsuarioEnum = Models.RolUsuarioExtensions.ParsearRol(_rolUsuario)
+            Dim rolLimpio As String = Models.RolUsuarioExtensions.ObtenerEtiqueta(enumRol)
+
+            lblNombreUsuario.Text = _nombreUsuario
+            lblRolUsuario.Text = rolLimpio
+            lblAvatarIcono.Text = If(Not String.IsNullOrEmpty(usuario), usuario.Substring(0, 1).ToUpper(), "U")
+
             AplicarPermisosPorRol()
 
-            ' 4. Cargar la vista inicial según el ROL del usuario
-            If _rolUsuario.Contains("Cliente") Then
-                Dim tituloVista As String = If(_rolUsuario.Contains("Invitado"), "📲 Menú Digital de Pedidos (Modo Invitado)", $"📲 Menú Digital de Pedidos (Cliente: {_nombreUsuario})")
+            If Models.RolUsuarioExtensions.EsCliente(enumRol) Then
+                Dim tituloVista As String = If(usuario.Equals("Invitado", StringComparison.OrdinalIgnoreCase), "Carta & Menú Digital", $"Carta & Menú Digital ({_nombreUsuario})")
                 lblTituloModuloTop.Text = tituloVista
-                SeleccionarBotonNavegacion(btnNavCocina, "Monitor de Pedidos & Menú")
-                AbrirFormularioEnPanel(New Cocina.FrmCcnMonitorCocina(_nombreUsuario))
-            ElseIf _rolUsuario.Contains("Cocina") Then
+                SeleccionarBotonNavegacion(btnNavCliente, tituloVista)
+                MostrarModuloClienteEnConstruccion()
+            ElseIf enumRol = Models.RolUsuarioEnum.Cocina Then
                 SeleccionarBotonNavegacion(btnNavCocina, "Monitor de Cocina (KDS)")
                 AbrirFormularioEnPanel(Of Cocina.FrmCcnMonitorCocina)()
+            ElseIf enumRol = Models.RolUsuarioEnum.Cajero Then
+                SeleccionarBotonNavegacion(btnNavCobroAdmin, "Caja & Procesamiento de Pagos")
+                AbrirFormularioEnPanel(Of Caja.FrmCajaCobros)()
             Else
-                ' Administrador / Cajero por defecto en Dashboard
-                SeleccionarBotonNavegacion(btnNavDashboard, "Dashboard General")
-                AbrirFormularioEnPanel(Of Dashboards.FrmDashboardGeneral)()
+                ' Administrador por defecto en Cobro / Admin
+                SeleccionarBotonNavegacion(btnNavCobroAdmin, "Caja y Administración")
+                AbrirFormularioEnPanel(Of Caja.FrmCajaCobros)()
             End If
         End Sub
 
         ''' <summary>
         ''' Restringe y oculta las opciones del menú lateral según el ROL del usuario autenticado.
+        ''' Organizado estrictamente en los 3 módulos: Cliente, Cocina, Cobro/Admin sin usar la palabra 'MÓDULO'.
         ''' </summary>
         Private Sub AplicarPermisosPorRol()
-            ' Actualizar etiqueta de pie de sidebar con el usuario y rol
-            lblEstadoBaseDatos.Text = $"🟢 ROL: {_rolUsuario.Replace("👑 ", "").Replace("💵 ", "").Replace("🍳 ", "").Replace("📲 ", "")}"
+            Dim enumRol As Models.RolUsuarioEnum = Models.RolUsuarioExtensions.ParsearRol(_rolUsuario)
+            Dim rolLimpio As String = Models.RolUsuarioExtensions.ObtenerEtiqueta(enumRol)
+            lblEstadoBaseDatos.Text = $"Conectado: {rolLimpio}"
 
-            If _rolUsuario.Contains("Cliente") Then
-                ' EL CLIENTE ÚNICAMENTE ACCEDE A SU VISTA DE PEDIDOS / MENÚ DIGITAL
-                btnNavDashboard.Visible = False
-                btnNavCatalogo.Visible = False
-                btnNavCocina.Visible = True
-                btnNavCocina.Text = If(_rolUsuario.Contains("Invitado"), "  📲 Menú Digital (Invitado)", "  📲 Mi Pedido / Menú Digital")
-                btnNavCaja.Visible = False
-                btnNavFacturacion.Visible = False
-                btnNavReportes.Visible = False
-            ElseIf _rolUsuario.Contains("Cocina") Then
-                ' PERSONAL DE COCINA ÚNICAMENTE ACCEDE AL MONITOR KDS UNIFICADO
-                btnNavDashboard.Visible = False
-                btnNavCatalogo.Visible = False
-                btnNavCocina.Visible = True
-                btnNavCocina.Text = "  👨‍🍳 Monitor Cocina KDS"
-                btnNavCaja.Visible = False
-                btnNavFacturacion.Visible = False
-                btnNavReportes.Visible = False
-            ElseIf _rolUsuario.Contains("Cajero") Then
-                ' CAJERO ACCEDE A COCINA/PEDIDOS, CAJA Y FACTURACIÓN
-                btnNavDashboard.Visible = True
-                btnNavCatalogo.Visible = False
-                btnNavCocina.Visible = True
-                btnNavCocina.Text = "  👨‍🍳 Monitor de Cocina"
-                btnNavCaja.Visible = True
-                btnNavFacturacion.Visible = True
-                btnNavReportes.Visible = False
+            If Models.RolUsuarioExtensions.EsCliente(enumRol) Then
+                ' En Modo Cliente se muestra Acceso Personal en TopBar y se oculta Cerrar Sesión en Sidebar
+                btnAccesoPersonal.Visible = True
+                btnCerrarSesion.Visible = False
+
+                ' EL CLIENTE ÚNICAMENTE ACCEDE A SU CARTA Y PEDIDOS
+                btnNavCliente.Visible = True
+                btnNavCliente.Text = "  Carta & Pedidos"
+                btnNavCocina.Visible = False
+                btnNavCobroAdmin.Visible = False
             Else
-                ' ADMINISTRADOR TIENE ACCESO COMPLETO
-                btnNavDashboard.Visible = True
-                btnNavCatalogo.Visible = True
-                btnNavCocina.Visible = True
-                btnNavCocina.Text = "  👨‍🍳 Monitor Cocina KDS"
-                btnNavCaja.Visible = True
-                btnNavFacturacion.Visible = True
-                btnNavReportes.Visible = True
+                ' En Modo Personal (Staff) se oculta el botón de acceso y se habilita Cerrar Sesión
+                btnAccesoPersonal.Visible = False
+                btnCerrarSesion.Visible = True
+
+                Select Case enumRol
+                    Case Models.RolUsuarioEnum.Cocina
+                        ' PERSONAL DE COCINA ÚNICAMENTE ACCEDE AL MONITOR KDS
+                        btnNavCliente.Visible = False
+                        btnNavCocina.Visible = True
+                        btnNavCocina.Text = "  Monitor de Cocina"
+                        btnNavCobroAdmin.Visible = False
+                    Case Models.RolUsuarioEnum.Cajero
+                        ' CAJERO TIENE ACCESO A TOMA DE PEDIDOS Y CAJA/COBROS
+                        btnNavCliente.Visible = True
+                        btnNavCliente.Text = "  Toma de Pedidos"
+                        btnNavCocina.Visible = False
+                        btnNavCobroAdmin.Visible = True
+                        btnNavCobroAdmin.Text = "  Caja & Cobros"
+                    Case Else
+                        ' ADMINISTRADOR TIENE ACCESO COMPLETO A LOS 3 ACCESOS
+                        btnNavCliente.Visible = True
+                        btnNavCliente.Text = "  Carta & Pedidos"
+                        btnNavCocina.Visible = True
+                        btnNavCocina.Text = "  Monitor de Cocina"
+                        btnNavCobroAdmin.Visible = True
+                        btnNavCobroAdmin.Text = "  Caja y Administración"
+                End Select
             End If
 
             ReorganizarBotonesMenu()
         End Sub
 
         ''' <summary>
-        ''' Distribuye verticalmente de forma ordenada los botones visibles del sidebar para evitar huecos.
+        ''' Distribuye verticalmente de forma ordenada los 3 botones principales visibles del sidebar para evitar huecos.
         ''' </summary>
         Private Sub ReorganizarBotonesMenu()
-            Dim intPosicionY As Integer = 100
-            Dim arrBotones = {btnNavDashboard, btnNavCatalogo, btnNavCocina, btnNavCaja, btnNavFacturacion, btnNavReportes}
+            Dim intPosicionY As Integer = 110
+            Dim arrBotones = {btnNavCliente, btnNavCocina, btnNavCobroAdmin}
             For Each btn In arrBotones
                 If btn.Visible Then
                     btn.Location = New Point(6, intPosicionY)
-                    intPosicionY += 50
+                    intPosicionY += 56
                 End If
             Next
         End Sub
@@ -186,32 +208,42 @@ Namespace Views
         ' ESTILIZADO Y TEMÁTICA VISUAL
         ' =========================================================================
 
-        Private Sub AplicarTemaVisual()
-            Me.BackColor = ThemeConfig.ColorBackgroundApp
+        Protected Overrides Sub AplicarTemaVisual()
+            MyBase.AplicarTemaVisual()
             pnlSidebar.BackColor = ThemeConfig.ColorBackgroundSidebar
             pnlTopBar.BackColor = ThemeConfig.ColorBackgroundCard
             pnlContenedorPrincipal.BackColor = ThemeConfig.ColorBackgroundApp
             pnlBarraIndicadorMenu.BackColor = ThemeConfig.ColorPrimary
 
+            ' Identidad visual del restaurante en sidebar
+            pnlLogoEmblema.BackColor = ThemeConfig.ColorPrimary
+            lblLogoEmblemaTexto.ForeColor = Color.White
             lblNombreRestaurante.ForeColor = ThemeConfig.ColorNeutralDark
-            lblNombreRestaurante.Font = ThemeConfig.ObtenerFuenteTitulo(13.5F, FontStyle.Bold)
-            lblEsloganRestaurante.ForeColor = ThemeConfig.ColorTextMuted
+            lblNombreRestaurante.Font = ThemeConfig.ObtenerFuenteTitulo(12.5F, FontStyle.Bold)
+            lblEsloganRestaurante.ForeColor = ThemeConfig.ColorPrimary
+            lblEsloganRestaurante.Font = ThemeConfig.ObtenerFuenteCuerpo(7.5F, FontStyle.Bold)
+            pnlLogoSeparador.BackColor = ThemeConfig.ColorBorder
 
+            ' Barra superior y perfil de usuario
             lblTituloModuloTop.ForeColor = ThemeConfig.ColorNeutralDark
-            lblTituloModuloTop.Font = ThemeConfig.ObtenerFuenteTitulo(14.0F, FontStyle.Bold)
+            lblTituloModuloTop.Font = ThemeConfig.ObtenerFuenteTitulo(15.0F, FontStyle.Bold)
 
             lblFechaHoraSistema.ForeColor = ThemeConfig.ColorNeutralDark
             lblFechaHoraSistema.Font = ThemeConfig.ObtenerFuenteSubtitulo(9.5F, FontStyle.Bold)
+
+            pnlAvatar.BackColor = ThemeConfig.ColorPrimaryLight
+            lblAvatarIcono.ForeColor = ThemeConfig.ColorPrimary
 
             pnlSidebarFooter.BackColor = ThemeConfig.ColorBackgroundSidebar
             lblEstadoBaseDatos.ForeColor = ThemeConfig.ColorTertiarySuccess
 
             lblNombreUsuario.Text = _nombreUsuario
-            lblRolUsuario.Text = _rolUsuario.Replace("👑 ", "").Replace("💵 ", "").Replace("🍳 ", "").Replace("📲 ", "")
+            lblRolUsuario.Text = Models.RolUsuarioExtensions.ObtenerEtiqueta(Models.RolUsuarioExtensions.ParsearRol(_rolUsuario))
 
+            ThemeConfig.EstilizarBotonPrimario(btnAccesoPersonal)
             ThemeConfig.EstilizarBotonEliminar(btnCerrarSesion)
 
-            Dim botonesNav = {btnNavDashboard, btnNavCatalogo, btnNavCocina, btnNavCaja, btnNavFacturacion, btnNavReportes}
+            Dim botonesNav = {btnNavCliente, btnNavCocina, btnNavCobroAdmin}
             For Each btn In botonesNav
                 ThemeConfig.EstilizarBotonNavegacion(btn, False)
             Next
@@ -221,7 +253,7 @@ Namespace Views
         Private Sub SeleccionarBotonNavegacion(btnSeleccionado As Button, tituloModulo As String)
             If btnSeleccionado Is Nothing Then Return
 
-            Dim botonesNav = {btnNavDashboard, btnNavCatalogo, btnNavCocina, btnNavCaja, btnNavFacturacion, btnNavReportes}
+            Dim botonesNav = {btnNavCliente, btnNavCocina, btnNavCobroAdmin}
             For Each btn In botonesNav
                 ThemeConfig.EstilizarBotonNavegacion(btn, False)
             Next
@@ -238,39 +270,21 @@ Namespace Views
         ' EVENTOS DE NAVEGACIÓN Y RELOJ
         ' =========================================================================
 
-        Private Sub btnNavDashboard_Click(sender As Object, e As EventArgs) Handles btnNavDashboard.Click
-            SeleccionarBotonNavegacion(btnNavDashboard, "Dashboard General")
-            AbrirFormularioEnPanel(Of Dashboards.FrmDashboardGeneral)()
-        End Sub
-
-        Private Sub btnNavCatalogo_Click(sender As Object, e As EventArgs) Handles btnNavCatalogo.Click
-            SeleccionarBotonNavegacion(btnNavCatalogo, "Menú & Catálogo de Productos")
-            AbrirFormularioEnPanel(Of Catalogo.FrmCatalogo)()
+        Private Sub btnNavCliente_Click(sender As Object, e As EventArgs) Handles btnNavCliente.Click
+            Dim tituloVista As String = If(_rolUsuario.Contains("Cliente"), "Carta & Menú Digital", "Carta & Pedidos")
+            SeleccionarBotonNavegacion(btnNavCliente, tituloVista)
+            MostrarModuloClienteEnConstruccion()
         End Sub
 
         Private Sub btnNavCocina_Click(sender As Object, e As EventArgs) Handles btnNavCocina.Click
-            If _rolUsuario.Contains("Cliente") Then
-                SeleccionarBotonNavegacion(btnNavCocina, "Monitor de Pedidos & Menú")
-                AbrirFormularioEnPanel(New Cocina.FrmCcnMonitorCocina(_nombreUsuario))
-            Else
-                SeleccionarBotonNavegacion(btnNavCocina, "Monitor de Cocina (KDS)")
-                AbrirFormularioEnPanel(Of Cocina.FrmCcnMonitorCocina)()
-            End If
+            SeleccionarBotonNavegacion(btnNavCocina, "Monitor de Cocina (KDS)")
+            AbrirFormularioEnPanel(Of Cocina.FrmCcnMonitorCocina)()
         End Sub
 
-        Private Sub btnNavCaja_Click(sender As Object, e As EventArgs) Handles btnNavCaja.Click
-            SeleccionarBotonNavegacion(btnNavCaja, "Caja & Procesamiento de Pagos")
+        Private Sub btnNavCobroAdmin_Click(sender As Object, e As EventArgs) Handles btnNavCobroAdmin.Click
+            Dim tituloVista As String = If(_rolUsuario.Contains("Cajero"), "Caja & Procesamiento de Pagos", "Caja y Administración")
+            SeleccionarBotonNavegacion(btnNavCobroAdmin, tituloVista)
             AbrirFormularioEnPanel(Of Caja.FrmCajaCobros)()
-        End Sub
-
-        Private Sub btnNavFacturacion_Click(sender As Object, e As EventArgs) Handles btnNavFacturacion.Click
-            SeleccionarBotonNavegacion(btnNavFacturacion, "Facturación & Comprobantes PDF")
-            AbrirFormularioEnPanel(Of Facturacion.FrmFacturacionPDF)()
-        End Sub
-
-        Private Sub btnNavReportes_Click(sender As Object, e As EventArgs) Handles btnNavReportes.Click
-            SeleccionarBotonNavegacion(btnNavReportes, "Reportes de Ventas & Cierre")
-            AbrirFormularioEnPanel(Of Reportes.FrmReportesVentas)()
         End Sub
 
         Private Sub tmrRelojSistema_Tick(sender As Object, e As EventArgs) Handles tmrRelojSistema.Tick
@@ -281,45 +295,102 @@ Namespace Views
             Dim ahora As DateTime = DateTime.Now
             Dim diaSemana As String = ahora.ToString("dddd", New System.Globalization.CultureInfo("es-ES"))
             diaSemana = Char.ToUpper(diaSemana(0)) & diaSemana.Substring(1)
-            lblFechaHoraSistema.Text = $"📅 {diaSemana}, {ahora:dd MMM} • {ahora:HH:mm:ss}"
+            lblFechaHoraSistema.Text = $"{diaSemana}, {ahora:dd MMM} • {ahora:HH:mm:ss}"
         End Sub
 
-        Private Sub MostrarMensajeModulo(nombreModulo As String, descripcionFuncional As String)
+        ''' <summary>
+        ''' Despliega la pantalla informativa temporal para la Carta Digital del Cliente.
+        ''' </summary>
+        Private Sub MostrarModuloClienteEnConstruccion()
             If _formularioActivo IsNot Nothing Then
                 _formularioActivo.Close()
                 _formularioActivo.Dispose()
                 _formularioActivo = Nothing
             End If
-            Dim pnlPlaceholder As New Panel With {
+
+            Dim pnlContenedor As New Panel With {
                 .Dock = DockStyle.Fill,
                 .BackColor = ThemeConfig.ColorBackgroundApp
             }
 
-            Dim lblInfo As New Label With {
-                .Text = $"📌 Módulo: {nombreModulo}{vbCrLf}{vbCrLf}{descripcionFuncional}{vbCrLf}{vbCrLf}Listo para incrustar el formulario correspondiente del equipo.{vbCrLf}Ejemplo: 'FrmHome.AbrirFormularioEnPanel(Of Frm{nombreModulo.Replace(" ", "")})()'",
-                .Font = ThemeConfig.ObtenerFuenteSubtitulo(11.0F, FontStyle.Regular),
-                .ForeColor = ThemeConfig.ColorNeutralDark,
+            Dim pnlTarjeta As New Panel With {
+                .Size = New Size(560, 290),
+                .BackColor = Color.White
+            }
+            pnlTarjeta.Location = New Point(Math.Max(20, (pnlContenedorPrincipal.Width - pnlTarjeta.Width) \ 2),
+                                            Math.Max(20, (pnlContenedorPrincipal.Height - pnlTarjeta.Height) \ 2))
+            ThemeConfig.AplicarEstiloTarjeta(pnlTarjeta)
+
+            Dim lblIcono As New Label With {
+                .Text = "🍽️",
+                .Font = New Font("Segoe UI Emoji", 36.0F, FontStyle.Regular),
                 .TextAlign = ContentAlignment.MiddleCenter,
-                .Dock = DockStyle.Fill,
-                .Padding = New Padding(30)
+                .Dock = DockStyle.Top,
+                .Height = 70
             }
 
-            pnlPlaceholder.Controls.Add(lblInfo)
+            Dim lblTitulo As New Label With {
+                .Text = "Carta & Menú Digital",
+                .Font = ThemeConfig.ObtenerFuenteTitulo(15.0F, FontStyle.Bold),
+                .ForeColor = ThemeConfig.ColorNeutralDark,
+                .TextAlign = ContentAlignment.MiddleCenter,
+                .Dock = DockStyle.Top,
+                .Height = 35
+            }
 
+            Dim lblEstadoBadge As New Label With {
+                .Text = "En producción. Pronto estará disponible.",
+                .Font = ThemeConfig.ObtenerFuenteSubtitulo(12.0F, FontStyle.Bold),
+                .ForeColor = ThemeConfig.ColorPrimary,
+                .TextAlign = ContentAlignment.MiddleCenter,
+                .Dock = DockStyle.Top,
+                .Height = 35
+            }
+
+            Dim lblDetalle As New Label With {
+                .Text = "Esta sección se encuentra actualmente en desarrollo y se diseñará próximamente para la atención digital de pedidos de los clientes.",
+                .Font = ThemeConfig.ObtenerFuenteSubtitulo(10.0F, FontStyle.Regular),
+                .ForeColor = ThemeConfig.ColorTextMuted,
+                .TextAlign = ContentAlignment.MiddleCenter,
+                .Dock = DockStyle.Fill,
+                .Padding = New Padding(25, 5, 25, 10)
+            }
+
+            pnlTarjeta.Controls.Add(lblDetalle)
+            pnlTarjeta.Controls.Add(lblEstadoBadge)
+            pnlTarjeta.Controls.Add(lblTitulo)
+            pnlTarjeta.Controls.Add(lblIcono)
+
+            pnlContenedor.Controls.Add(pnlTarjeta)
+
+            AddHandler pnlContenedor.Resize, Sub(s, ev)
+                                                 pnlTarjeta.Location = New Point(Math.Max(20, (pnlContenedor.Width - pnlTarjeta.Width) \ 2),
+                                                                                 Math.Max(20, (pnlContenedor.Height - pnlTarjeta.Height) \ 2))
+                                             End Sub
+
+            pnlContenedorPrincipal.SuspendLayout()
             pnlContenedorPrincipal.Controls.Clear()
-            pnlContenedorPrincipal.Controls.Add(pnlPlaceholder)
+            pnlContenedorPrincipal.Controls.Add(pnlContenedor)
+            pnlContenedorPrincipal.ResumeLayout(True)
         End Sub
 
         ''' <summary>
-        ''' Cierra la sesión activa del usuario y regresa al formulario de Inicio de Sesión (FrmLogin).
+        ''' Abre el modal de inicio de sesión para que el personal (Cocina, Caja, Admin) acceda a sus paneles.
+        ''' </summary>
+        Private Sub btnAccesoPersonal_Click(sender As Object, e As EventArgs) Handles btnAccesoPersonal.Click
+            Using frmLog As New Auth.FrmLogin()
+                If frmLog.ShowDialog(Me) = DialogResult.OK Then
+                    EstablecerSesion(frmLog.RolAutenticado, frmLog.UsuarioAutenticado)
+                End If
+            End Using
+        End Sub
+
+        ''' <summary>
+        ''' Cierra la sesión activa del personal y regresa a la Carta & Menú Digital del Cliente.
         ''' </summary>
         Private Sub btnCerrarSesion_Click(sender As Object, e As EventArgs) Handles btnCerrarSesion.Click
-            Dim confirmacion = MessageBox.Show("¿Está seguro de que desea cerrar la sesión actual y regresar al inicio de sesión?", "Cerrar Sesión", MessageBoxButtons.YesNo, MessageBoxIcon.Question)
-            If confirmacion = DialogResult.Yes Then
-                Dim frmLog As New Auth.FrmLogin()
-                Me.Hide()
-                frmLog.ShowDialog()
-                Me.Close()
+            If ConfirmarAccion("¿Desea cerrar la sesión de personal y regresar a la Carta & Menú Digital?", "Cerrar Sesión de Personal") Then
+                EstablecerSesion("Cliente", "Invitado")
             End If
         End Sub
 
