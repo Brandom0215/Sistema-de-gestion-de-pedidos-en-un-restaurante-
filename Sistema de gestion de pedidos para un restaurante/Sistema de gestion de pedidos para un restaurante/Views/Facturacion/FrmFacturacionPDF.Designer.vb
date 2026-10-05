@@ -43,9 +43,10 @@ Namespace Views.Facturacion
             Me.txtCorreo = New System.Windows.Forms.TextBox()
             Me.lblDireccion = New System.Windows.Forms.Label()
             Me.txtDireccion = New System.Windows.Forms.TextBox()
-            Me.pnlAcciones = New System.Windows.Forms.Panel()
-            Me.btnGenerarPDF = New System.Windows.Forms.Button()
+            Me.pnlAcciones = New System.Windows.Forms.TableLayoutPanel()
+            Me.btnImprimir = New System.Windows.Forms.Button()
             Me.btnGuardarComo = New System.Windows.Forms.Button()
+            Me.btnEnviarCorreo = New System.Windows.Forms.Button()
             Me.btnLimpiar = New System.Windows.Forms.Button()
             Me.grpVistaPrevia = New System.Windows.Forms.GroupBox()
             Me.pnlComprobanteVisual = New System.Windows.Forms.Panel()
@@ -345,42 +346,66 @@ Namespace Views.Facturacion
             '
             Me.pnlAcciones.Anchor = CType(((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Left) _
             Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
-            Me.pnlAcciones.Controls.Add(Me.btnLimpiar)
-            Me.pnlAcciones.Controls.Add(Me.btnGuardarComo)
-            Me.pnlAcciones.Controls.Add(Me.btnGenerarPDF)
-            Me.pnlAcciones.Location = New System.Drawing.Point(0, 475)
+            Me.pnlAcciones.ColumnCount = 2
+            Me.pnlAcciones.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50.0F))
+            Me.pnlAcciones.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50.0F))
+            Me.pnlAcciones.RowCount = 2
+            Me.pnlAcciones.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50.0F))
+            Me.pnlAcciones.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50.0F))
+            Me.pnlAcciones.Controls.Add(Me.btnImprimir, 0, 0)
+            Me.pnlAcciones.Controls.Add(Me.btnEnviarCorreo, 1, 0)
+            Me.pnlAcciones.Controls.Add(Me.btnGuardarComo, 0, 1)
+            Me.pnlAcciones.Controls.Add(Me.btnLimpiar, 1, 1)
+            Me.pnlAcciones.Location = New System.Drawing.Point(0, 460)
             Me.pnlAcciones.Name = "pnlAcciones"
-            Me.pnlAcciones.Size = New System.Drawing.Size(540, 70)
+            Me.pnlAcciones.Size = New System.Drawing.Size(540, 85)
             Me.pnlAcciones.TabIndex = 2
             '
-            ' btnGenerarPDF
+            ' btnImprimir
             '
-            Me.btnGenerarPDF.Font = New System.Drawing.Font("Segoe UI", 9.5F, System.Drawing.FontStyle.Bold)
-            Me.btnGenerarPDF.Location = New System.Drawing.Point(0, 10)
-            Me.btnGenerarPDF.Name = "btnGenerarPDF"
-            Me.btnGenerarPDF.Size = New System.Drawing.Size(230, 45)
-            Me.btnGenerarPDF.TabIndex = 0
-            Me.btnGenerarPDF.Text = "🖨️ Imprimir Factura Fiscal (PDF)"
-            Me.btnGenerarPDF.UseVisualStyleBackColor = True
+            Me.btnImprimir.Dock = System.Windows.Forms.DockStyle.Fill
+            Me.btnImprimir.Font = New System.Drawing.Font("Segoe UI", 9.0F, System.Drawing.FontStyle.Bold)
+            Me.btnImprimir.Location = New System.Drawing.Point(3, 3)
+            Me.btnImprimir.Margin = New System.Windows.Forms.Padding(3)
+            Me.btnImprimir.Name = "btnImprimir"
+            Me.btnImprimir.Size = New System.Drawing.Size(264, 36)
+            Me.btnImprimir.TabIndex = 0
+            Me.btnImprimir.Text = "🖨️ Imprimir Ticket"
+            Me.btnImprimir.UseVisualStyleBackColor = True
+            '
+            ' btnEnviarCorreo
+            '
+            Me.btnEnviarCorreo.Dock = System.Windows.Forms.DockStyle.Fill
+            Me.btnEnviarCorreo.Font = New System.Drawing.Font("Segoe UI", 9.0F, System.Drawing.FontStyle.Bold)
+            Me.btnEnviarCorreo.Location = New System.Drawing.Point(273, 3)
+            Me.btnEnviarCorreo.Margin = New System.Windows.Forms.Padding(3)
+            Me.btnEnviarCorreo.Name = "btnEnviarCorreo"
+            Me.btnEnviarCorreo.Size = New System.Drawing.Size(264, 36)
+            Me.btnEnviarCorreo.TabIndex = 1
+            Me.btnEnviarCorreo.Text = "📧 Enviar por Correo"
+            Me.btnEnviarCorreo.UseVisualStyleBackColor = True
             '
             ' btnGuardarComo
             '
+            Me.btnGuardarComo.Dock = System.Windows.Forms.DockStyle.Fill
             Me.btnGuardarComo.Font = New System.Drawing.Font("Segoe UI", 9.0F, System.Drawing.FontStyle.Bold)
-            Me.btnGuardarComo.Location = New System.Drawing.Point(230, 10)
+            Me.btnGuardarComo.Location = New System.Drawing.Point(3, 45)
+            Me.btnGuardarComo.Margin = New System.Windows.Forms.Padding(3)
             Me.btnGuardarComo.Name = "btnGuardarComo"
-            Me.btnGuardarComo.Size = New System.Drawing.Size(170, 45)
-            Me.btnGuardarComo.TabIndex = 1
-            Me.btnGuardarComo.Text = "💾 Guardar Archivo PDF Como..."
+            Me.btnGuardarComo.Size = New System.Drawing.Size(264, 37)
+            Me.btnGuardarComo.TabIndex = 2
+            Me.btnGuardarComo.Text = "💾 Guardar como PDF"
             Me.btnGuardarComo.UseVisualStyleBackColor = True
             '
             ' btnLimpiar
             '
-            Me.btnLimpiar.Anchor = CType((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
+            Me.btnLimpiar.Dock = System.Windows.Forms.DockStyle.Fill
             Me.btnLimpiar.Font = New System.Drawing.Font("Segoe UI", 8.5F, System.Drawing.FontStyle.Bold)
-            Me.btnLimpiar.Location = New System.Drawing.Point(415, 10)
+            Me.btnLimpiar.Location = New System.Drawing.Point(273, 45)
+            Me.btnLimpiar.Margin = New System.Windows.Forms.Padding(3)
             Me.btnLimpiar.Name = "btnLimpiar"
-            Me.btnLimpiar.Size = New System.Drawing.Size(120, 45)
-            Me.btnLimpiar.TabIndex = 2
+            Me.btnLimpiar.Size = New System.Drawing.Size(264, 37)
+            Me.btnLimpiar.TabIndex = 3
             Me.btnLimpiar.Text = "🧹 Limpiar"
             Me.btnLimpiar.UseVisualStyleBackColor = True
             '
@@ -725,9 +750,10 @@ Namespace Views.Facturacion
         Friend WithEvents txtCorreo As TextBox
         Friend WithEvents lblDireccion As Label
         Friend WithEvents txtDireccion As TextBox
-        Friend WithEvents pnlAcciones As Panel
-        Friend WithEvents btnGenerarPDF As Button
+        Friend WithEvents pnlAcciones As TableLayoutPanel
+        Friend WithEvents btnImprimir As Button
         Friend WithEvents btnGuardarComo As Button
+        Friend WithEvents btnEnviarCorreo As Button
         Friend WithEvents btnLimpiar As Button
         Friend WithEvents grpVistaPrevia As GroupBox
         Friend WithEvents pnlComprobanteVisual As Panel
