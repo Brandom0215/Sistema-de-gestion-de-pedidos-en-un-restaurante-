@@ -4,7 +4,7 @@ Imports System.Windows.Forms
 Namespace Views.Caja
     <Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
     Partial Class FrmCajaCobros
-        Inherits System.Windows.Forms.Form
+        Inherits Sistema_de_gestion_de_pedidos_para_un_restaurante.Views.Common.FrmBaseForm
 
         Protected Overrides Sub Dispose(ByVal disposing As Boolean)
             Try
@@ -90,7 +90,7 @@ Namespace Views.Caja
             Me.lblTituloHeader.Name = "lblTituloHeader"
             Me.lblTituloHeader.Size = New System.Drawing.Size(350, 30)
             Me.lblTituloHeader.TabIndex = 0
-            Me.lblTituloHeader.Text = "💵 Caja & Procesamiento de Pagos"
+            Me.lblTituloHeader.Text = "Caja & Procesamiento de Pagos"
             '
             ' lblSubtituloHeader
             '

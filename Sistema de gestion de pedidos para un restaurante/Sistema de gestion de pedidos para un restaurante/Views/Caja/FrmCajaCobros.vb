@@ -21,7 +21,6 @@ Namespace Views.Caja
 
         Public Sub New()
             InitializeComponent()
-            ThemeConfig.HabilitarDobleBuffer(Me)
         End Sub
 
         Private Sub FrmCajaCobros_Load(sender As Object, e As EventArgs) Handles MyBase.Load
@@ -32,8 +31,8 @@ Namespace Views.Caja
         ''' <summary>
         ''' Aplica la paleta visual oficial y estilos de controles.
         ''' </summary>
-        Private Sub AplicarTemaVisual()
-            Me.BackColor = ThemeConfig.ColorBackgroundApp
+        Protected Overrides Sub AplicarTemaVisual()
+            MyBase.AplicarTemaVisual()
             pnlHeader.BackColor = ThemeConfig.ColorBackgroundApp
             pnlContenedor.BackColor = ThemeConfig.ColorBackgroundApp
 
@@ -255,29 +254,27 @@ Namespace Views.Caja
                                             If(metodo = "Efectivo", $"• Recibido: ${montoRecibido:N2} | Vuelto: ${cambio:N2}{vbCrLf}", "") &
                                             $"• Destino: Transmisión inmediata a Cocina KDS"
 
-            Dim respuesta = MessageBox.Show(mensajePregunta, "Confirmar Transacción en Caja", MessageBoxButtons.YesNo, MessageBoxIcon.Question)
-            If respuesta = DialogResult.Yes Then
+            If ConfirmarAccion(mensajePregunta, "Confirmar Transacción en Caja") Then
                 Dim exito = PedidoDAO.ConfirmarCobro(_idPedidoSeleccionado, metodo, montoRecibido, cambio)
                 If exito Then
-                    Dim mensajeExito As String = $"✅ ¡Cobro de la Comanda #{_idPedidoSeleccionado} registrado exitosamente!" & vbCrLf & vbCrLf &
+                    Dim mensajeExito As String = $"¡Cobro de la Comanda #{_idPedidoSeleccionado} registrado exitosamente!" & vbCrLf & vbCrLf &
                                                  $"La orden ha sido autorizada y enviada a la pantalla de cocina (KDS)." & vbCrLf &
                                                  If(cambio > 0, $"Entregar cambio al cliente: ${cambio:N2}", "")
 
                     Dim idCobrado = _idPedidoSeleccionado
-                    MessageBox.Show(mensajeExito, "Cobro Exitoso", MessageBoxButtons.OK, MessageBoxIcon.Information)
+                    MostrarMensajeExito(mensajeExito, "Cobro Exitoso")
                     LimpiarDetalle()
                     CargarPedidosPendientes()
 
                     ' Opción de facturación inmediata (CU-004 / CU-006)
-                    Dim emitirFactura = MessageBox.Show($"¿Desea emitir o imprimir el comprobante fiscal de la Comanda #{idCobrado} ahora?", "Facturación Fiscal", MessageBoxButtons.YesNo, MessageBoxIcon.Question)
-                    If emitirFactura = DialogResult.Yes Then
+                    If ConfirmarAccion($"¿Desea emitir o imprimir el comprobante fiscal de la Comanda #{idCobrado} ahora?", "Facturación Fiscal") Then
                         Dim formHome = TryCast(Me.ParentForm, FrmHome)
                         If formHome IsNot Nothing Then
                             formHome.AbrirFormularioEnPanel(Of Facturacion.FrmFacturacionPDF)()
                         End If
                     End If
                 Else
-                    MessageBox.Show("No se pudo actualizar el estado del pedido en el repositorio.", "Error al Cobrar", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                    MostrarMensajeError("No se pudo actualizar el estado del pedido en el repositorio.", "Error al Cobrar")
                 End If
             End If
         End Sub

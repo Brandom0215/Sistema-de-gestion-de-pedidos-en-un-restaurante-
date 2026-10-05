@@ -223,21 +223,9 @@ Namespace Views.Cocina.Controles
         ''' Controla el clic en el botón de acción para avanzar el pedido en el ciclo de vida de cocina.
         ''' </summary>
         Private Sub btnCcnAccionPrincipal_Click(ByVal sender As Object, ByVal e As EventArgs) Handles btnCcnAccionPrincipal.Click
-            If _objPedidoModel Is Nothing Then Return
+            If _objPedidoModel Is Nothing OrElse Not _objPedidoModel.PuedeAvanzarEstado() Then Return
 
-            Dim enumProximoEstado As CcnEstadoPedidoEnum
-
-            Select Case _objPedidoModel.EnumEstado
-                Case CcnEstadoPedidoEnum.Recibido
-                    enumProximoEstado = CcnEstadoPedidoEnum.EnPreparacion
-                Case CcnEstadoPedidoEnum.EnPreparacion
-                    enumProximoEstado = CcnEstadoPedidoEnum.Listo
-                Case CcnEstadoPedidoEnum.Listo
-                    enumProximoEstado = CcnEstadoPedidoEnum.Entregado
-                Case Else
-                    Return
-            End Select
-
+            Dim enumProximoEstado As CcnEstadoPedidoEnum = _objPedidoModel.ObtenerProximoEstado()
             RaiseEvent CcnCambioEstadoSolicitado(Me, _objPedidoModel.IntIdPedido, enumProximoEstado)
         End Sub
 

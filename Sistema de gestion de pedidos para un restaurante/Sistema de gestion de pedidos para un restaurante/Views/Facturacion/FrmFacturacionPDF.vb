@@ -25,7 +25,6 @@ Namespace Views.Facturacion
 
         Public Sub New()
             InitializeComponent()
-            ThemeConfig.HabilitarDobleBuffer(Me)
             _carpetaFacturas = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "FacturasEmitidas")
             If Not Directory.Exists(_carpetaFacturas) Then
                 Directory.CreateDirectory(_carpetaFacturas)
@@ -40,8 +39,8 @@ Namespace Views.Facturacion
         ''' <summary>
         ''' Aplica la paleta visual oficial y fuentes modernas a todos los controles.
         ''' </summary>
-        Private Sub AplicarTemaVisual()
-            Me.BackColor = ThemeConfig.ColorBackgroundApp
+        Protected Overrides Sub AplicarTemaVisual()
+            MyBase.AplicarTemaVisual()
             pnlHeader.BackColor = ThemeConfig.ColorBackgroundApp
             pnlContenedor.BackColor = ThemeConfig.ColorBackgroundApp
 

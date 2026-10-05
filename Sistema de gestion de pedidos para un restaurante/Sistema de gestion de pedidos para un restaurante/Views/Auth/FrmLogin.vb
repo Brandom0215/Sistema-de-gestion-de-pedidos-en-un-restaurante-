@@ -9,9 +9,16 @@ Namespace Views.Auth
     ''' </summary>
     Public Class FrmLogin
 
+        ''' <summary> Nombre de usuario autenticado exitosamente en el diálogo </summary>
+        <System.ComponentModel.DesignerSerializationVisibility(System.ComponentModel.DesignerSerializationVisibility.Hidden)>
+        Public Property UsuarioAutenticado As String = String.Empty
+
+        ''' <summary> Rol de permisos obtenido tras la autenticación </summary>
+        <System.ComponentModel.DesignerSerializationVisibility(System.ComponentModel.DesignerSerializationVisibility.Hidden)>
+        Public Property RolAutenticado As String = String.Empty
+
         Public Sub New()
             InitializeComponent()
-            ThemeConfig.HabilitarDobleBuffer(Me)
         End Sub
 
         Private Sub FrmLogin_Load(sender As Object, e As EventArgs) Handles MyBase.Load
@@ -20,8 +27,8 @@ Namespace Views.Auth
             txtPassword.Text = ""
         End Sub
 
-        Private Sub AplicarTemaVisual()
-            Me.BackColor = ThemeConfig.ColorBackgroundApp
+        Protected Overrides Sub AplicarTemaVisual()
+            MyBase.AplicarTemaVisual()
             pnlCardLogin.BackColor = Color.White
             ThemeConfig.AplicarEstiloTarjeta(pnlCardLogin)
 
@@ -31,8 +38,6 @@ Namespace Views.Auth
             lblPassword.ForeColor = ThemeConfig.ColorNeutralDark
 
             ThemeConfig.EstilizarBotonPrimario(btnIniciarSesion)
-            ThemeConfig.EstilizarBotonSecundario(btnIrARegistro)
-            ThemeConfig.EstilizarBotonSecundario(btnIngresarInvitado)
             ThemeConfig.EstilizarBotonSecundario(btnSalir)
         End Sub
 
@@ -41,52 +46,47 @@ Namespace Views.Auth
             Dim passwordInput As String = txtPassword.Text.Trim()
 
             If String.IsNullOrWhiteSpace(usuarioInput) Then
-                MessageBox.Show("Por favor, ingrese su usuario o correo registrado.", "Autenticación", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                MostrarMensajeAdvertencia("Por favor, ingrese su usuario o correo registrado.", "Autenticación")
                 txtUsuario.Focus()
                 Return
             End If
 
             If String.IsNullOrWhiteSpace(passwordInput) Then
-                MessageBox.Show("Por favor, ingrese su contraseña.", "Autenticación", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                MostrarMensajeAdvertencia("Por favor, ingrese su contraseña.", "Autenticación")
                 txtPassword.Focus()
                 Return
             End If
 
-            ' Validar credenciales mediante UsuarioDAO
-            Dim rolDeterminado As String = "👑 Administrador"
+            ' Validar credenciales mediante UsuarioDAO / UsuarioService
+            Dim rolDeterminado As String = "Administrador"
             Dim autenticado As Boolean = Data.UsuarioDAO.Autenticar(usuarioInput, passwordInput, rolDeterminado)
 
             If Not autenticado Then
-                MessageBox.Show("Credenciales incorrectas. Verifique su usuario y contraseña.", "Autenticación Fallida", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                MostrarMensajeError("Credenciales incorrectas. Verifique su usuario y contraseña.", "Autenticación Fallida")
                 Return
             End If
 
-            ' Abrir FrmHome con el rol y usuario autenticado
-            Dim mainHome As New FrmHome(rolDeterminado, usuarioInput)
-            Me.Hide()
-            mainHome.ShowDialog()
-            Me.Close()
-        End Sub
+            UsuarioAutenticado = usuarioInput
+            RolAutenticado = rolDeterminado
 
-        Private Sub btnIrARegistro_Click(sender As Object, e As EventArgs) Handles btnIrARegistro.Click
-            Dim frmReg As New FrmRegistroCliente()
-            Me.Hide()
-            frmReg.ShowDialog()
-            Me.Close()
-        End Sub
-
-        ''' <summary>
-        ''' Permite a un cliente explorar el menú digital de platos sin necesidad de registrarse o iniciar sesión.
-        ''' </summary>
-        Private Sub btnIngresarInvitado_Click(sender As Object, e As EventArgs) Handles btnIngresarInvitado.Click
-            Dim mainHome As New FrmHome("📲 Cliente (Invitado)", "Invitado")
-            Me.Hide()
-            mainHome.ShowDialog()
-            Me.Close()
+            If Me.Modal Then
+                Me.DialogResult = DialogResult.OK
+                Me.Close()
+            Else
+                Dim mainHome As New FrmHome(rolDeterminado, usuarioInput)
+                Me.Hide()
+                mainHome.ShowDialog()
+                Me.Close()
+            End If
         End Sub
 
         Private Sub btnSalir_Click(sender As Object, e As EventArgs) Handles btnSalir.Click
-            Application.Exit()
+            If Me.Modal Then
+                Me.DialogResult = DialogResult.Cancel
+                Me.Close()
+            Else
+                Me.Close()
+            End If
         End Sub
 
     End Class

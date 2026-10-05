@@ -13,7 +13,6 @@ Namespace Views.Reportes
 
         Public Sub New()
             InitializeComponent()
-            ThemeConfig.HabilitarDobleBuffer(Me)
         End Sub
 
         Private Sub FrmReportesVentas_Load(sender As Object, e As EventArgs) Handles MyBase.Load
@@ -27,8 +26,8 @@ Namespace Views.Reportes
         ' ESTILIZADO Y CONFIGURACIÓN VISUAL
         ' =========================================================================
 
-        Private Sub AplicarTemaVisual()
-            Me.BackColor = ThemeConfig.ColorBackgroundApp
+        Protected Overrides Sub AplicarTemaVisual()
+            MyBase.AplicarTemaVisual()
             pnlHeaderContainer.BackColor = ThemeConfig.ColorBackgroundApp
 
             lblTituloReportes.ForeColor = ThemeConfig.ColorNeutralDark

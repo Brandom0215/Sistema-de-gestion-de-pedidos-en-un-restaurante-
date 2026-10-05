@@ -4,7 +4,7 @@ Imports System.Windows.Forms
 Namespace Views.Auth
     <Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
     Partial Class FrmLogin
-        Inherits System.Windows.Forms.Form
+        Inherits Sistema_de_gestion_de_pedidos_para_un_restaurante.Views.Common.FrmBaseForm
 
         <System.Diagnostics.DebuggerNonUserCode()>
         Protected Overrides Sub Dispose(ByVal disposing As Boolean)
@@ -30,8 +30,6 @@ Namespace Views.Auth
             Me.lblPassword = New System.Windows.Forms.Label()
             Me.txtPassword = New System.Windows.Forms.TextBox()
             Me.btnIniciarSesion = New System.Windows.Forms.Button()
-            Me.btnIrARegistro = New System.Windows.Forms.Button()
-            Me.btnIngresarInvitado = New System.Windows.Forms.Button()
             Me.btnSalir = New System.Windows.Forms.Button()
 
             Me.pnlCardLogin.SuspendLayout()
@@ -42,8 +40,6 @@ Namespace Views.Auth
             Me.pnlCardLogin.Anchor = System.Windows.Forms.AnchorStyles.None
             Me.pnlCardLogin.BackColor = System.Drawing.Color.White
             Me.pnlCardLogin.Controls.Add(Me.btnSalir)
-            Me.pnlCardLogin.Controls.Add(Me.btnIngresarInvitado)
-            Me.pnlCardLogin.Controls.Add(Me.btnIrARegistro)
             Me.pnlCardLogin.Controls.Add(Me.btnIniciarSesion)
             Me.pnlCardLogin.Controls.Add(Me.txtPassword)
             Me.pnlCardLogin.Controls.Add(Me.lblPassword)
@@ -55,7 +51,7 @@ Namespace Views.Auth
             Me.pnlCardLogin.Location = New System.Drawing.Point(40, 15)
             Me.pnlCardLogin.Name = "pnlCardLogin"
             Me.pnlCardLogin.Padding = New System.Windows.Forms.Padding(30)
-            Me.pnlCardLogin.Size = New System.Drawing.Size(440, 480)
+            Me.pnlCardLogin.Size = New System.Drawing.Size(440, 395)
             Me.pnlCardLogin.TabIndex = 0
             '
             ' lblLogoEmpresa
@@ -87,7 +83,7 @@ Namespace Views.Auth
             Me.lblSubtituloLogin.Name = "lblSubtituloLogin"
             Me.lblSubtituloLogin.Size = New System.Drawing.Size(390, 20)
             Me.lblSubtituloLogin.TabIndex = 2
-            Me.lblSubtituloLogin.Text = "Sistema de Gestión de Pedidos y Autenticación"
+            Me.lblSubtituloLogin.Text = "Acceso Exclusivo para Personal (Cocina, Caja, Admin)"
             Me.lblSubtituloLogin.TextAlign = System.Drawing.ContentAlignment.MiddleCenter
             '
             ' lblUsuario
@@ -138,35 +134,14 @@ Namespace Views.Auth
             Me.btnIniciarSesion.Text = "Iniciar Sesión"
             Me.btnIniciarSesion.UseVisualStyleBackColor = True
             '
-            ' btnIrARegistro
-            '
-            Me.btnIrARegistro.Font = New System.Drawing.Font("Segoe UI", 9.0F)
-            Me.btnIrARegistro.Location = New System.Drawing.Point(25, 328)
-            Me.btnIrARegistro.Name = "btnIrARegistro"
-            Me.btnIrARegistro.Size = New System.Drawing.Size(390, 34)
-            Me.btnIrARegistro.TabIndex = 8
-            Me.btnIrARegistro.Text = "¿No tienes cuenta? Regístrate aquí"
-            Me.btnIrARegistro.UseVisualStyleBackColor = True
-            '
-            ' btnIngresarInvitado
-            '
-            Me.btnIngresarInvitado.Font = New System.Drawing.Font("Segoe UI", 9.0F, System.Drawing.FontStyle.Bold)
-            Me.btnIngresarInvitado.Location = New System.Drawing.Point(25, 370)
-            Me.btnIngresarInvitado.Name = "btnIngresarInvitado"
-            Me.btnIngresarInvitado.Size = New System.Drawing.Size(390, 34)
-            Me.btnIngresarInvitado.TabIndex = 9
-            Me.btnIngresarInvitado.Text = "Explorar Menú como Invitado"
-            Me.btnIngresarInvitado.UseVisualStyleBackColor = True
-            '
             ' btnSalir
             '
-            Me.btnSalir.Font = New System.Drawing.Font("Segoe UI", 8.5F)
-            Me.btnSalir.ForeColor = System.Drawing.Color.DarkGray
-            Me.btnSalir.Location = New System.Drawing.Point(25, 412)
+            Me.btnSalir.Font = New System.Drawing.Font("Segoe UI", 9.0F)
+            Me.btnSalir.Location = New System.Drawing.Point(25, 332)
             Me.btnSalir.Name = "btnSalir"
-            Me.btnSalir.Size = New System.Drawing.Size(390, 30)
-            Me.btnSalir.TabIndex = 10
-            Me.btnSalir.Text = "Salir de la Aplicación"
+            Me.btnSalir.Size = New System.Drawing.Size(390, 36)
+            Me.btnSalir.TabIndex = 8
+            Me.btnSalir.Text = "Volver al Menú Principal"
             Me.btnSalir.UseVisualStyleBackColor = True
             '
             ' FrmLogin
@@ -174,7 +149,7 @@ Namespace Views.Auth
             Me.AutoScaleDimensions = New System.Drawing.SizeF(7.0F, 15.0F)
             Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
             Me.BackColor = System.Drawing.Color.FromArgb(244, 243, 237)
-            Me.ClientSize = New System.Drawing.Size(520, 510)
+            Me.ClientSize = New System.Drawing.Size(520, 430)
             Me.Controls.Add(Me.pnlCardLogin)
             Me.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle
             Me.MaximizeBox = False
@@ -196,8 +171,6 @@ Namespace Views.Auth
         Friend WithEvents lblPassword As Label
         Friend WithEvents txtPassword As TextBox
         Friend WithEvents btnIniciarSesion As Button
-        Friend WithEvents btnIrARegistro As Button
-        Friend WithEvents btnIngresarInvitado As Button
         Friend WithEvents btnSalir As Button
     End Class
 End Namespace

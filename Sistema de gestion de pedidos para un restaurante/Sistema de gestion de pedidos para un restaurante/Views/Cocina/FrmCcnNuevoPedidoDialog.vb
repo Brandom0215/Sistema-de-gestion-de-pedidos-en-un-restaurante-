@@ -27,7 +27,6 @@ Namespace Views.Cocina
         Public Sub New(ByVal strClienteSugerido As String)
             InitializeComponent()
             _strNombreClienteSugerido = strClienteSugerido
-            ThemeConfig.HabilitarDobleBuffer(Me)
         End Sub
 
         Private Sub FrmCcnNuevoPedidoDialog_Load(ByVal sender As Object, ByVal e As EventArgs) Handles MyBase.Load
@@ -44,8 +43,8 @@ Namespace Views.Cocina
             ActualizarTotalCalculado()
         End Sub
 
-        Private Sub AplicarTemaVisual()
-            Me.BackColor = ThemeConfig.ColorBackgroundApp
+        Protected Overrides Sub AplicarTemaVisual()
+            MyBase.AplicarTemaVisual()
             pnlCcnHeaderModal.BackColor = ThemeConfig.ColorBackgroundSidebar
             pnlCcnContenedorForm.BackColor = Color.White
             pnlCcnBotonesAccion.BackColor = ThemeConfig.ColorBackgroundSidebar
@@ -182,11 +181,11 @@ Namespace Views.Cocina
 
             If blnGuardado Then
                 Dim strDetallePago As String = If(strEstadoPago = "PAGADO", $"Pagado con {strMetodoPago}", "Pendiente de cobro (disponible en Caja)")
-                MessageBox.Show($"¡Comanda generada exitosamente!{vbCrLf}{vbCrLf}Cliente: {strCliente}{vbCrLf}Mesa: {strMesa} ({strServicio}){vbCrLf}Plato: {strPlatoFinal}{vbCrLf}Total: ${decTotal:N2}{vbCrLf}Estado Pago: {strDetallePago}", "Orden Recibida en Cocina", MessageBoxButtons.OK, MessageBoxIcon.Information)
+                MostrarMensajeExito($"¡Comanda generada exitosamente!{vbCrLf}{vbCrLf}Cliente: {strCliente}{vbCrLf}Mesa: {strMesa} ({strServicio}){vbCrLf}Plato: {strPlatoFinal}{vbCrLf}Total: ${decTotal:N2}{vbCrLf}Estado Pago: {strDetallePago}", "Orden Recibida en Cocina")
                 Me.DialogResult = DialogResult.OK
                 Me.Close()
             Else
-                MessageBox.Show("No se pudo registrar la comanda en memoria.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                MostrarMensajeError("No se pudo registrar la comanda en memoria.", "Error")
             End If
         End Sub
 
