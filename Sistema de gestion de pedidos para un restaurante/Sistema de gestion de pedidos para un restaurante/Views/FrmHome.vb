@@ -49,7 +49,7 @@ Namespace Views
                 AbrirFormularioEnPanel(Of Pedidos.FrmPedidos)()
             ElseIf _rolUsuario.Contains("Cocina") Then
                 SeleccionarBotonNavegacion(btnNavCocina, "Monitor de Cocina (KDS)")
-                MostrarMensajeModulo("Monitor de Cocina (KDS)", "Recepción FIFO de comandas en tiempo real (RF-008, RF-009, RF-010).")
+                AbrirFormularioEnPanel(Of Cocina.FrmCcnMonitorCocina)()
             Else
                 ' Administrador / Cajero por defecto en Dashboard
                 SeleccionarBotonNavegacion(btnNavDashboard, "Dashboard General")
@@ -242,7 +242,7 @@ Namespace Views
 
         Private Sub btnNavCocina_Click(sender As Object, e As EventArgs) Handles btnNavCocina.Click
             SeleccionarBotonNavegacion(btnNavCocina, "Monitor de Cocina (KDS)")
-            MostrarMensajeModulo("Monitor de Cocina (KDS)", "Recepción FIFO de comandas en tiempo real, gestión de estados y semaforización de tiempos (RF-008, RF-009, RF-010).")
+            AbrirFormularioEnPanel(Of Cocina.FrmCcnMonitorCocina)()
         End Sub
 
         Private Sub btnNavCaja_Click(sender As Object, e As EventArgs) Handles btnNavCaja.Click
