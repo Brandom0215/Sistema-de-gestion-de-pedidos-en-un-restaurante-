@@ -44,8 +44,9 @@ Namespace Views
 
             ' 4. Cargar la vista inicial según el ROL del usuario
             If _rolUsuario.Contains("Cliente") Then
-                lblTituloModuloTop.Text = $"📲 Menú Digital de Pedidos (Cliente: {_nombreUsuario})"
-                SeleccionarBotonNavegacion(btnNavPedidos, "Toma de Pedidos & Menú Digital")
+                Dim tituloVista As String = If(_rolUsuario.Contains("Invitado"), "📲 Menú Digital de Pedidos (Modo Invitado)", $"📲 Menú Digital de Pedidos (Cliente: {_nombreUsuario})")
+                lblTituloModuloTop.Text = tituloVista
+                SeleccionarBotonNavegacion(btnNavPedidos, tituloVista)
                 AbrirFormularioEnPanel(Of Pedidos.FrmPedidos)()
             ElseIf _rolUsuario.Contains("Cocina") Then
                 SeleccionarBotonNavegacion(btnNavCocina, "Monitor de Cocina (KDS)")
@@ -74,7 +75,7 @@ Namespace Views
                 btnNavReportes.Visible = False
                 
                 btnNavPedidos.Visible = True
-                btnNavPedidos.Text = "  📲 Mi Pedido / Menú Digital"
+                btnNavPedidos.Text = If(_rolUsuario.Contains("Invitado"), "  📲 Menú Digital (Invitado)", "  📲 Mi Pedido / Menú Digital")
                 btnNavPedidos.Location = New Point(0, 70)
             ElseIf _rolUsuario.Contains("Cocina") Then
                 ' PERSONAL DE COCINA ÚNICAMENTE ACCEDE A KDS Y CONSULTA DE PEDIDOS
