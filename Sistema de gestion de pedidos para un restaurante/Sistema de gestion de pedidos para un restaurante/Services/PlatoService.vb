@@ -14,12 +14,15 @@ Namespace Services
         Private _ultimoId As Integer = 0
 
         Public Sub New()
-            ' Catálogo inicial gastronómico
-            Guardar(New PlatoModel(0, "Sancocho Criollo Gourmet", "Especialidades", 450.0D, "15 min", True, "Sancocho dominicano tradicional con carnes seleccionadas y víveres frescos."))
-            Guardar(New PlatoModel(0, "Chivo Liniero Guisado", "Platos Fuertes", 650.0D, "20 min", True, "Chivo liniero tierno guisado a fuego lento con orégano silvestre."))
-            Guardar(New PlatoModel(0, "Mofongo Especial El Buen Sazón", "Autóctonos", 550.0D, "12 min", True, "Plátano verde majado con ajo silvestre, chicharrón crujiente y caldo de la casa."))
-            Guardar(New PlatoModel(0, "Jarra de Jugo Natural de Chinola", "Bebidas", 200.0D, "5 min", True, "Jarra de 1 litro de chinola 100% natural servida con hielo rústico."))
-            Guardar(New PlatoModel(0, "Flan de Leche Artesanal", "Postres", 180.0D, "5 min", False, "Flan de leche condensada tradicional con caramelo suave (Agotado por el momento)."))
+            ' Catálogo inicial gastronómico categorizado según los requerimientos del restaurante
+            Guardar(New PlatoModel(0, "Mangú Tres Golpes Tradicional", "Desayunos", 350.0D, "10 min", True, "Plátano verde majado con queso frito, salami induveca y huevo."))
+            Guardar(New PlatoModel(0, "Sancocho Criollo Gourmet", "Almuerzos", 450.0D, "15 min", True, "Sancocho dominicano tradicional de 7 carnes con víveres y arroz blanco."))
+            Guardar(New PlatoModel(0, "Chivo Liniero Guisado", "Almuerzos", 650.0D, "20 min", True, "Chivo liniero tierno guisado a fuego lento con orégano silvestre y yuca al mojo."))
+            Guardar(New PlatoModel(0, "Mofongo Especial El Buen Sazón", "Almuerzos", 550.0D, "12 min", True, "Plátano verde majado con ajo silvestre, chicharrón crujiente y caldo de la casa."))
+            Guardar(New PlatoModel(0, "Fettuccine a la Huancaína con Lomo", "Cenas", 580.0D, "15 min", True, "Pastas artesanales en salsa huancaína con tiras de lomo salteado."))
+            Guardar(New PlatoModel(0, "Combo Familiar Platos Armados", "Platos Armados", 1200.0D, "25 min", True, "Pollo horneado, arroz moro, papas fritas, ensalada y jarra de jugo."))
+            Guardar(New PlatoModel(0, "Jarra de Jugo Natural de Chinola", "Bebidas y Sodas", 200.0D, "5 min", True, "Jarra de 1 litro de chinola 100% natural servida con hielo rústico."))
+            Guardar(New PlatoModel(0, "Soda Artesanal de Frutos Rojos", "Bebidas y Sodas", 120.0D, "3 min", True, "Refresco artesanal de frutos rojos con agua con gas y menta."))
         End Sub
 
         Public Function ObtenerTodos() As IReadOnlyList(Of PlatoModel) Implements IPlatoService.ObtenerTodos
