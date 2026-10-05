@@ -20,6 +20,7 @@ Namespace Views.Dashboards
         Friend WithEvents pnlHeaderContainer As System.Windows.Forms.Panel
         Friend WithEvents lblTituloDashboard As System.Windows.Forms.Label
         Friend WithEvents lblSubtituloDashboard As System.Windows.Forms.Label
+        Friend WithEvents btnRefrescar As System.Windows.Forms.Button
 
         ' Layout Principal
         Friend WithEvents tlpMainLayout As System.Windows.Forms.TableLayoutPanel
@@ -75,6 +76,7 @@ Namespace Views.Dashboards
             Me.pnlHeaderContainer = New System.Windows.Forms.Panel()
             Me.lblTituloDashboard = New System.Windows.Forms.Label()
             Me.lblSubtituloDashboard = New System.Windows.Forms.Label()
+            Me.btnRefrescar = New System.Windows.Forms.Button()
 
             Me.tlpMainLayout = New System.Windows.Forms.TableLayoutPanel()
 
@@ -139,6 +141,7 @@ Namespace Views.Dashboards
             ' 
             ' pnlHeaderContainer
             ' 
+            Me.pnlHeaderContainer.Controls.Add(Me.btnRefrescar)
             Me.pnlHeaderContainer.Controls.Add(Me.lblSubtituloDashboard)
             Me.pnlHeaderContainer.Controls.Add(Me.lblTituloDashboard)
             Me.pnlHeaderContainer.Dock = System.Windows.Forms.DockStyle.Top
@@ -146,6 +149,18 @@ Namespace Views.Dashboards
             Me.pnlHeaderContainer.Name = "pnlHeaderContainer"
             Me.pnlHeaderContainer.Size = New System.Drawing.Size(980, 75)
             Me.pnlHeaderContainer.TabIndex = 0
+
+            ' 
+            ' btnRefrescar
+            ' 
+            Me.btnRefrescar.Anchor = CType((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
+            Me.btnRefrescar.Font = New System.Drawing.Font("Segoe UI", 9.0F, System.Drawing.FontStyle.Bold)
+            Me.btnRefrescar.Location = New System.Drawing.Point(810, 18)
+            Me.btnRefrescar.Name = "btnRefrescar"
+            Me.btnRefrescar.Size = New System.Drawing.Size(150, 38)
+            Me.btnRefrescar.TabIndex = 2
+            Me.btnRefrescar.Text = "Actualizar Datos"
+            Me.btnRefrescar.UseVisualStyleBackColor = True
 
             ' 
             ' lblTituloDashboard
