@@ -247,12 +247,12 @@ Namespace Views
 
         Private Sub btnNavCaja_Click(sender As Object, e As EventArgs) Handles btnNavCaja.Click
             SeleccionarBotonNavegacion(btnNavCaja, "Caja & Procesamiento de Pagos")
-            MostrarMensajeModulo("Caja & Cobros", "Aprobación de pagos en efectivo, integración de pasarelas y liberación de comandas a cocina (RF-006, RF-011).")
+            AbrirFormularioEnPanel(Of Caja.FrmCajaCobros)()
         End Sub
 
         Private Sub btnNavFacturacion_Click(sender As Object, e As EventArgs) Handles btnNavFacturacion.Click
             SeleccionarBotonNavegacion(btnNavFacturacion, "Facturación & Comprobantes PDF")
-            MostrarMensajeModulo("Facturación & PDF", "Generación e impresión de facturas en PDF inalterables con número correlativo único (RF-007, RN-009, RN-010).")
+            AbrirFormularioEnPanel(Of Facturacion.FrmFacturacionPDF)()
         End Sub
 
         Private Sub btnNavReportes_Click(sender As Object, e As EventArgs) Handles btnNavReportes.Click
