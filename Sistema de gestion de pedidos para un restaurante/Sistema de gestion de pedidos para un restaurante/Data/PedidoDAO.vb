@@ -29,6 +29,7 @@ Namespace Data
             _tablaPedidos.Columns.Add("Impuesto", GetType(Decimal))
             _tablaPedidos.Columns.Add("Total", GetType(Decimal))
             _tablaPedidos.Columns.Add("Estado", GetType(String)) ' PENDIENTE, PAGADO, EN_PREPARACION, LISTO
+            _tablaPedidos.Columns.Add("EstadoCocina", GetType(String)) ' RECIBIDO, EN_PREPARACION, LISTO, ENTREGADO
             _tablaPedidos.Columns.Add("MetodoPago", GetType(String)) ' Efectivo, Tarjeta POS, Transferencia / QR
             _tablaPedidos.Columns.Add("MontoRecibido", GetType(Decimal))
             _tablaPedidos.Columns.Add("Cambio", GetType(Decimal))
@@ -40,16 +41,18 @@ Namespace Data
             _tablaPedidos.Columns.Add("TelefonoCliente", GetType(String))
             _tablaPedidos.Columns.Add("CorreoCliente", GetType(String))
 
-            ' Cargar pedidos iniciales de demostración con estados variados
-            AgregarPedidoInicial("Carlos Mendoza", "Mesa 04", "Lomo a la Brasa ($18.50)", "Papas Fritas, Ensalada Fresca", "En Mesa", 18.50D, "PENDIENTE", "", 0, 0, False, "")
-            AgregarPedidoInicial("María Fernández", "Mesa 02", "Ceviche Mixto Tradicional ($16.50)", "Salsas de la Casa", "En Mesa", 16.50D, "PENDIENTE", "", 0, 0, False, "")
-            AgregarPedidoInicial("Roberto Gómez", "Delivery", "Pollo Abrasado Artesanal ($14.00)", "Papas Fritas, Arroz con Choclo", "Delivery", 14.00D, "PAGADO", "Tarjeta POS", 14.00D, 0.0D, True, "FAC-2026-1001")
-            AgregarPedidoInicial("Ana Lucía Torres", "Llevar", "Hamburguesa Gourmet Rústica ($12.00)", "Papas Fritas", "Para Llevar", 12.00D, "PAGADO", "Efectivo", 20.00D, 8.00D, False, "")
+            ' Cargar pedidos iniciales de demostración con estados variados vinculados a Cocina, Caja y Facturación
+            AgregarPedidoInicial("Carlos Mendoza", "Mesa 04", "Bife de Chorizo a la Brasa ($24.00)", "Término medio, papas rústicas al romero", "Comer en el Sitio", 24.00D, "PAGADO", "Tarjeta Crédito", 24.00D, 0.0D, False, "", "EN_PREPARACION")
+            AgregarPedidoInicial("María Fernández", "Mesa 09", "Risotto de Hongos Silvestres ($24.00)", "CELÍACO: Estrictamente Sin Gluten", "Comer en el Sitio", 24.00D, "PENDIENTE", "", 0, 0, False, "", "RECIBIDO")
+            AgregarPedidoInicial("Sofía Alarcón", "ENTREGAS", "Pollo al Limón y Romero a la Leña ($26.00)", "Empacado en contenedor térmico kraft", "Para Llevar", 26.00D, "PAGADO", "Pagado Web (Stripe)", 26.00D, 0.0D, True, "FAC-2026-1001", "LISTO")
+            AgregarPedidoInicial("Ana Lucía Torres", "Llevar", "Hamburguesa Gourmet Rústica ($12.00)", "Papas Fritas crujientes con hierbas", "Para Llevar", 12.00D, "PAGADO", "Efectivo", 20.00D, 8.00D, False, "", "RECIBIDO")
+            AgregarPedidoInicial("Roberto Gómez", "Mesa 02", "Ceviche Mixto Tradicional ($16.50)", "Salsas de la Casa y maíz crocante", "Comer en el Sitio", 16.50D, "PENDIENTE", "", 0, 0, False, "", "EN_PREPARACION")
         End Sub
 
         Private Sub AgregarPedidoInicial(cliente As String, mesa As String, plato As String, acomp As String, servicio As String,
                                          precioBase As Decimal, estado As String, metodoPago As String, montoRecibido As Decimal,
-                                         cambio As Decimal, facturado As Boolean, numFactura As String)
+                                         cambio As Decimal, facturado As Boolean, numFactura As String,
+                                         Optional estadoCocina As String = "RECIBIDO")
             _ultimoId += 1
             Dim dr As DataRow = _tablaPedidos.NewRow()
             dr("ID") = _ultimoId
@@ -58,12 +61,13 @@ Namespace Data
             dr("PlatoPrincipal") = plato
             dr("Acompanamientos") = acomp
             dr("TipoServicio") = servicio
-            dr("FechaHora") = DateTime.Now.AddMinutes(-_ultimoId * 12).ToString("HH:mm:ss")
+            dr("FechaHora") = DateTime.Now.AddMinutes(-_ultimoId * 8).ToString("HH:mm:ss")
             dr("PrecioUnitario") = precioBase
             dr("Subtotal") = Math.Round(precioBase / 1.07D, 2)
             dr("Impuesto") = Math.Round(precioBase - CDec(dr("Subtotal")), 2)
             dr("Total") = precioBase
             dr("Estado") = estado
+            dr("EstadoCocina") = estadoCocina
             dr("MetodoPago") = metodoPago
             dr("MontoRecibido") = montoRecibido
             dr("Cambio") = cambio
@@ -137,9 +141,14 @@ Namespace Data
         End Function
 
         ''' <summary>
-        ''' Agrega un nuevo pedido al repositorio en memoria. Compatible con la firma original de FrmPedidos.
+        ''' Agrega un nuevo pedido al repositorio en memoria centralizado.
+        ''' Soporta estados iniciales de pago y de cocina.
         ''' </summary>
-        Public Function Guardar(cliente As String, mesa As String, plato As String, acomp As String, servicio As String, Optional total As Decimal = 0D) As Boolean
+        Public Function Guardar(cliente As String, mesa As String, plato As String, acomp As String, servicio As String,
+                                Optional total As Decimal = 0D,
+                                Optional estadoPago As String = "PENDIENTE",
+                                Optional metodoPago As String = "",
+                                Optional estadoCocina As String = "RECIBIDO") As Boolean
             Try
                 _ultimoId += 1
                 Dim dr As DataRow = _tablaPedidos.NewRow()
@@ -156,9 +165,10 @@ Namespace Data
                 dr("Subtotal") = Math.Round(precioFinal / 1.07D, 2)
                 dr("Impuesto") = Math.Round(precioFinal - CDec(dr("Subtotal")), 2)
                 dr("Total") = precioFinal
-                dr("Estado") = "PENDIENTE"
-                dr("MetodoPago") = ""
-                dr("MontoRecibido") = 0D
+                dr("Estado") = estadoPago
+                dr("EstadoCocina") = estadoCocina
+                dr("MetodoPago") = metodoPago
+                dr("MontoRecibido") = If(estadoPago = "PAGADO", precioFinal, 0D)
                 dr("Cambio") = 0D
                 dr("Facturado") = False
                 dr("NumeroFactura") = ""
@@ -258,6 +268,80 @@ Namespace Data
         ''' </summary>
         Public Function ObtenerProximoNumeroFactura() As String
             Return $"FAC-2026-{_contadorFacturas + 1}"
+        End Function
+
+        ''' <summary>
+        ''' Actualiza el estado de la comanda en cocina (RECIBIDO, EN_PREPARACION, LISTO, ENTREGADO).
+        ''' </summary>
+        Public Function ActualizarEstadoCocina(id As Integer, nuevoEstadoCocina As String) As Boolean
+            For Each row As DataRow In _tablaPedidos.Rows
+                If Convert.ToInt32(row("ID")) = id Then
+                    row("EstadoCocina") = nuevoEstadoCocina.Trim().ToUpper()
+                    Return True
+                End If
+            Next
+            Return False
+        End Function
+
+        ''' <summary>
+        ''' Obtiene todas las órdenes del repositorio mapeadas al modelo de comanda de cocina CcnPedidoModel.
+        ''' Conecta información de Cliente, Estado de Pago en Caja y Facturación electrónica.
+        ''' </summary>
+        Public Function ObtenerComandasCocina() As List(Of Models.CcnPedidoModel)
+            Dim lista As New List(Of Models.CcnPedidoModel)()
+
+            For Each row As DataRow In _tablaPedidos.Rows
+                Dim id As Integer = Convert.ToInt32(row("ID"))
+                Dim strCodigo As String = $"#08-{1040 + id}"
+                Dim strMesa As String = If(row("Mesa") IsNot DBNull.Value, row("Mesa").ToString(), "Mesa 01")
+                Dim strCliente As String = If(row("Cliente") IsNot DBNull.Value, row("Cliente").ToString(), "Cliente General")
+                Dim strServicio As String = If(row("TipoServicio") IsNot DBNull.Value, row("TipoServicio").ToString(), "Comer en el Sitio")
+                Dim strMetodo As String = If(row("MetodoPago") IsNot DBNull.Value, row("MetodoPago").ToString(), "Pendiente")
+                Dim blnPagado As Boolean = (row("Estado").ToString().ToUpper() = "PAGADO")
+                Dim blnFacturado As Boolean = (row("Facturado") IsNot DBNull.Value AndAlso CBool(row("Facturado")))
+                Dim strNumFactura As String = If(row("NumeroFactura") IsNot DBNull.Value, row("NumeroFactura").ToString(), "")
+
+                Dim strEstadoCocina As String = If(_tablaPedidos.Columns.Contains("EstadoCocina") AndAlso row("EstadoCocina") IsNot DBNull.Value, row("EstadoCocina").ToString().ToUpper(), "RECIBIDO")
+                Dim enumEstado As Models.CcnEstadoPedidoEnum = Models.CcnEstadoPedidoEnum.Recibido
+                Select Case strEstadoCocina
+                    Case "EN_PREPARACION", "ENPREPARACION"
+                        enumEstado = Models.CcnEstadoPedidoEnum.EnPreparacion
+                    Case "LISTO"
+                        enumEstado = Models.CcnEstadoPedidoEnum.Listo
+                    Case "ENTREGADO", "DESPACHADO"
+                        enumEstado = Models.CcnEstadoPedidoEnum.Entregado
+                    Case Else
+                        enumEstado = Models.CcnEstadoPedidoEnum.Recibido
+                End Select
+
+                Dim dtHora As DateTime = DateTime.Now.AddMinutes(-id * 4)
+                If row("FechaHora") IsNot DBNull.Value Then
+                    Dim strHora As String = row("FechaHora").ToString()
+                    Dim ts As TimeSpan
+                    If TimeSpan.TryParse(strHora, ts) Then
+                        dtHora = DateTime.Today.Add(ts)
+                    End If
+                End If
+
+                Dim objComanda As New Models.CcnPedidoModel(
+                    id, strCodigo, strMesa, "Mozo General", strCliente, strServicio,
+                    strMetodo, blnPagado, dtHora, enumEstado
+                )
+                objComanda.BlnFacturado = blnFacturado
+                objComanda.StrNumeroFactura = strNumFactura
+
+                Dim strPlato As String = If(row("PlatoPrincipal") IsNot DBNull.Value, row("PlatoPrincipal").ToString(), "Plato del Día")
+                Dim strAcomp As String = If(row("Acompanamientos") IsNot DBNull.Value, row("Acompanamientos").ToString(), "")
+                Dim decPrecio As Decimal = If(row("Total") IsNot DBNull.Value, Convert.ToDecimal(row("Total")), 15.0D)
+
+                Dim blnCelíaco As Boolean = strAcomp.IndexOf("CELÍACO", StringComparison.OrdinalIgnoreCase) >= 0 OrElse strPlato.IndexOf("CELÍACO", StringComparison.OrdinalIgnoreCase) >= 0
+
+                objComanda.LstDetallePlatos.Add(New Models.CcnItemPedidoModel(1, strPlato, strAcomp, decPrecio, blnCelíaco, If(blnCelíaco, "CELÍACO: Estrictamente Sin Gluten", "")))
+
+                lista.Add(objComanda)
+            Next
+
+            Return lista
         End Function
 
     End Module
