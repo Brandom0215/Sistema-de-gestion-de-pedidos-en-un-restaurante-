@@ -7,11 +7,12 @@ Namespace Views.Common
     ''' Proporciona herencia visual unificada, doble búfer automático para evitar parpadeos,
     ''' y métodos de notificación y diálogo altamente reutilizables.
     ''' </summary>
-    Public Class FrmBaseForm
+    Public Partial Class FrmBaseForm
         Inherits Form
 
         Public Sub New()
             MyBase.New()
+            InitializeComponent()
             ThemeConfig.HabilitarDobleBuffer(Me)
         End Sub
 
