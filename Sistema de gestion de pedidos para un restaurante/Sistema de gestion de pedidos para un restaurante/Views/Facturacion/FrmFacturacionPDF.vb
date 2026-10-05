@@ -2,6 +2,7 @@ Imports System
 Imports System.Data
 Imports System.Diagnostics
 Imports System.Drawing
+Imports System.Drawing.Printing
 Imports System.Globalization
 Imports System.IO
 Imports System.Windows.Forms
@@ -12,14 +13,15 @@ Imports Sistema_de_gestion_de_pedidos_para_un_restaurante.Theme
 Namespace Views.Facturacion
     ''' <summary>
     ''' Formulario de Facturación & Comprobantes Digitales PDF (RF-007, RN-009, RN-010, CU-004).
-    ''' Permite al Cajero o Administrador emitir comprobantes fiscales con número correlativo único e inalterable,
-    ''' validar datos fiscales del receptor y generar documentos PDF estándar.
+    ''' Implementa emisión fiscal con impresión real a impresora física/virtual (PrintDialog/PrintDocument),
+    ''' compilación nativa de documentos PDF, y despacho opcional por correo electrónico (RN-011).
     ''' </summary>
     Public Class FrmFacturacionPDF
 
         Private _idPedidoSeleccionado As Integer = 0
         Private _pedidoSeleccionadoRow As DataRow = Nothing
         Private _carpetaFacturas As String
+        Private WithEvents _printDocument As New PrintDocument()
 
         Public Sub New()
             InitializeComponent()
@@ -50,8 +52,10 @@ Namespace Views.Facturacion
             grpDatosFiscales.ForeColor = ThemeConfig.ColorSecondary
             grpVistaPrevia.ForeColor = ThemeConfig.ColorSecondary
 
-            ThemeConfig.EstilizarBotonPrimario(btnGenerarPDF)
+            ' Estilizado de la barra de acciones
+            ThemeConfig.EstilizarBotonPrimario(btnImprimir)
             ThemeConfig.EstilizarBotonSecundario(btnGuardarComo)
+            ThemeConfig.EstilizarBotonSecundario(btnEnviarCorreo)
             ThemeConfig.EstilizarBotonSecundario(btnLimpiar)
             ThemeConfig.EstilizarBotonSecundario(btnBuscar)
             ThemeConfig.EstilizarBotonSecundario(btnRefrescar)
@@ -157,14 +161,14 @@ Namespace Views.Facturacion
                 txtDireccion.ReadOnly = True
                 txtTelefono.ReadOnly = True
                 txtCorreo.ReadOnly = True
-                btnGenerarPDF.Text = "🖨️ Re-Imprimir Factura Fiscal (PDF)"
+                btnImprimir.Text = "🖨️ Re-Imprimir Ticket"
             Else
                 txtRucCedula.ReadOnly = False
                 txtRazonSocial.ReadOnly = False
                 txtDireccion.ReadOnly = False
                 txtTelefono.ReadOnly = False
                 txtCorreo.ReadOnly = False
-                btnGenerarPDF.Text = "🖨️ Imprimir Factura Fiscal (PDF)"
+                btnImprimir.Text = "🖨️ Imprimir Ticket"
             End If
         End Sub
 
@@ -185,7 +189,6 @@ Namespace Views.Facturacion
                 Return
             End If
 
-            Dim id = Convert.ToInt32(_pedidoSeleccionadoRow("ID"))
             Dim yaFacturado = CBool(_pedidoSeleccionadoRow("Facturado"))
             Dim numFactura = If(yaFacturado AndAlso Not String.IsNullOrEmpty(_pedidoSeleccionadoRow("NumeroFactura").ToString()),
                                 _pedidoSeleccionadoRow("NumeroFactura").ToString(),
@@ -216,60 +219,291 @@ Namespace Views.Facturacion
         End Sub
 
         ''' <summary>
-        ''' Genera la factura en PDF inalterable y la abre de inmediato en el visor del sistema.
+        ''' Asegura que el pedido tenga correlativo asignado y su archivo PDF generado en disco.
         ''' </summary>
-        Private Sub btnGenerarPDF_Click(sender As Object, e As EventArgs) Handles btnGenerarPDF.Click
+        Private Function AsegurarEmisionFactura() As String
+            Dim correlativo = PedidoDAO.RegistrarFactura(_idPedidoSeleccionado, txtRucCedula.Text.Trim(),
+                                                        txtRazonSocial.Text.Trim(), txtDireccion.Text.Trim(),
+                                                        txtTelefono.Text.Trim(), txtCorreo.Text.Trim())
+            _pedidoSeleccionadoRow = PedidoDAO.ObtenerPedidoPorId(_idPedidoSeleccionado)
+
+            Dim nombreArchivo = $"Factura_{correlativo}.pdf"
+            Dim rutaArchivo = Path.Combine(_carpetaFacturas, nombreArchivo)
+            FacturaPDFService.GenerarFacturaPDF(rutaArchivo, _pedidoSeleccionadoRow)
+            Return rutaArchivo
+        End Function
+
+        ' =========================================================================
+        ' 1. IMPRESIÓN FÍSICA / REAL A IMPRESORA (PrintDialog & PrintDocument)
+        ' =========================================================================
+
+        Private Sub btnImprimir_Click(sender As Object, e As EventArgs) Handles btnImprimir.Click
             If Not ValidarFormulario() Then Return
 
             Try
-                ' 1. Registrar datos fiscales y asignar correlativo inalterable (RN-009, RN-010)
-                Dim correlativo = PedidoDAO.RegistrarFactura(_idPedidoSeleccionado, txtRucCedula.Text.Trim(),
-                                                            txtRazonSocial.Text.Trim(), txtDireccion.Text.Trim(),
-                                                            txtTelefono.Text.Trim(), txtCorreo.Text.Trim())
+                Dim rutaArchivo = AsegurarEmisionFactura()
+                Dim correlativo = _pedidoSeleccionadoRow("NumeroFactura").ToString()
 
-                ' Refrescar fila
-                _pedidoSeleccionadoRow = PedidoDAO.ObtenerPedidoPorId(_idPedidoSeleccionado)
+                ' Configurar y mostrar el cuadro de diálogo oficial de Windows para seleccionar impresora
+                Using pd As New PrintDialog()
+                    pd.Document = _printDocument
+                    pd.UseEXDialog = True
 
-                ' 2. Generar el archivo PDF físico
-                Dim nombreArchivo = $"Factura_{correlativo}.pdf"
-                Dim rutaArchivo = Path.Combine(_carpetaFacturas, nombreArchivo)
+                    If pd.ShowDialog(Me) = DialogResult.OK Then
+                        _printDocument.Print()
+                        MessageBox.Show($"🖨️ ¡Comprobante '{correlativo}' enviado exitosamente a la impresora '{_printDocument.PrinterSettings.PrinterName}'!", "Impresión Completada", MessageBoxButtons.OK, MessageBoxIcon.Information)
+                    End If
+                End Using
 
-                FacturaPDFService.GenerarFacturaPDF(rutaArchivo, _pedidoSeleccionadoRow)
+                CargarPedidosPagados()
+                ActualizarTicketVisual()
+            Catch ex As Exception
+                MessageBox.Show($"Ocurrió un error al enviar el trabajo a la impresora: {ex.Message}", "Error de Impresión", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            End Try
+        End Sub
 
-                ' 3. Notificar simulación de impresión y apertura
-                Dim msg = $"🖨️ ¡Comprobante fiscal '{correlativo}' enviado a cola de impresión fiscal!" & vbCrLf & vbCrLf &
-                          $"• Archivo PDF generado: {rutaArchivo}" & vbCrLf & vbCrLf &
-                          "¿Desea previsualizar el documento fiscal en pantalla ahora mismo?"
+        ''' <summary>
+        ''' Dibuja el comprobante fiscal térmico en el motor de impresión nativo de Windows (GDI+).
+        ''' </summary>
+        Private Sub _printDocument_PrintPage(sender As Object, e As PrintPageEventArgs) Handles _printDocument.PrintPage
+            If _pedidoSeleccionadoRow Is Nothing Then Return
 
-                Dim respuesta = MessageBox.Show(msg, "Impresión Fiscal Digital", MessageBoxButtons.YesNo, MessageBoxIcon.Information)
+            Dim g = e.Graphics
+            Dim fuenteTitulo As New Font("Segoe UI", 11.0F, FontStyle.Bold)
+            Dim fuenteSub As New Font("Segoe UI", 8.0F, FontStyle.Regular)
+            Dim fuenteNegrita As New Font("Segoe UI", 8.5F, FontStyle.Bold)
+            Dim fuenteCuerpo As New Font("Segoe UI", 8.0F, FontStyle.Regular)
+            Dim fuenteGrande As New Font("Segoe UI", 12.0F, FontStyle.Bold)
+
+            Dim brush As Brush = Brushes.Black
+            Dim y As Single = 15.0F
+            Dim x As Single = 20.0F
+            Dim anchoTicket As Single = 260.0F
+
+            ' Encabezado
+            Dim sfCentrado As New StringFormat With {.Alignment = StringAlignment.Center}
+            g.DrawString("RESTAURANTE EL BUEN SAZÓN", fuenteTitulo, brush, New RectangleF(x, y, anchoTicket, 20), sfCentrado)
+            y += 20
+            g.DrawString("Sabor Tradicional & Excelencia Gastronómica", fuenteSub, brush, New RectangleF(x, y, anchoTicket, 15), sfCentrado)
+            y += 14
+            g.DrawString("RUC: 155698421-2-2024 DV 89  •  Tel: 223-9000", fuenteSub, brush, New RectangleF(x, y, anchoTicket, 15), sfCentrado)
+            y += 14
+            g.DrawString("Ciudad de Panamá, Rep. de Panamá", fuenteSub, brush, New RectangleF(x, y, anchoTicket, 15), sfCentrado)
+            y += 18
+
+            ' Separador
+            g.DrawLine(Pens.Gray, x, y, x + anchoTicket, y)
+            y += 6
+
+            ' Datos Comprobante
+            Dim numFactura = _pedidoSeleccionadoRow("NumeroFactura").ToString()
+            g.DrawString($"FACTURA FISCAL: {numFactura}", fuenteNegrita, brush, x, y)
+            y += 16
+            g.DrawString($"Fecha: {DateTime.Now:dd/MM/yyyy HH:mm:ss}", fuenteCuerpo, brush, x, y)
+            y += 14
+            g.DrawString($"Método de Pago: {_pedidoSeleccionadoRow("MetodoPago")}", fuenteCuerpo, brush, x, y)
+            y += 14
+            g.DrawString($"Servicio: {_pedidoSeleccionadoRow("TipoServicio")} • Mesa: {_pedidoSeleccionadoRow("Mesa")}", fuenteCuerpo, brush, x, y)
+            y += 18
+
+            ' Datos Cliente
+            g.DrawLine(Pens.Gray, x, y, x + anchoTicket, y)
+            y += 6
+            g.DrawString($"Cliente: {txtRazonSocial.Text.Trim()}", fuenteNegrita, brush, x, y)
+            y += 14
+            g.DrawString($"RUC/Cédula: {txtRucCedula.Text.Trim()}", fuenteCuerpo, brush, x, y)
+            y += 14
+            If Not String.IsNullOrWhiteSpace(txtTelefono.Text) Then
+                g.DrawString($"Tel: {txtTelefono.Text.Trim()}", fuenteCuerpo, brush, x, y)
+                y += 14
+            End If
+            y += 4
+
+            ' Detalle de Productos
+            g.DrawLine(Pens.Gray, x, y, x + anchoTicket, y)
+            y += 6
+            g.DrawString("CANT  DESCRIPCIÓN                   TOTAL", fuenteNegrita, brush, x, y)
+            y += 16
+            g.DrawLine(Pens.LightGray, x, y, x + anchoTicket, y)
+            y += 5
+
+            Dim total = Convert.ToDecimal(_pedidoSeleccionadoRow("Total"))
+            Dim subtotal = Math.Round(total / 1.07D, 2)
+            Dim impuesto = Math.Round(total - subtotal, 2)
+
+            g.DrawString($"1 x   {_pedidoSeleccionadoRow("PlatoPrincipal")}", fuenteCuerpo, brush, x, y)
+            y += 14
+            g.DrawString($"      ({_pedidoSeleccionadoRow("Acompanamientos")})", fuenteSub, brush, x, y)
+            y += 14
+            Dim sfDerecha As New StringFormat With {.Alignment = StringAlignment.Far}
+            g.DrawString($"${total:N2}", fuenteNegrita, brush, New RectangleF(x, y - 28, anchoTicket, 16), sfDerecha)
+            y += 6
+
+            ' Totales
+            g.DrawLine(Pens.Gray, x, y, x + anchoTicket, y)
+            y += 6
+            g.DrawString("Subtotal Gravable:", fuenteCuerpo, brush, x, y)
+            g.DrawString($"${subtotal:N2}", fuenteCuerpo, brush, New RectangleF(x, y, anchoTicket, 16), sfDerecha)
+            y += 16
+
+            g.DrawString("ITBMS (7%):", fuenteCuerpo, brush, x, y)
+            g.DrawString($"${impuesto:N2}", fuenteCuerpo, brush, New RectangleF(x, y, anchoTicket, 16), sfDerecha)
+            y += 16
+
+            g.DrawString("TOTAL A PAGAR:", fuenteGrande, brush, x, y)
+            g.DrawString($"${total:N2}", fuenteGrande, brush, New RectangleF(x, y, anchoTicket, 24), sfDerecha)
+            y += 26
+
+            ' Pie Legal
+            g.DrawLine(Pens.Gray, x, y, x + anchoTicket, y)
+            y += 8
+            g.DrawString("🟢 COMPROBANTE FISCAL DIGITAL VALIDO", fuenteNegrita, brush, New RectangleF(x, y, anchoTicket, 15), sfCentrado)
+            y += 16
+            g.DrawString("¡Muchas gracias por su preferencia!", fuenteSub, brush, New RectangleF(x, y, anchoTicket, 15), sfCentrado)
+            y += 14
+            g.DrawString("Conserve este ticket para sus registros.", fuenteSub, brush, New RectangleF(x, y, anchoTicket, 15), sfCentrado)
+
+            e.HasMorePages = False
+        End Sub
+
+
+        ' =========================================================================
+        ' 3. ENVÍO REAL / PREPARACIÓN POR CORREO ELECTRÓNICO (RN-011)
+        ' =========================================================================
+
+        Private Sub btnEnviarCorreo_Click(sender As Object, e As EventArgs) Handles btnEnviarCorreo.Click
+            If Not ValidarFormulario() Then Return
+
+            Dim correoCliente = txtCorreo.Text.Trim()
+            If String.IsNullOrWhiteSpace(correoCliente) OrElse Not correoCliente.Contains("@") OrElse Not correoCliente.Contains(".") Then
+                MessageBox.Show("Por favor, ingrese un correo electrónico válido para enviar la factura (ej: cliente@dominio.com).", "Correo Inválido", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                txtCorreo.Focus()
+                Return
+            End If
+
+            Try
+                Dim rutaArchivo = AsegurarEmisionFactura()
+                Dim correlativo = _pedidoSeleccionadoRow("NumeroFactura").ToString()
+                Dim total = Convert.ToDecimal(_pedidoSeleccionadoRow("Total"))
+                Dim nombreCliente = txtRazonSocial.Text.Trim()
+                Dim nombrePdf = Path.GetFileName(rutaArchivo)
+
+                ' 1. Redactar mensaje cortés y formal para el cliente
+                Dim cuerpoTexto As String = $"Estimado(a) {nombreCliente}:{vbCrLf}{vbCrLf}" &
+                                           $"Esperamos que haya disfrutado de su experiencia en Restaurante ""El Buen Sazón"".{vbCrLf}{vbCrLf}" &
+                                           $"Le hacemos entrega formal de su comprobante fiscal correspondiente a su consumo:{vbCrLf}" &
+                                           $"• Factura N°: {correlativo}{vbCrLf}" &
+                                           $"• Total Pagado: ${total:N2}{vbCrLf}" &
+                                           $"• Fecha de Emisión: {DateTime.Now:dd/MM/yyyy HH:mm:ss}{vbCrLf}{vbCrLf}" &
+                                           $"En el archivo adjunto encontrará el documento PDF oficial con el desglose de su orden e impuestos.{vbCrLf}{vbCrLf}" &
+                                           $"Agradecemos sinceramente su preferencia y esperamos tener el placer de atenderle nuevamente muy pronto.{vbCrLf}{vbCrLf}" &
+                                           $"Atentamente,{vbCrLf}" &
+                                           $"Restaurante ""El Buen Sazón""{vbCrLf}" &
+                                           $"Teléfono: (+507) 223-9000 | Ciudad de Panamá"
+
+                ' 2. Construir archivo .EML estándar con el PDF adjunto (MIME multipart/mixed)
+                Dim pdfBytes As Byte() = File.ReadAllBytes(rutaArchivo)
+                Dim base64Pdf As String = Convert.ToBase64String(pdfBytes)
+
+                Dim sbMimePdf As New System.Text.StringBuilder()
+                For i As Integer = 0 To base64Pdf.Length - 1 Step 76
+                    Dim longitud As Integer = Math.Min(76, base64Pdf.Length - i)
+                    sbMimePdf.AppendLine(base64Pdf.Substring(i, longitud))
+                Next
+
+                Dim boundary = "----=_Part_" & Guid.NewGuid().ToString("N")
+                Dim emlContent As New System.Text.StringBuilder()
+
+                emlContent.AppendLine($"To: {correoCliente}")
+                emlContent.AppendLine($"Subject: Factura Fiscal Digital {correlativo} - Restaurante El Buen Sazón")
+                emlContent.AppendLine("X-Unsent: 1")
+                emlContent.AppendLine("MIME-Version: 1.0")
+                emlContent.AppendLine($"Content-Type: multipart/mixed; boundary=""{boundary}""")
+                emlContent.AppendLine()
+
+                ' Parte 1: Mensaje de texto cortés
+                emlContent.AppendLine($"--{boundary}")
+                emlContent.AppendLine("Content-Type: text/plain; charset=""utf-8""")
+                emlContent.AppendLine("Content-Transfer-Encoding: 8bit")
+                emlContent.AppendLine()
+                emlContent.AppendLine(cuerpoTexto)
+                emlContent.AppendLine()
+
+                ' Parte 2: Archivo PDF adjunto
+                emlContent.AppendLine($"--{boundary}")
+                emlContent.AppendLine($"Content-Type: application/pdf; name=""{nombrePdf}""")
+                emlContent.AppendLine("Content-Transfer-Encoding: base64")
+                emlContent.AppendLine($"Content-Disposition: attachment; filename=""{nombrePdf}""")
+                emlContent.AppendLine()
+                emlContent.Append(sbMimePdf.ToString())
+                emlContent.AppendLine()
+                emlContent.AppendLine($"--{boundary}--")
+
+                Dim rutaEml = Path.Combine(_carpetaFacturas, $"Envio_{correlativo}.eml")
+                File.WriteAllText(rutaEml, emlContent.ToString(), System.Text.Encoding.UTF8)
+
+                ' Copiar el archivo como objeto al portapapeles para facilitar pegar el adjunto en cualquier webmail
+                Try
+                    Dim coleccionArchivos As New System.Collections.Specialized.StringCollection()
+                    coleccionArchivos.Add(rutaArchivo)
+                    Clipboard.SetFileDropList(coleccionArchivos)
+                Catch exClipboard As Exception
+                    ' Continuar si el portapapeles del sistema está ocupado
+                End Try
+
+                ' 3. Abrir la ventana de correo nativa con el mensaje y el PDF ya adjuntado
+                Dim correoAbierto As Boolean = False
+                Try
+                    Dim psiEml As New ProcessStartInfo(rutaEml) With {
+                        .UseShellExecute = True
+                    }
+                    Process.Start(psiEml)
+                    correoAbierto = True
+                Catch exEml As Exception
+                    ' Fallback por mailto si no hay cliente .eml asociado
+                    Dim asuntoMailto = Uri.EscapeDataString($"Factura Fiscal Digital {correlativo} - Restaurante El Buen Sazón")
+                    Dim cuerpoMailto = Uri.EscapeDataString(cuerpoTexto)
+                    Dim mailtoUrl = $"mailto:{correoCliente}?subject={asuntoMailto}&body={cuerpoMailto}"
+                    Try
+                        Process.Start(New ProcessStartInfo(mailtoUrl) With {.UseShellExecute = True})
+                    Catch exMailto As Exception
+                        ' Continuar
+                    End Try
+                End Try
+
+                ' 4. Diálogo amigable con el usuario sin exponer rutas técnicas
+                Dim msgConfirmacion As String = $"📧 ¡Factura preparada exitosamente para el cliente!" & vbCrLf & vbCrLf &
+                                                $"• Se preparó el correo cortés con la factura adjunta para: {correoCliente}" & vbCrLf &
+                                                $"• El archivo PDF se guardó de forma segura en la carpeta predeterminada del sistema." & vbCrLf & vbCrLf &
+                                                "¿Desea abrir la carpeta predeterminada para verificar el archivo PDF de la factura?"
+
+                Dim respuesta = MessageBox.Show(msgConfirmacion, "Factura Lista para Envío", MessageBoxButtons.YesNo, MessageBoxIcon.Information)
                 If respuesta = DialogResult.Yes Then
-                    AbrirArchivo(rutaArchivo)
+                    Process.Start("explorer.exe", $"/select,""{rutaArchivo}""")
                 End If
 
                 CargarPedidosPagados()
                 ActualizarTicketVisual()
             Catch ex As Exception
-                MessageBox.Show($"Ocurrió un error al compilar el documento PDF: {ex.Message}", "Error de Generación", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                MessageBox.Show($"Ocurrió un error al preparar el envío de la factura: {ex.Message}", "Aviso", MessageBoxButtons.OK, MessageBoxIcon.Error)
             End Try
         End Sub
 
-        ''' <summary>
-        ''' Permite guardar el archivo PDF con un diálogo en la ubicación que elija el usuario.
-        ''' </summary>
+        ' =========================================================================
+        ' 4. GUARDAR COPIA PDF EN DIRECTORIO ESPECÍFICO
+        ' =========================================================================
+
         Private Sub btnGuardarComo_Click(sender As Object, e As EventArgs) Handles btnGuardarComo.Click
             If Not ValidarFormulario() Then Return
 
             Try
-                Dim correlativo = PedidoDAO.RegistrarFactura(_idPedidoSeleccionado, txtRucCedula.Text.Trim(),
-                                                            txtRazonSocial.Text.Trim(), txtDireccion.Text.Trim(),
-                                                            txtTelefono.Text.Trim(), txtCorreo.Text.Trim())
-
-                _pedidoSeleccionadoRow = PedidoDAO.ObtenerPedidoPorId(_idPedidoSeleccionado)
+                AsegurarEmisionFactura()
+                Dim correlativo = _pedidoSeleccionadoRow("NumeroFactura").ToString()
 
                 Using sfd As New SaveFileDialog()
                     sfd.Filter = "Documentos PDF (*.pdf)|*.pdf"
                     sfd.FileName = $"Factura_{correlativo}.pdf"
-                    sfd.Title = "Guardar Factura Fiscal PDF"
+                    sfd.Title = "Guardar Copia de Factura Fiscal PDF"
 
                     If sfd.ShowDialog(Me) = DialogResult.OK Then
                         FacturaPDFService.GenerarFacturaPDF(sfd.FileName, _pedidoSeleccionadoRow)
@@ -287,7 +521,7 @@ Namespace Views.Facturacion
 
         Private Function ValidarFormulario() As Boolean
             If _idPedidoSeleccionado <= 0 OrElse _pedidoSeleccionadoRow Is Nothing Then
-                MessageBox.Show("Por favor, seleccione una orden cobrada de la lista para emitir la factura.", "Selección Requerida", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                MessageBox.Show("Por favor, seleccione una orden cobrada de la lista para emitir o imprimir la factura.", "Selección Requerida", MessageBoxButtons.OK, MessageBoxIcon.Warning)
                 Return False
             End If
 
@@ -342,7 +576,10 @@ Namespace Views.Facturacion
             txtDireccion.Clear()
             txtRucCedula.ReadOnly = False
             txtRazonSocial.ReadOnly = False
-            btnGenerarPDF.Text = "🖨️ Imprimir Factura Fiscal (PDF)"
+            txtDireccion.ReadOnly = False
+            txtTelefono.ReadOnly = False
+            txtCorreo.ReadOnly = False
+            btnImprimir.Text = "🖨️ Imprimir Ticket"
             ActualizarTicketVisual()
             If dgvPedidosFacturar.SelectedRows.Count > 0 Then
                 dgvPedidosFacturar.ClearSelection()

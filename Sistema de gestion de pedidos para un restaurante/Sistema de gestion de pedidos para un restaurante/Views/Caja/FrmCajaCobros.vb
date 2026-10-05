@@ -263,9 +263,19 @@ Namespace Views.Caja
                                                  $"La orden ha sido autorizada y enviada a la pantalla de cocina (KDS)." & vbCrLf &
                                                  If(cambio > 0, $"Entregar cambio al cliente: ${cambio:N2}", "")
 
+                    Dim idCobrado = _idPedidoSeleccionado
                     MessageBox.Show(mensajeExito, "Cobro Exitoso", MessageBoxButtons.OK, MessageBoxIcon.Information)
                     LimpiarDetalle()
                     CargarPedidosPendientes()
+
+                    ' Opción de facturación inmediata (CU-004 / CU-006)
+                    Dim emitirFactura = MessageBox.Show($"¿Desea emitir o imprimir el comprobante fiscal de la Comanda #{idCobrado} ahora?", "Facturación Fiscal", MessageBoxButtons.YesNo, MessageBoxIcon.Question)
+                    If emitirFactura = DialogResult.Yes Then
+                        Dim formHome = TryCast(Me.ParentForm, FrmHome)
+                        If formHome IsNot Nothing Then
+                            formHome.AbrirFormularioEnPanel(Of Facturacion.FrmFacturacionPDF)()
+                        End If
+                    End If
                 Else
                     MessageBox.Show("No se pudo actualizar el estado del pedido en el repositorio.", "Error al Cobrar", MessageBoxButtons.OK, MessageBoxIcon.Error)
                 End If
