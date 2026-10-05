@@ -4,8 +4,8 @@ Imports Sistema_de_gestion_de_pedidos_para_un_restaurante.Theme
 
 Namespace Views.Auth
     ''' <summary>
-    ''' Formulario de Autenticación e Inicio de Sesión.
-    ''' Valida credenciales del usuario en RestauranteDB e infiere automáticamente su rol de permisos.
+    ''' Formulario Profesional de Autenticación e Inicio de Sesión.
+    ''' Valida credenciales del usuario e infiere automáticamente su rol de permisos.
     ''' </summary>
     Public Class FrmLogin
 
@@ -16,8 +16,8 @@ Namespace Views.Auth
 
         Private Sub FrmLogin_Load(sender As Object, e As EventArgs) Handles MyBase.Load
             AplicarTemaVisual()
-            txtUsuario.Text = "admin"
-            txtPassword.Text = "1234"
+            txtUsuario.Text = ""
+            txtPassword.Text = ""
         End Sub
 
         Private Sub AplicarTemaVisual()
@@ -29,16 +29,10 @@ Namespace Views.Auth
             lblSubtituloLogin.ForeColor = ThemeConfig.ColorTextMuted
             lblUsuario.ForeColor = ThemeConfig.ColorNeutralDark
             lblPassword.ForeColor = ThemeConfig.ColorNeutralDark
-            lblCredencialesDemo.ForeColor = ThemeConfig.ColorTextMuted
 
             ThemeConfig.EstilizarBotonPrimario(btnIniciarSesion)
             ThemeConfig.EstilizarBotonSecundario(btnIrARegistro)
             ThemeConfig.EstilizarBotonSecundario(btnSalir)
-
-            ThemeConfig.EstilizarBotonSecundario(btnDemoAdmin)
-            ThemeConfig.EstilizarBotonSecundario(btnDemoCajero)
-            ThemeConfig.EstilizarBotonSecundario(btnDemoCocina)
-            ThemeConfig.EstilizarBotonSecundario(btnDemoCliente)
         End Sub
 
         Private Sub btnIniciarSesion_Click(sender As Object, e As EventArgs) Handles btnIniciarSesion.Click
@@ -57,19 +51,13 @@ Namespace Views.Auth
                 Return
             End If
 
-            ' Determinar rol asignado según credenciales en RestauranteDB
+            ' Validar credenciales mediante UsuarioDAO
             Dim rolDeterminado As String = "👑 Administrador"
-            Dim usuarioLower As String = usuarioInput.ToLower()
+            Dim autenticado As Boolean = Data.UsuarioDAO.Autenticar(usuarioInput, passwordInput, rolDeterminado)
 
-            If usuarioLower = "admin" Then
-                rolDeterminado = "👑 Administrador"
-            ElseIf usuarioLower = "cajero" Then
-                rolDeterminado = "💵 Cajero / Personal de Sala"
-            ElseIf usuarioLower = "cocina" Then
-                rolDeterminado = "🍳 Personal de Cocina (KDS)"
-            Else
-                ' Cualquier otro usuario registrado es tratado como Cliente
-                rolDeterminado = "📲 Cliente / Autoatención"
+            If Not autenticado Then
+                MessageBox.Show("Credenciales incorrectas. Verifique su usuario y contraseña.", "Autenticación Fallida", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                Return
             End If
 
             ' Abrir FrmHome con el rol y usuario autenticado
@@ -77,30 +65,6 @@ Namespace Views.Auth
             Me.Hide()
             mainHome.ShowDialog()
             Me.Close()
-        End Sub
-
-        ' =========================================================================
-        ' BOTONES DE AUTO-COMPLETADO RÁPIDO PARA PRUEBAS DE ROLES
-        ' =========================================================================
-
-        Private Sub btnDemoAdmin_Click(sender As Object, e As EventArgs) Handles btnDemoAdmin.Click
-            txtUsuario.Text = "admin"
-            txtPassword.Text = "1234"
-        End Sub
-
-        Private Sub btnDemoCajero_Click(sender As Object, e As EventArgs) Handles btnDemoCajero.Click
-            txtUsuario.Text = "cajero"
-            txtPassword.Text = "1234"
-        End Sub
-
-        Private Sub btnDemoCocina_Click(sender As Object, e As EventArgs) Handles btnDemoCocina.Click
-            txtUsuario.Text = "cocina"
-            txtPassword.Text = "1234"
-        End Sub
-
-        Private Sub btnDemoCliente_Click(sender As Object, e As EventArgs) Handles btnDemoCliente.Click
-            txtUsuario.Text = "cliente_carlos"
-            txtPassword.Text = "1234"
         End Sub
 
         Private Sub btnIrARegistro_Click(sender As Object, e As EventArgs) Handles btnIrARegistro.Click

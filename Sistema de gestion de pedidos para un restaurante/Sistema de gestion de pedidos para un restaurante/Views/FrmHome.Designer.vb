@@ -261,7 +261,7 @@ Namespace Views
             Me.lblEstadoBaseDatos.Location = New System.Drawing.Point(12, 18)
             Me.lblEstadoBaseDatos.Name = "lblEstadoBaseDatos"
             Me.lblEstadoBaseDatos.Size = New System.Drawing.Size(226, 25)
-            Me.lblEstadoBaseDatos.Text = "● PostgreSQL: Conectado"
+            Me.lblEstadoBaseDatos.Text = "● Sistema: Listo (En Memoria)"
             Me.lblEstadoBaseDatos.TextAlign = System.Drawing.ContentAlignment.MiddleCenter
             Me.lblEstadoBaseDatos.UseMnemonic = False
 
