@@ -44,7 +44,8 @@ Namespace Views
 
             ' 4. Cargar la vista inicial según el ROL del usuario
             If _rolUsuario.Contains("Cliente") Then
-                lblTituloModuloTop.Text = $"📲 Menú Digital de Pedidos (Cliente: {_nombreUsuario})"
+                Dim tituloVista As String = If(_rolUsuario.Contains("Invitado"), "📲 Menú Digital de Pedidos (Modo Invitado)", $"📲 Menú Digital de Pedidos (Cliente: {_nombreUsuario})")
+                lblTituloModuloTop.Text = tituloVista
                 SeleccionarBotonNavegacion(btnNavCocina, "Monitor de Pedidos & Menú")
                 AbrirFormularioEnPanel(New Cocina.FrmCcnMonitorCocina(_nombreUsuario))
             ElseIf _rolUsuario.Contains("Cocina") Then
@@ -69,7 +70,7 @@ Namespace Views
                 btnNavDashboard.Visible = False
                 btnNavCatalogo.Visible = False
                 btnNavCocina.Visible = True
-                btnNavCocina.Text = "  📲 Mi Pedido / Menú Digital"
+                btnNavCocina.Text = If(_rolUsuario.Contains("Invitado"), "  📲 Menú Digital (Invitado)", "  📲 Mi Pedido / Menú Digital")
                 btnNavCaja.Visible = False
                 btnNavFacturacion.Visible = False
                 btnNavReportes.Visible = False
@@ -244,7 +245,7 @@ Namespace Views
 
         Private Sub btnNavCatalogo_Click(sender As Object, e As EventArgs) Handles btnNavCatalogo.Click
             SeleccionarBotonNavegacion(btnNavCatalogo, "Menú & Catálogo de Productos")
-            MostrarMensajeModulo("Menú & Catálogo", "Gestión de platos, categorías, precios e insumos de disponibilidad (RF-002, RF-003, RF-012).")
+            AbrirFormularioEnPanel(Of Catalogo.FrmCatalogo)()
         End Sub
 
         Private Sub btnNavCocina_Click(sender As Object, e As EventArgs) Handles btnNavCocina.Click
@@ -269,7 +270,7 @@ Namespace Views
 
         Private Sub btnNavReportes_Click(sender As Object, e As EventArgs) Handles btnNavReportes.Click
             SeleccionarBotonNavegacion(btnNavReportes, "Reportes de Ventas & Cierre")
-            MostrarMensajeModulo("Reportes & Ventas", "Generación de métricas diarias, reporte de platos más vendidos y cierre de caja (RF-013).")
+            AbrirFormularioEnPanel(Of Reportes.FrmReportesVentas)()
         End Sub
 
         Private Sub tmrRelojSistema_Tick(sender As Object, e As EventArgs) Handles tmrRelojSistema.Tick

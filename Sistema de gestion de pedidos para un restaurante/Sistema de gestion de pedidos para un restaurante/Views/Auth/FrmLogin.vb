@@ -32,6 +32,7 @@ Namespace Views.Auth
 
             ThemeConfig.EstilizarBotonPrimario(btnIniciarSesion)
             ThemeConfig.EstilizarBotonSecundario(btnIrARegistro)
+            ThemeConfig.EstilizarBotonSecundario(btnIngresarInvitado)
             ThemeConfig.EstilizarBotonSecundario(btnSalir)
         End Sub
 
@@ -71,6 +72,16 @@ Namespace Views.Auth
             Dim frmReg As New FrmRegistroCliente()
             Me.Hide()
             frmReg.ShowDialog()
+            Me.Close()
+        End Sub
+
+        ''' <summary>
+        ''' Permite a un cliente explorar el menú digital de platos sin necesidad de registrarse o iniciar sesión.
+        ''' </summary>
+        Private Sub btnIngresarInvitado_Click(sender As Object, e As EventArgs) Handles btnIngresarInvitado.Click
+            Dim mainHome As New FrmHome("📲 Cliente (Invitado)", "Invitado")
+            Me.Hide()
+            mainHome.ShowDialog()
             Me.Close()
         End Sub
 
