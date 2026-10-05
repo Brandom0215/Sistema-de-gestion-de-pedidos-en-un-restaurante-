@@ -231,7 +231,7 @@ Namespace Views
 
         Private Sub btnNavCatalogo_Click(sender As Object, e As EventArgs) Handles btnNavCatalogo.Click
             SeleccionarBotonNavegacion(btnNavCatalogo, "Menú & Catálogo de Productos")
-            MostrarMensajeModulo("Menú & Catálogo", "Gestión de platos, categorías, precios e insumos de disponibilidad (RF-002, RF-003, RF-012).")
+            AbrirFormularioEnPanel(Of Catalogo.FrmCatalogo)()
         End Sub
 
         Private Sub btnNavPedidos_Click(sender As Object, e As EventArgs) Handles btnNavPedidos.Click
