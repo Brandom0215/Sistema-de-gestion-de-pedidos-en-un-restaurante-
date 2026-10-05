@@ -129,6 +129,9 @@ Namespace Views.Pedidos
             dr("FechaHora") = DateTime.Now.ToString("HH:mm:ss")
             _tablaPedidos.Rows.Add(dr)
 
+            ' Sincronizar en el repositorio compartido para Caja y Facturación
+            Data.PedidoDAO.Guardar(txtNombreCliente.Text.Trim(), txtMesa.Text.Trim(), cboPlatoPrincipal.SelectedItem.ToString(), ObtenerAcompanamientosSeleccionados(), ObtenerTipoServicioSeleccionado())
+
             MessageBox.Show($"¡Pedido #{_contadorId} guardado exitosamente en RestauranteDB!", "Pedido Registrado", MessageBoxButtons.OK, MessageBoxIcon.Information)
             _contadorId += 1
             LimpiarFormulario()
@@ -155,6 +158,9 @@ Namespace Views.Pedidos
                 dr("Acompanamientos") = ObtenerAcompanamientosSeleccionados()
                 dr("TipoServicio") = ObtenerTipoServicioSeleccionado()
 
+                ' Sincronizar actualización en PedidoDAO
+                Data.PedidoDAO.Actualizar(_idPedidoSeleccionado, txtNombreCliente.Text.Trim(), txtMesa.Text.Trim(), cboPlatoPrincipal.SelectedItem.ToString(), ObtenerAcompanamientosSeleccionados(), ObtenerTipoServicioSeleccionado())
+
                 MessageBox.Show($"¡Pedido #{_idPedidoSeleccionado} actualizado correctamente!", "Pedido Modificado", MessageBoxButtons.OK, MessageBoxIcon.Information)
                 LimpiarFormulario()
                 RefrescarGrilla()
@@ -175,6 +181,9 @@ Namespace Views.Pedidos
                 Dim filas() As DataRow = _tablaPedidos.Select($"ID = {_idPedidoSeleccionado}")
                 If filas.Length > 0 Then
                     _tablaPedidos.Rows.Remove(filas(0))
+                    ' Sincronizar eliminación en PedidoDAO
+                    Data.PedidoDAO.Eliminar(_idPedidoSeleccionado)
+
                     MessageBox.Show($"El pedido #{_idPedidoSeleccionado} ha sido eliminado.", "Pedido Eliminado", MessageBoxButtons.OK, MessageBoxIcon.Information)
                     LimpiarFormulario()
                     RefrescarGrilla()
