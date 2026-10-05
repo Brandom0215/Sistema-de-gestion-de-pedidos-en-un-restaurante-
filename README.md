@@ -1,27 +1,27 @@
 # Sistema de Gestión de Pedidos — Restaurante "El Buen Sazón"
 
-Plataforma de software desarrollada en Visual Basic .NET y PostgreSQL para la digitalización, automatización y administración eficiente del flujo operativo en restaurantes.
+Plataforma de software desarrollada en Visual Basic .NET para la digitalización, automatización y administración eficiente del flujo operativo en restaurantes.
 
 ---
 
 ## 1. Descripción General del Proyecto
 
-El sistema transforma la experiencia gastronómica tradicional mediante la automatización de la toma de comandas, el procesamiento de pagos, la transmisión en tiempo real hacia la cocina (KDS) y la emisión de facturas/comprobantes digitales.
+El sistema transforma la experiencia gastronómica tradicional mediante la automatización de la toma de comandas, el procesamiento de pagos, la transmisión en tiempo real hacia la cocina (KDS) y la emisión de facturas/comprobantes digitales. Funciona de manera autónoma en memoria sin requerir la instalación de servicios externos de base de datos.
 
 - **Nombre Comercial:** Restaurante "El Buen Sazón".
-- **Tecnologías:** Visual Basic .NET (WinForms), .NET 10.0, PostgreSQL.
-- **Arquitectura:** Contenedor principal desacoplado (FrmHome) con carga dinámica de módulos y sistema de diseño centralizado (ThemeConfig).
+- **Tecnologías:** Visual Basic .NET (WinForms), .NET 10.0.
+- **Arquitectura:** Contenedor principal desacoplado (FrmHome) con carga dinámica de módulos, almacenamiento en memoria aislada (DAO Repository) y sistema de diseño centralizado (ThemeConfig).
 
 ---
 
 ## 2. Flujo Operativo y Arquitectura de Usuarios
 
-El sistema opera bajo una arquitectura multi-rol con validación estricta de credenciales en la base de datos (RestauranteDB).
+El sistema opera bajo una arquitectura multi-rol con validación estricta de credenciales en memoria (UsuarioDAO).
 
 ### 2.1. Pantalla de Autenticación (FrmLogin)
 - La aplicación se inicia en FrmLogin.vb.
 - El usuario ingresa sus credenciales (usuario/correo y contraseña).
-- El sistema autentica las credenciales en RestauranteDB e infiere automáticamente su rol de permisos asignado.
+- El sistema autentica las credenciales en memoria e infiere automáticamente su rol de permisos asignado.
 - Los clientes nuevos disponen de un enlace directo hacia el formulario de registro (FrmRegistroCliente.vb).
 
 ### 2.2. Roles y Permisos en el Sistema (FrmHome)
@@ -73,4 +73,4 @@ En la pantalla de inicio de sesión (FrmLogin) se disponen de botones de autocom
 - **Administrador:** `admin` / `1234`
 - **Cajero:** `cajero` / `1234`
 - **Cocina:** `cocina` / `1234`
-- **Cliente:** `cliente_carlos` / `1234`
+- **Cliente:** `cliente` / `1234`

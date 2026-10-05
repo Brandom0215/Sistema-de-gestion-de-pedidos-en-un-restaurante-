@@ -54,14 +54,25 @@ Namespace Views.Auth
             End If
 
             Dim nombreCliente As String = txtNombreCompleto.Text.Trim()
+            Dim telefonoCliente As String = txtTelefono.Text.Trim()
+            Dim correoCliente As String = txtCorreo.Text.Trim()
+            Dim passwordCliente As String = txtPassword.Text.Trim()
+
+            Dim exito As Boolean = Data.UsuarioDAO.RegistrarCliente(nombreCliente, telefonoCliente, correoCliente, passwordCliente)
+            If Not exito Then
+                MessageBox.Show("No se pudo registrar la cuenta. Es posible que el correo/usuario ya exista en RestauranteDB.", "Error de Registro", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                Return
+            End If
+
             MessageBox.Show($"¡Bienvenido {nombreCliente}! Tu cuenta ha sido registrada con éxito en RestauranteDB.", "Registro Exitoso", MessageBoxButtons.OK, MessageBoxIcon.Information)
 
             ' Abrir FrmHome en Modo Cliente pasando sus datos
-            Dim mainHome As New FrmHome("📲 Cliente / Tótem de Autoservicio", nombreCliente)
+            Dim mainHome As New FrmHome("📲 Cliente / Autoatención", nombreCliente)
             Me.Hide()
             mainHome.ShowDialog()
             Me.Close()
         End Sub
+
 
         Private Sub btnVolverLogin_Click(sender As Object, e As EventArgs) Handles btnVolverLogin.Click
             Dim frmLog As New FrmLogin()
