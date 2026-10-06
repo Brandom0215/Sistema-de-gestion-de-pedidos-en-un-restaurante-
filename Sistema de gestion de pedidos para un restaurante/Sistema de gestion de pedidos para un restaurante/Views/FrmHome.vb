@@ -70,15 +70,18 @@ Namespace Views
                 SeleccionarBotonNavegacion(btnNavCobroAdmin, "Caja & Procesamiento de Pagos")
                 AbrirFormularioEnPanel(Of Caja.FrmCajaCobros)()
             Else
-                ' Administrador por defecto en Cobro / Admin
-                SeleccionarBotonNavegacion(btnNavCobroAdmin, "Caja y Administración")
-                AbrirFormularioEnPanel(Of Caja.FrmCajaCobros)()
+                ' Administrador por defecto en Métricas & Ingresos del Negocio
+                SeleccionarBotonNavegacion(btnNavMetricas, "Métricas & Rendimiento del Negocio")
+                AbrirFormularioEnPanel(Of Dashboards.FrmDashboardGeneral)()
             End If
         End Sub
 
         ''' <summary>
-        ''' Restringe y oculta las opciones del menú lateral según el ROL del usuario autenticado.
-        ''' Organizado estrictamente en los 3 módulos: Cliente, Cocina, Cobro/Admin sin usar la palabra 'MÓDULO'.
+        ''' Restringe y configura las opciones del menú lateral según el ROL del usuario autenticado.
+        ''' Administrador: Exclusivamente Métricas de Ingresos y Gestión de Menú/Platos.
+        ''' Cajero: Toma de pedidos y Caja & Cobros.
+        ''' Cocina: Monitor de cocina KDS.
+        ''' Cliente: Carta y pedidos digitales.
         ''' </summary>
         Private Sub AplicarPermisosPorRol()
             Dim enumRol As Models.RolUsuarioEnum = Models.RolUsuarioExtensions.ParsearRol(_rolUsuario)
@@ -95,6 +98,8 @@ Namespace Views
                 btnNavCliente.Text = "  Carta & Pedidos"
                 btnNavCocina.Visible = False
                 btnNavCobroAdmin.Visible = False
+                btnNavMetricas.Visible = False
+                btnNavCatalogo.Visible = False
             Else
                 ' En Modo Personal (Staff) se oculta el botón de acceso y se habilita Cerrar Sesión
                 btnAccesoPersonal.Visible = False
@@ -107,6 +112,8 @@ Namespace Views
                         btnNavCocina.Visible = True
                         btnNavCocina.Text = "  Monitor de Cocina"
                         btnNavCobroAdmin.Visible = False
+                        btnNavMetricas.Visible = False
+                        btnNavCatalogo.Visible = False
                     Case Models.RolUsuarioEnum.Cajero
                         ' CAJERO TIENE ACCESO A TOMA DE PEDIDOS Y CAJA/COBROS
                         btnNavCliente.Visible = True
@@ -114,14 +121,18 @@ Namespace Views
                         btnNavCocina.Visible = False
                         btnNavCobroAdmin.Visible = True
                         btnNavCobroAdmin.Text = "  Caja & Cobros"
+                        btnNavMetricas.Visible = False
+                        btnNavCatalogo.Visible = False
                     Case Else
-                        ' ADMINISTRADOR TIENE ACCESO COMPLETO A LOS 3 ACCESOS
-                        btnNavCliente.Visible = True
-                        btnNavCliente.Text = "  Carta & Pedidos"
-                        btnNavCocina.Visible = True
-                        btnNavCocina.Text = "  Monitor de Cocina"
-                        btnNavCobroAdmin.Visible = True
-                        btnNavCobroAdmin.Text = "  Caja y Administración"
+                        ' ADMINISTRADOR: ÚNICAMENTE MÉTRICAS/INGRESOS Y GESTIÓN DE MENÚ/PLATOS
+                        ' Todos los demás apartados (Pedidos, Cocina, Caja/Cobros) se quitan de su vista
+                        btnNavCliente.Visible = False
+                        btnNavCocina.Visible = False
+                        btnNavCobroAdmin.Visible = False
+                        btnNavMetricas.Visible = True
+                        btnNavMetricas.Text = "  Métricas & Ingresos"
+                        btnNavCatalogo.Visible = True
+                        btnNavCatalogo.Text = "  Menú & Platos"
                 End Select
             End If
 
@@ -129,13 +140,13 @@ Namespace Views
         End Sub
 
         ''' <summary>
-        ''' Distribuye verticalmente de forma ordenada los 3 botones principales visibles del sidebar para evitar huecos.
+        ''' Distribuye verticalmente de forma ordenada los botones principales visibles del sidebar para evitar huecos.
         ''' </summary>
         Private Sub ReorganizarBotonesMenu()
             Dim intPosicionY As Integer = 110
-            Dim arrBotones = {btnNavCliente, btnNavCocina, btnNavCobroAdmin}
+            Dim arrBotones = {btnNavCliente, btnNavCocina, btnNavCobroAdmin, btnNavMetricas, btnNavCatalogo}
             For Each btn In arrBotones
-                If btn.Visible Then
+                If btn IsNot Nothing AndAlso btn.Visible Then
                     btn.Location = New Point(6, intPosicionY)
                     intPosicionY += 56
                 End If
@@ -243,9 +254,11 @@ Namespace Views
             ThemeConfig.EstilizarBotonPrimario(btnAccesoPersonal)
             ThemeConfig.EstilizarBotonEliminar(btnCerrarSesion)
 
-            Dim botonesNav = {btnNavCliente, btnNavCocina, btnNavCobroAdmin}
+            Dim botonesNav = {btnNavCliente, btnNavCocina, btnNavCobroAdmin, btnNavMetricas, btnNavCatalogo}
             For Each btn In botonesNav
-                ThemeConfig.EstilizarBotonNavegacion(btn, False)
+                If btn IsNot Nothing Then
+                    ThemeConfig.EstilizarBotonNavegacion(btn, False)
+                End If
             Next
         End Sub
 
@@ -253,9 +266,11 @@ Namespace Views
         Private Sub SeleccionarBotonNavegacion(btnSeleccionado As Button, tituloModulo As String)
             If btnSeleccionado Is Nothing Then Return
 
-            Dim botonesNav = {btnNavCliente, btnNavCocina, btnNavCobroAdmin}
+            Dim botonesNav = {btnNavCliente, btnNavCocina, btnNavCobroAdmin, btnNavMetricas, btnNavCatalogo}
             For Each btn In botonesNav
-                ThemeConfig.EstilizarBotonNavegacion(btn, False)
+                If btn IsNot Nothing Then
+                    ThemeConfig.EstilizarBotonNavegacion(btn, False)
+                End If
             Next
 
             ThemeConfig.EstilizarBotonNavegacion(btnSeleccionado, True)
@@ -285,6 +300,16 @@ Namespace Views
             Dim tituloVista As String = If(_rolUsuario.Contains("Cajero"), "Caja & Procesamiento de Pagos", "Caja y Administración")
             SeleccionarBotonNavegacion(btnNavCobroAdmin, tituloVista)
             AbrirFormularioEnPanel(Of Caja.FrmCajaCobros)()
+        End Sub
+
+        Private Sub btnNavMetricas_Click(sender As Object, e As EventArgs) Handles btnNavMetricas.Click
+            SeleccionarBotonNavegacion(btnNavMetricas, "Métricas & Rendimiento del Negocio")
+            AbrirFormularioEnPanel(Of Dashboards.FrmDashboardGeneral)()
+        End Sub
+
+        Private Sub btnNavCatalogo_Click(sender As Object, e As EventArgs) Handles btnNavCatalogo.Click
+            SeleccionarBotonNavegacion(btnNavCatalogo, "Gestión de Menú y Catálogo de Platos")
+            AbrirFormularioEnPanel(Of Catalogo.FrmCatalogo)()
         End Sub
 
         Private Sub tmrRelojSistema_Tick(sender As Object, e As EventArgs) Handles tmrRelojSistema.Tick
