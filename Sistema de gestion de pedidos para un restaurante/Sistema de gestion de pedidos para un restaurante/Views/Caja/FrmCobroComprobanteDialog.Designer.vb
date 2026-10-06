@@ -94,7 +94,7 @@ Namespace Views.Caja
             Me.lblSubtitulo.Name = "lblSubtitulo"
             Me.lblSubtitulo.Size = New System.Drawing.Size(540, 15)
             Me.lblSubtitulo.TabIndex = 1
-            Me.lblSubtitulo.Text = "Comanda cobrada con éxito. Configure los datos fiscales y elija la vía de entrega del comprobante."
+            Me.lblSubtitulo.Text = "Pedido cobrado con éxito. Puede imprimir o enviar el recibo al cliente."
             '
             ' lblTitulo
             '
@@ -105,7 +105,7 @@ Namespace Views.Caja
             Me.lblTitulo.Name = "lblTitulo"
             Me.lblTitulo.Size = New System.Drawing.Size(325, 25)
             Me.lblTitulo.TabIndex = 0
-            Me.lblTitulo.Text = "🧾 Emisión de Comprobante Fiscal"
+            Me.lblTitulo.Text = "🧾 Recibo de Pago"
             '
             ' pnlContenedor
             '
@@ -139,7 +139,7 @@ Namespace Views.Caja
             Me.grpVistaPrevia.Size = New System.Drawing.Size(348, 502)
             Me.grpVistaPrevia.TabIndex = 0
             Me.grpVistaPrevia.TabStop = False
-            Me.grpVistaPrevia.Text = "Vista Previa de Comprobante Térmico"
+            Me.grpVistaPrevia.Text = "Vista previa del recibo"
             '
             ' pnlTicketVisual
             '
@@ -184,8 +184,7 @@ Namespace Views.Caja
             Me.lblTicketPie.Name = "lblTicketPie"
             Me.lblTicketPie.Size = New System.Drawing.Size(302, 34)
             Me.lblTicketPie.TabIndex = 21
-            Me.lblTicketPie.Text = "¡Gracias por su visita! Buen provecho." & Global.Microsoft.VisualBasic.ChrW(13) & Global.Microsoft.VisualBasic.ChrW(10) & "Comprobante emitido bajo normativa fiscal v" &
-    "igente."
+            Me.lblTicketPie.Text = "¡Gracias por su visita y preferencia!" & Global.Microsoft.VisualBasic.ChrW(13) & Global.Microsoft.VisualBasic.ChrW(10) & "Restaurante El Buen Sazón"
             Me.lblTicketPie.TextAlign = System.Drawing.ContentAlignment.MiddleCenter
             '
             ' pnlSep5
@@ -442,7 +441,7 @@ Namespace Views.Caja
             Me.btnCerrar.Name = "btnCerrar"
             Me.btnCerrar.Size = New System.Drawing.Size(408, 44)
             Me.btnCerrar.TabIndex = 2
-            Me.btnCerrar.Text = "✓ Finalizar y Siguiente Cliente"
+            Me.btnCerrar.Text = "✓ Listo / Continuar"
             Me.btnCerrar.UseVisualStyleBackColor = True
             '
             ' btnEnviarCorreo
@@ -454,7 +453,7 @@ Namespace Views.Caja
             Me.btnEnviarCorreo.Name = "btnEnviarCorreo"
             Me.btnEnviarCorreo.Size = New System.Drawing.Size(408, 46)
             Me.btnEnviarCorreo.TabIndex = 1
-            Me.btnEnviarCorreo.Text = "✉️ Enviar Comprobante por Correo"
+            Me.btnEnviarCorreo.Text = "✉️ Enviar por Correo"
             Me.btnEnviarCorreo.UseVisualStyleBackColor = True
             '
             ' btnImprimirTicket
@@ -466,7 +465,7 @@ Namespace Views.Caja
             Me.btnImprimirTicket.Name = "btnImprimirTicket"
             Me.btnImprimirTicket.Size = New System.Drawing.Size(408, 46)
             Me.btnImprimirTicket.TabIndex = 0
-            Me.btnImprimirTicket.Text = "🖨️ Imprimir Ticket Fiscal"
+            Me.btnImprimirTicket.Text = "🖨️ Imprimir Recibo"
             Me.btnImprimirTicket.UseVisualStyleBackColor = True
             '
             ' grpDatosFiscales
@@ -489,7 +488,7 @@ Namespace Views.Caja
             Me.grpDatosFiscales.Size = New System.Drawing.Size(416, 310)
             Me.grpDatosFiscales.TabIndex = 0
             Me.grpDatosFiscales.TabStop = False
-            Me.grpDatosFiscales.Text = "Datos de Facturación del Cliente"
+            Me.grpDatosFiscales.Text = "Datos del Cliente (Opcional)"
             '
             ' txtDireccion
             '
@@ -509,9 +508,9 @@ Namespace Views.Caja
             Me.lblDireccion.Location = New System.Drawing.Point(12, 241)
             Me.lblDireccion.Name = "lblDireccion"
             Me.lblDireccion.Padding = New System.Windows.Forms.Padding(0, 6, 0, 0)
-            Me.lblDireccion.Size = New System.Drawing.Size(87, 19)
+            Me.lblDireccion.Size = New System.Drawing.Size(60, 19)
             Me.lblDireccion.TabIndex = 8
-            Me.lblDireccion.Text = "Dirección Fiscal:"
+            Me.lblDireccion.Text = "Dirección:"
             '
             ' txtCorreo
             '
@@ -533,7 +532,7 @@ Namespace Views.Caja
             Me.lblCorreo.Padding = New System.Windows.Forms.Padding(0, 6, 0, 0)
             Me.lblCorreo.Size = New System.Drawing.Size(161, 19)
             Me.lblCorreo.TabIndex = 6
-            Me.lblCorreo.Text = "Correo Electrónico (Para envío):"
+            Me.lblCorreo.Text = "Correo electrónico (Para envío):"
             '
             ' txtTelefono
             '
@@ -575,9 +574,9 @@ Namespace Views.Caja
             Me.lblRazonSocial.Location = New System.Drawing.Point(12, 75)
             Me.lblRazonSocial.Name = "lblRazonSocial"
             Me.lblRazonSocial.Padding = New System.Windows.Forms.Padding(0, 6, 0, 0)
-            Me.lblRazonSocial.Size = New System.Drawing.Size(161, 19)
+            Me.lblRazonSocial.Size = New System.Drawing.Size(110, 19)
             Me.lblRazonSocial.TabIndex = 2
-            Me.lblRazonSocial.Text = "Nombre / Razón Social Fiscal:"
+            Me.lblRazonSocial.Text = "Nombre del cliente:"
             '
             ' txtRucCedula
             '
@@ -596,9 +595,9 @@ Namespace Views.Caja
             Me.lblRuc.ForeColor = System.Drawing.Color.DimGray
             Me.lblRuc.Location = New System.Drawing.Point(12, 24)
             Me.lblRuc.Name = "lblRuc"
-            Me.lblRuc.Size = New System.Drawing.Size(74, 13)
+            Me.lblRuc.Size = New System.Drawing.Size(78, 13)
             Me.lblRuc.TabIndex = 0
-            Me.lblRuc.Text = "RUC / Cédula:"
+            Me.lblRuc.Text = "Cédula o RUC:"
             '
             ' FrmCobroComprobanteDialog
             '
@@ -616,7 +615,7 @@ Namespace Views.Caja
             Me.Name = "FrmCobroComprobanteDialog"
             Me.ShowInTaskbar = False
             Me.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent
-            Me.Text = "Emisión de Comprobante Fiscal"
+            Me.Text = "Recibo de Pago"
             Me.pnlTop.ResumeLayout(False)
             Me.pnlTop.PerformLayout()
             Me.pnlContenedor.ResumeLayout(False)

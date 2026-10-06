@@ -106,7 +106,7 @@ Namespace Views.Caja
                 End If
 
                 dgvPedidosPendientes.DataSource = vista
-                lblTotalPendientes.Text = $"Comandas pendientes de cobro: {vista.Count}"
+                lblTotalPendientes.Text = $"Pedidos pendientes de cobro: {vista.Count}"
 
                 If dgvPedidosPendientes.Columns.Count > 0 Then
                     If dgvPedidosPendientes.Columns.Contains("ID") Then
@@ -126,7 +126,7 @@ Namespace Views.Caja
                         dgvPedidosPendientes.Columns("Mesa").Width = 80
                     End If
                     If dgvPedidosPendientes.Columns.Contains("PlatoPrincipal") Then
-                        dgvPedidosPendientes.Columns("PlatoPrincipal").HeaderText = "Plato / Comanda"
+                        dgvPedidosPendientes.Columns("PlatoPrincipal").HeaderText = "Pedido / Consumo"
                         dgvPedidosPendientes.Columns("PlatoPrincipal").Width = 210
                     End If
                     If dgvPedidosPendientes.Columns.Contains("Total") Then
@@ -174,11 +174,11 @@ Namespace Views.Caja
                 _subtotalGravable = Math.Round(_totalAPagar / 1.07D, 2)
                 _impuestoCalculado = Math.Round(_totalAPagar - _subtotalGravable, 2)
 
-                lblDetallePedidoId.Text = $"Comanda #{_idPedidoSeleccionado}"
+                lblDetallePedidoId.Text = $"Pedido #{_idPedidoSeleccionado}"
                 lblDetalleCliente.Text = $"Cliente: {cliente}"
-                lblDetalleMesa.Text = $"Modalidad: {servicio} • Mesa: {mesa}"
-                lblDetallePlato.Text = $"Plato: {plato}"
-                lblDetalleAcomp.Text = $"Acomp: {acomp}"
+                lblDetalleMesa.Text = $"Servicio: {servicio} • Mesa: {mesa}"
+                lblDetallePlato.Text = $"Consumo: {plato}"
+                lblDetalleAcomp.Text = $"Extras: {If(String.IsNullOrWhiteSpace(acomp), "--", acomp)}"
 
                 lblSubtotalValor.Text = $"${_subtotalGravable:N2}"
                 lblImpuestoValor.Text = $"${_impuestoCalculado:N2}"
@@ -244,7 +244,7 @@ Namespace Views.Caja
         ''' </summary>
         Private Sub btnConfirmarCobro_Click(sender As Object, e As EventArgs) Handles btnConfirmarCobro.Click
             If _idPedidoSeleccionado <= 0 Then
-                MessageBox.Show("Por favor, seleccione una comanda pendiente de la lista para proceder con el cobro.", "Selección Requerida", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                MessageBox.Show("Por favor, elija un pedido pendiente de la lista para cobrar.", "Seleccione un pedido", MessageBoxButtons.OK, MessageBoxIcon.Warning)
                 Return
             End If
 
@@ -256,28 +256,28 @@ Namespace Views.Caja
                 metodo = "Efectivo"
                 Dim montoStr As String = txtMontoRecibido.Text.Trim()
                 If String.IsNullOrWhiteSpace(montoStr) Then
-                    MessageBox.Show("Por favor, ingrese el monto en efectivo recibido por el cliente.", "Dato Requerido", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                    MessageBox.Show("Por favor, ingrese el dinero recibido en efectivo.", "Monto requerido", MessageBoxButtons.OK, MessageBoxIcon.Warning)
                     txtMontoRecibido.Focus()
                     Return
                 End If
 
                 If Not (Decimal.TryParse(montoStr, NumberStyles.Any, CultureInfo.CurrentCulture, montoRecibido) OrElse
                         Decimal.TryParse(montoStr, NumberStyles.Any, CultureInfo.InvariantCulture, montoRecibido)) Then
-                    MessageBox.Show("El monto ingresado no es un número válido. Verifique el formato.", "Monto Inválido", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                    MessageBox.Show("El valor ingresado no es válido. Escriba un monto correcto.", "Monto no válido", MessageBoxButtons.OK, MessageBoxIcon.Warning)
                     txtMontoRecibido.Focus()
                     Return
                 End If
 
                 If montoRecibido < _totalAPagar Then
                     Dim faltante As Decimal = _totalAPagar - montoRecibido
-                    MessageBox.Show($"El monto recibido (${montoRecibido:N2}) es insuficiente para cubrir el total de ${_totalAPagar:N2}. Faltan ${faltante:N2}.", "Pago Insuficiente", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                    MessageBox.Show($"El dinero recibido (${montoRecibido:N2}) no cubre el total de ${_totalAPagar:N2}. Faltan ${faltante:N2}.", "Falta dinero", MessageBoxButtons.OK, MessageBoxIcon.Warning)
                     txtMontoRecibido.Focus()
                     Return
                 End If
 
                 cambio = montoRecibido - _totalAPagar
             ElseIf rbTarjeta.Checked Then
-                metodo = "Tarjeta POS"
+                metodo = "Tarjeta"
                 montoRecibido = _totalAPagar
                 cambio = 0D
             Else
@@ -286,32 +286,33 @@ Namespace Views.Caja
                 cambio = 0D
             End If
 
-            ' Confirmación de operación crítica
-            Dim mensajePregunta As String = $"¿Desea confirmar el cobro de la Comanda #{_idPedidoSeleccionado}?" & vbCrLf & vbCrLf &
-                                            $"• Total a Cobrar: ${_totalAPagar:N2}" & vbCrLf &
-                                            $"• Método de Pago: {metodo}" & vbCrLf &
-                                            If(metodo = "Efectivo", $"• Recibido: ${montoRecibido:N2} | Vuelto: ${cambio:N2}{vbCrLf}", "") &
-                                            $"• Destino: Transmisión inmediata a Cocina KDS"
+            ' Confirmación amigable para el cajero
+            Dim mensajePregunta As String = $"¿Desea confirmar el cobro del Pedido #{_idPedidoSeleccionado}?" & vbCrLf & vbCrLf &
+                                            $"• Total a pagar: ${_totalAPagar:N2}" & vbCrLf &
+                                            $"• Forma de pago: {metodo}" & vbCrLf &
+                                            If(metodo = "Efectivo", $"• Recibido: ${montoRecibido:N2} | Cambio: ${cambio:N2}{vbCrLf}", "") &
+                                            $"• El pedido pasará a cocina para su preparación."
 
-            If ConfirmarAccion(mensajePregunta, "Confirmar Transacción en Caja") Then
+            If ConfirmarAccion(mensajePregunta, "Confirmar cobro") Then
                 Dim idCobrado As Integer = _idPedidoSeleccionado
                 Dim exito = PedidoDAO.ConfirmarCobro(idCobrado, metodo, montoRecibido, cambio)
                 If exito Then
-                    Dim mensajeExito As String = $"¡Cobro de la Comanda #{idCobrado} registrado exitosamente!" & vbCrLf & vbCrLf &
-                                                 $"La orden ha sido autorizada y enviada a la pantalla de cocina (KDS)." & vbCrLf &
-                                                 If(cambio > 0, $"Entregar cambio al cliente: ${cambio:N2}", "")
-                    MostrarMensajeExito(mensajeExito, "Cobro Exitoso")
                     LimpiarDetalle()
                     CargarPedidosPendientes()
 
-                    ' Flujo POS del Mundo Real: Diálogo inmediato de comprobante fiscal para la orden cobrada
-                    If ConfirmarAccion($"¿Desea emitir o imprimir el comprobante fiscal de la Comanda #{idCobrado} ahora?", "Emisión de Comprobante Fiscal") Then
+                    ' Unificar la confirmación del cobro y la pregunta de facturación en una sola ventana
+                    Dim textoCobroFactura As String = $"¡Cobro del pedido #{idCobrado} registrado con éxito!" & vbCrLf &
+                                                      $"El pedido ya fue enviado a la cocina." &
+                                                      If(cambio > 0, $"{vbCrLf}Cambio a entregar al cliente: ${cambio:N2}", "") & vbCrLf & vbCrLf &
+                                                      "¿Desea facturar e imprimir el recibo de este pedido?"
+
+                    If ConfirmarAccion(textoCobroFactura, "Cobro exitoso") Then
                         Using dlg As New FrmCobroComprobanteDialog(idCobrado)
                             dlg.ShowDialog(Me)
                         End Using
                     End If
                 Else
-                    MostrarMensajeError("No se pudo actualizar el estado del pedido en el repositorio.", "Error al Cobrar")
+                    MostrarMensajeError("No se pudo actualizar el estado del pedido.", "Error al cobrar")
                 End If
             End If
         End Sub
@@ -336,11 +337,11 @@ Namespace Views.Caja
             _subtotalGravable = 0D
             _impuestoCalculado = 0D
 
-            lblDetallePedidoId.Text = "Comanda: (Sin Selección)"
-            lblDetalleCliente.Text = "Cliente: Seleccione una orden"
+            lblDetallePedidoId.Text = "Pedido: (Ninguno seleccionado)"
+            lblDetalleCliente.Text = "Cliente: Seleccione un pedido"
             lblDetalleMesa.Text = "Mesa / Servicio: --"
-            lblDetallePlato.Text = "Plato: Ninguno"
-            lblDetalleAcomp.Text = "Acomp: --"
+            lblDetallePlato.Text = "Consumo: Ninguno"
+            lblDetalleAcomp.Text = "Extras: --"
 
             lblSubtotalValor.Text = "$0.00"
             lblImpuestoValor.Text = "$0.00"

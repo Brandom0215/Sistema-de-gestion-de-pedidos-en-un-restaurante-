@@ -232,7 +232,7 @@ Namespace Views
         Me.btnNavCobroAdmin.Name = "btnNavCobroAdmin"
         Me.btnNavCobroAdmin.Size = New System.Drawing.Size(238, 48)
         Me.btnNavCobroAdmin.TabIndex = 4
-        Me.btnNavCobroAdmin.Text = "  💵 Módulo Cobro / Admin"
+        Me.btnNavCobroAdmin.Text = "  💵 Caja y Cobros"
         Me.btnNavCobroAdmin.UseVisualStyleBackColor = True
         Me.btnNavCobroAdmin.UseMnemonic = False
 
@@ -243,7 +243,7 @@ Namespace Views
         Me.btnNavFacturacion.Name = "btnNavFacturacion"
         Me.btnNavFacturacion.Size = New System.Drawing.Size(238, 48)
         Me.btnNavFacturacion.TabIndex = 5
-        Me.btnNavFacturacion.Text = "  📜 Historial Facturas"
+        Me.btnNavFacturacion.Text = "  📜 Historial de Facturas"
         Me.btnNavFacturacion.UseVisualStyleBackColor = True
         Me.btnNavFacturacion.UseMnemonic = False
         Me.btnNavFacturacion.Visible = False

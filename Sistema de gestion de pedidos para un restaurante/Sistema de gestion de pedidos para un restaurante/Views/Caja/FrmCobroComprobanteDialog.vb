@@ -56,13 +56,13 @@ Namespace Views.Caja
         Private Sub CargarDatosPedido()
             _pedidoRow = PedidoDAO.ObtenerPedidoPorId(_idPedido)
             If _pedidoRow Is Nothing Then
-                MessageBox.Show($"No se encontró la información de la comanda #{_idPedido}.", "Comanda No Encontrada", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                MessageBox.Show($"No se encontró la información del pedido #{_idPedido}.", "Pedido No Encontrado", MessageBoxButtons.OK, MessageBoxIcon.Warning)
                 Me.DialogResult = DialogResult.Cancel
                 Me.Close()
                 Return
             End If
 
-            lblTitulo.Text = $"🧾 Emisión de Comprobante Fiscal — Comanda #{_idPedido}"
+            lblTitulo.Text = $"🧾 Recibo de Pago — Pedido #{_idPedido}"
 
             Dim cliente As String = _pedidoRow("Cliente").ToString()
             Dim ruc As String = If(_pedidoRow("RUC_Cedula") IsNot DBNull.Value AndAlso Not String.IsNullOrWhiteSpace(_pedidoRow("RUC_Cedula").ToString()), _pedidoRow("RUC_Cedula").ToString(), "8-800-1234")
@@ -84,7 +84,7 @@ Namespace Views.Caja
                 txtTelefono.ReadOnly = True
                 txtCorreo.ReadOnly = True
                 txtDireccion.ReadOnly = True
-                btnImprimirTicket.Text = "🖨️ Re-Imprimir Ticket Fiscal"
+                btnImprimirTicket.Text = "🖨️ Reimprimir Recibo"
             End If
 
             ActualizarTicketVisual()
@@ -97,9 +97,9 @@ Namespace Views.Caja
                                           _pedidoRow("NumeroFactura").ToString(),
                                           PedidoDAO.ObtenerProximoNumeroFactura())
 
-            lblTicketCorrelativo.Text = $"FACTURA FISCAL: {numFactura}"
+            lblTicketCorrelativo.Text = $"RECIBO / FACTURA: {numFactura}"
             lblTicketFecha.Text = $"Fecha: {DateTime.Now:dd/MM/yyyy HH:mm:ss}"
-            lblTicketRuc.Text = $"RUC / Cédula: {txtRucCedula.Text.Trim()}"
+            lblTicketRuc.Text = $"Cédula / RUC: {txtRucCedula.Text.Trim()}"
             lblTicketCliente.Text = $"Cliente: {txtRazonSocial.Text.Trim()}"
             lblTicketMetodo.Text = $"Forma de Pago: {_pedidoRow("MetodoPago")}"
             lblTicketMesa.Text = $"Servicio: {_pedidoRow("TipoServicio")} • {_pedidoRow("Mesa")}"
@@ -115,11 +115,11 @@ Namespace Views.Caja
             Dim recibido As Decimal = If(_pedidoRow("MontoRecibido") IsNot DBNull.Value AndAlso Convert.ToDecimal(_pedidoRow("MontoRecibido")) > 0D, Convert.ToDecimal(_pedidoRow("MontoRecibido")), total)
             Dim cambio As Decimal = If(_pedidoRow("Cambio") IsNot DBNull.Value, Convert.ToDecimal(_pedidoRow("Cambio")), 0D)
 
-            lblTicketSubtotal.Text = $"Subtotal Gravable: ${subtotal:N2}"
-            lblTicketImpuesto.Text = $"ITBMS (7%): ${impuesto:N2}"
-            lblTicketTotal.Text = $"TOTAL PAGADO: ${total:N2}"
-            lblTicketRecibido.Text = $"Monto Recibido: ${recibido:N2}"
-            lblTicketCambio.Text = $"Vuelto / Cambio: ${cambio:N2}"
+            lblTicketSubtotal.Text = $"Subtotal: ${subtotal:N2}"
+            lblTicketImpuesto.Text = $"Impuesto ITBMS (7%): ${impuesto:N2}"
+            lblTicketTotal.Text = $"TOTAL: ${total:N2}"
+            lblTicketRecibido.Text = $"Dinero recibido: ${recibido:N2}"
+            lblTicketCambio.Text = $"Cambio / Vuelto: ${cambio:N2}"
         End Sub
 
         Private Sub txtDatos_TextChanged(sender As Object, e As EventArgs) Handles txtRucCedula.TextChanged, txtRazonSocial.TextChanged
@@ -140,7 +140,7 @@ Namespace Views.Caja
 
         Private Sub btnImprimirTicket_Click(sender As Object, e As EventArgs) Handles btnImprimirTicket.Click
             If String.IsNullOrWhiteSpace(txtRucCedula.Text) OrElse String.IsNullOrWhiteSpace(txtRazonSocial.Text) Then
-                MessageBox.Show("Por favor indique al menos el RUC/Cédula y Nombre/Razón Social del cliente.", "Datos Fiscales Requeridos", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                MessageBox.Show("Por favor indique el nombre y la cédula o RUC del cliente.", "Datos del Cliente", MessageBoxButtons.OK, MessageBoxIcon.Warning)
                 Return
             End If
 
@@ -155,7 +155,7 @@ Namespace Views.Caja
                     If pd.ShowDialog(Me) = DialogResult.OK Then
                         _printDocument.Print()
                         Dim correlativo = _pedidoRow("NumeroFactura").ToString()
-                        MessageBox.Show($"🖨️ ¡Comprobante '{correlativo}' enviado exitosamente a la impresora '{_printDocument.PrinterSettings.PrinterName}'!", "Impresión Exitosa", MessageBoxButtons.OK, MessageBoxIcon.Information)
+                        MessageBox.Show($"🖨️ ¡Recibo '{correlativo}' enviado a la impresora con éxito!", "Impresión Exitosa", MessageBoxButtons.OK, MessageBoxIcon.Information)
                     End If
                 End Using
             Catch ex As Exception
@@ -191,7 +191,7 @@ Namespace Views.Caja
             y += 6
 
             Dim numFactura = _pedidoRow("NumeroFactura").ToString()
-            g.DrawString($"FACTURA FISCAL: {numFactura}", fuenteNegrita, brush, x, y)
+            g.DrawString($"RECIBO / FACTURA: {numFactura}", fuenteNegrita, brush, x, y)
             y += 16
             g.DrawString($"Fecha: {DateTime.Now:dd/MM/yyyy HH:mm:ss}", fuenteCuerpo, brush, x, y)
             y += 14
@@ -204,7 +204,7 @@ Namespace Views.Caja
             y += 6
             g.DrawString($"Cliente: {txtRazonSocial.Text.Trim()}", fuenteNegrita, brush, x, y)
             y += 14
-            g.DrawString($"RUC/Cédula: {txtRucCedula.Text.Trim()}", fuenteCuerpo, brush, x, y)
+            g.DrawString($"Cédula / RUC: {txtRucCedula.Text.Trim()}", fuenteCuerpo, brush, x, y)
             y += 18
 
             g.DrawLine(Pens.Gray, x, y, x + anchoTicket, y)
@@ -232,15 +232,15 @@ Namespace Views.Caja
 
             g.DrawLine(Pens.Gray, x, y, x + anchoTicket, y)
             y += 6
-            g.DrawString($"Subtotal Gravable:", fuenteCuerpo, brush, x, y)
+            g.DrawString($"Subtotal:", fuenteCuerpo, brush, x, y)
             g.DrawString($"${subtotal:N2}", fuenteCuerpo, brush, New RectangleF(x, y, anchoTicket, 16), sfDerecha)
             y += 14
 
-            g.DrawString($"ITBMS (7%):", fuenteCuerpo, brush, x, y)
+            g.DrawString($"Impuesto ITBMS (7%):", fuenteCuerpo, brush, x, y)
             g.DrawString($"${impuesto:N2}", fuenteCuerpo, brush, New RectangleF(x, y, anchoTicket, 16), sfDerecha)
             y += 16
 
-            g.DrawString($"TOTAL PAGADO:", fuenteNegrita, brush, x, y)
+            g.DrawString($"TOTAL:", fuenteNegrita, brush, x, y)
             g.DrawString($"${total:N2}", fuenteNegrita, brush, New RectangleF(x, y, anchoTicket, 16), sfDerecha)
             y += 24
 
@@ -266,15 +266,15 @@ Namespace Views.Caja
                 Dim total = Convert.ToDecimal(_pedidoRow("Total"))
                 Dim nombrePdf = Path.GetFileName(rutaArchivo)
 
-                ' 1. Redactar mensaje cortés y formal para el cliente
+                ' 1. Redactar mensaje cortés y claro para el cliente
                 Dim cuerpoTexto As String = $"Estimado(a) {cliente}:{vbCrLf}{vbCrLf}" &
                                            $"Esperamos que haya disfrutado de su experiencia en Restaurante ""El Buen Sazón"".{vbCrLf}{vbCrLf}" &
-                                           $"Le hacemos entrega formal de su comprobante fiscal correspondiente a su consumo:{vbCrLf}" &
-                                           $"• Factura N°: {correlativo}{vbCrLf}" &
-                                           $"• Total Pagado: ${total:N2}{vbCrLf}" &
-                                           $"• Fecha de Emisión: {DateTime.Now:dd/MM/yyyy HH:mm:ss}{vbCrLf}{vbCrLf}" &
-                                           $"En el archivo adjunto encontrará el documento PDF oficial con el desglose de su orden e impuestos.{vbCrLf}{vbCrLf}" &
-                                           $"Agradecemos sinceramente su preferencia y esperamos tener el placer de atenderle nuevamente muy pronto.{vbCrLf}{vbCrLf}" &
+                                           $"Le enviamos el recibo de compra correspondiente a su consumo:{vbCrLf}" &
+                                           $"• Recibo / Factura N°: {correlativo}{vbCrLf}" &
+                                           $"• Total: ${total:N2}{vbCrLf}" &
+                                           $"• Fecha: {DateTime.Now:dd/MM/yyyy HH:mm:ss}{vbCrLf}{vbCrLf}" &
+                                           $"En el archivo adjunto encontrará su documento en PDF con el detalle de su pedido.{vbCrLf}{vbCrLf}" &
+                                           $"¡Gracias por su visita y preferencia! Esperamos atenderle nuevamente pronto.{vbCrLf}{vbCrLf}" &
                                            $"Atentamente,{vbCrLf}" &
                                            $"Restaurante ""El Buen Sazón""{vbCrLf}" &
                                            $"Teléfono: (+507) 223-9000 | Ciudad de Panamá"
@@ -293,7 +293,7 @@ Namespace Views.Caja
                 Dim emlContent As New System.Text.StringBuilder()
 
                 emlContent.AppendLine($"To: {correoDestino}")
-                emlContent.AppendLine($"Subject: Factura Fiscal Digital {correlativo} - Restaurante El Buen Sazón")
+                emlContent.AppendLine($"Subject: Recibo de Pago {correlativo} - Restaurante El Buen Sazón")
                 emlContent.AppendLine("X-Unsent: 1")
                 emlContent.AppendLine("MIME-Version: 1.0")
                 emlContent.AppendLine($"Content-Type: multipart/mixed; boundary=""{boundary}""")
@@ -334,7 +334,7 @@ Namespace Views.Caja
                     Process.Start(psiEml)
                 Catch exEml As Exception
                     ' Fallback por mailto
-                    Dim asuntoMailto = Uri.EscapeDataString($"Factura Fiscal Digital {correlativo} - Restaurante El Buen Sazón")
+                    Dim asuntoMailto = Uri.EscapeDataString($"Recibo de Pago {correlativo} - Restaurante El Buen Sazón")
                     Dim cuerpoMailto = Uri.EscapeDataString(cuerpoTexto)
                     Dim mailtoUrl = $"mailto:{correoDestino}?subject={asuntoMailto}&body={cuerpoMailto}"
                     Try
@@ -343,19 +343,11 @@ Namespace Views.Caja
                     End Try
                 End Try
 
-                ' 4. Diálogo amigable con el usuario sin exponer rutas técnicas
-                Dim msgConfirmacion As String = $"📧 ¡Factura preparada exitosamente para el cliente!" & vbCrLf & vbCrLf &
-                                                $"• Se preparó el correo cortés con la factura adjunta para: {correoDestino}" & vbCrLf &
-                                                $"• El archivo PDF se guardó de forma segura en la carpeta predeterminada del sistema." & vbCrLf & vbCrLf &
-                                                "¿Desea abrir la carpeta predeterminada para verificar el archivo PDF de la factura?"
+                ' 4. Diálogo amigable de confirmación para el usuario
+                Dim msgConfirmacion As String = $"📧 ¡El recibo fue preparado con éxito!" & vbCrLf & vbCrLf &
+                                                $"Se preparó el correo con la factura en PDF adjunta para:{vbCrLf}{correoDestino}"
 
-                If MessageBox.Show(msgConfirmacion, "Factura Lista para Envío", MessageBoxButtons.YesNo, MessageBoxIcon.Information) = DialogResult.Yes Then
-                    If File.Exists(rutaArchivo) Then
-                        System.Diagnostics.Process.Start(New System.Diagnostics.ProcessStartInfo("explorer.exe", $"/select,""{rutaArchivo}""") With {.UseShellExecute = True})
-                    Else
-                        System.Diagnostics.Process.Start(New System.Diagnostics.ProcessStartInfo("explorer.exe", _carpetaFacturas) With {.UseShellExecute = True})
-                    End If
-                End If
+                MessageBox.Show(msgConfirmacion, "Recibo preparado para envío", MessageBoxButtons.OK, MessageBoxIcon.Information)
             Catch ex As Exception
                 MessageBox.Show($"Ocurrió un error al preparar el correo electrónico: {ex.Message}", "Error al Enviar", MessageBoxButtons.OK, MessageBoxIcon.Error)
             End Try
