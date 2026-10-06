@@ -35,29 +35,34 @@ Namespace Views.Cocina.Controles
 
             _objPedidoModel = objPedido
 
-            ' 1. Identificador de comanda en cabecera
+            ' 1. Identificador de comanda en cabecera con distintivo FIFO (Primero en Entrar, Primero en Salir)
+            Dim strPrefijoFifo As String = If(objPedido.IntPosicionFifo > 0, $"#FIFO-{objPedido.IntPosicionFifo:00} • ", "")
             If objPedido.StrTipoServicio.IndexOf("Llevar", StringComparison.OrdinalIgnoreCase) >= 0 OrElse
                objPedido.StrTipoServicio.IndexOf("Entrega", StringComparison.OrdinalIgnoreCase) >= 0 Then
-                lblCcnTagMesa.Text = $"🛍 LLEVAR  {objPedido.StrCodigoComanda}"
+                lblCcnTagMesa.Text = $"{strPrefijoFifo}🛍 LLEVAR {objPedido.StrCodigoComanda}"
             Else
                 Dim strMesa As String = If(String.IsNullOrWhiteSpace(objPedido.StrMesaCliente), "MESA", objPedido.StrMesaCliente.ToUpper())
-                lblCcnTagMesa.Text = $"{strMesa}  {objPedido.StrCodigoComanda}"
+                lblCcnTagMesa.Text = $"{strPrefijoFifo}{strMesa} {objPedido.StrCodigoComanda}"
             End If
 
             ' 2. Imagen del plato principal gastronómico
             Dim strPlatoPrincipal As String = objPedido.ObtenerPlatoPrincipalNombre()
             picCcnMiniaturaPlato.Image = CcnImagenPlatoHelper.GenerarImagenPlato(strPlatoPrincipal, picCcnMiniaturaPlato.Width, picCcnMiniaturaPlato.Height)
 
-            ' 3. Metadatos unificados: Cliente, Servicio y Tiempo
+            ' 3. Metadatos unificados: Cliente, Servicio y Tiempo de Espera FIFO
             lblCcnNombreCliente.Text = $"👤 Cliente: {If(String.IsNullOrWhiteSpace(objPedido.StrNombreCliente), "Cliente General", objPedido.StrNombreCliente)}"
             lblCcnTipoServicioMesa.Text = objPedido.ObtenerEtiquetaServicioMesa()
 
-            ' Tiempo transcurrido con alerta de semaforización
+            ' Tiempo transcurrido con alerta de semaforización según la Ley de FIFO
             Dim intMinutos As Integer = objPedido.ObtenerMinutosTranscurridos()
-            lblCcnTiempoTranscurrido.Text = $"⏱ {objPedido.FormatearTiempoTranscurrido()}"
+            Dim strEsperaInfo As String = If(objPedido.IntPosicionFifo > 0, $"⏱ FIFO [{objPedido.IntPosicionFifo}]: {objPedido.FormatearTiempoTranscurrido()}", $"⏱ Espera: {objPedido.FormatearTiempoTranscurrido()}")
+            lblCcnTiempoTranscurrido.Text = strEsperaInfo
 
             If intMinutos >= 15 AndAlso objPedido.EnumEstado <> CcnEstadoPedidoEnum.Listo Then
                 lblCcnTiempoTranscurrido.ForeColor = ThemeConfig.ColorDanger
+                lblCcnTiempoTranscurrido.Font = ThemeConfig.ObtenerFuenteCuerpo(8.5F, FontStyle.Bold)
+            ElseIf intMinutos >= 10 AndAlso objPedido.EnumEstado <> CcnEstadoPedidoEnum.Listo Then
+                lblCcnTiempoTranscurrido.ForeColor = ThemeConfig.ColorWarning
                 lblCcnTiempoTranscurrido.Font = ThemeConfig.ObtenerFuenteCuerpo(8.5F, FontStyle.Bold)
             Else
                 lblCcnTiempoTranscurrido.ForeColor = ThemeConfig.ColorTextMuted
@@ -95,15 +100,15 @@ Namespace Views.Cocina.Controles
             Select Case enumEstado
                 Case CcnEstadoPedidoEnum.Recibido
                     pnlCcnBordeSuperior.BackColor = ThemeConfig.ColorWarning
-                    lblCcnBadgeEstado.Text = "⏳ Pendiente"
+                    lblCcnBadgeEstado.Text = "⏳ En Espera"
                     lblCcnBadgeEstado.BackColor = Color.FromArgb(254, 243, 230)
                     lblCcnBadgeEstado.ForeColor = ThemeConfig.ColorWarning
-                    btnCcnAccionPrincipal.Text = "🍳 Enviar a Cocina"
+                    btnCcnAccionPrincipal.Text = "👨‍🍳 Iniciar Preparación"
                     btnCcnAccionPrincipal.BackColor = ThemeConfig.ColorPrimary
 
                 Case CcnEstadoPedidoEnum.EnPreparacion
                     pnlCcnBordeSuperior.BackColor = ThemeConfig.ColorPrimary
-                    lblCcnBadgeEstado.Text = "🔥 En Cocina"
+                    lblCcnBadgeEstado.Text = "🔥 En Preparación"
                     lblCcnBadgeEstado.BackColor = ThemeConfig.ColorPrimaryLight
                     lblCcnBadgeEstado.ForeColor = ThemeConfig.ColorPrimaryDark
                     btnCcnAccionPrincipal.Text = "✔ Marcar Listo"
@@ -111,11 +116,16 @@ Namespace Views.Cocina.Controles
 
                 Case CcnEstadoPedidoEnum.Listo
                     pnlCcnBordeSuperior.BackColor = ThemeConfig.ColorTertiarySuccess
-                    lblCcnBadgeEstado.Text = "✔ Listo para Entrega"
+                    lblCcnBadgeEstado.Text = "✔ Listo para Servir"
                     lblCcnBadgeEstado.BackColor = ThemeConfig.ColorTertiaryLight
                     lblCcnBadgeEstado.ForeColor = ThemeConfig.ColorTertiarySuccess
-                    btnCcnAccionPrincipal.Text = "📦 Entregar & Finalizar"
-                    btnCcnAccionPrincipal.BackColor = ThemeConfig.ColorSecondary
+                    If _objPedidoModel IsNot Nothing AndAlso _objPedidoModel.BlnEstaPagado Then
+                        btnCcnAccionPrincipal.Text = "📦 Despachar / Entregado"
+                        btnCcnAccionPrincipal.BackColor = ThemeConfig.ColorSecondary
+                    Else
+                        btnCcnAccionPrincipal.Text = "🔒 Bloqueado (Cobrar en Caja)"
+                        btnCcnAccionPrincipal.BackColor = ThemeConfig.ColorDanger
+                    End If
 
                 Case Else
                     pnlCcnBordeSuperior.BackColor = ThemeConfig.ColorBorder
@@ -223,7 +233,24 @@ Namespace Views.Cocina.Controles
         ''' Controla el clic en el botón de acción para avanzar el pedido en el ciclo de vida de cocina.
         ''' </summary>
         Private Sub btnCcnAccionPrincipal_Click(ByVal sender As Object, ByVal e As EventArgs) Handles btnCcnAccionPrincipal.Click
-            If _objPedidoModel Is Nothing OrElse Not _objPedidoModel.PuedeAvanzarEstado() Then Return
+            If _objPedidoModel Is Nothing Then Return
+
+            ' Validación estricta de cobro previo al despacho:
+            If _objPedidoModel.EnumEstado = CcnEstadoPedidoEnum.Listo AndAlso Not _objPedidoModel.BlnEstaPagado Then
+                MessageBox.Show(
+                    $"⛔ DESPACHO BLOQUEADO:{Environment.NewLine}{Environment.NewLine}" &
+                    $"La comanda {_objPedidoModel.StrCodigoComanda} para {_objPedidoModel.StrNombreCliente} ({_objPedidoModel.ObtenerEtiquetaServicioMesa()}) " &
+                    $"aún NO ha sido pagada en Caja (Monto: ${_objPedidoModel.CalcularTotal():N2}).{Environment.NewLine}{Environment.NewLine}" &
+                    $"Por política del restaurante, todo producto debe ser pagado antes de ser entregado o despachado al cliente. " &
+                    $"El botón se habilitará automáticamente al registrar el cobro en Caja.",
+                    "Validación de Pago Requerido",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning
+                )
+                Return
+            End If
+
+            If Not _objPedidoModel.PuedeAvanzarEstado() Then Return
 
             Dim enumProximoEstado As CcnEstadoPedidoEnum = _objPedidoModel.ObtenerProximoEstado()
             RaiseEvent CcnCambioEstadoSolicitado(Me, _objPedidoModel.IntIdPedido, enumProximoEstado)
@@ -262,10 +289,14 @@ Namespace Views.Cocina.Controles
             If _objPedidoModel Is Nothing Then Return
 
             Dim intMinutos As Integer = _objPedidoModel.ObtenerMinutosTranscurridos()
-            lblCcnTiempoTranscurrido.Text = $"⏱ {_objPedidoModel.FormatearTiempoTranscurrido()}"
+            Dim strEsperaInfo As String = If(_objPedidoModel.IntPosicionFifo > 0, $"⏱ FIFO [{_objPedidoModel.IntPosicionFifo}]: {_objPedidoModel.FormatearTiempoTranscurrido()}", $"⏱ Espera: {_objPedidoModel.FormatearTiempoTranscurrido()}")
+            lblCcnTiempoTranscurrido.Text = strEsperaInfo
 
             If intMinutos >= 15 AndAlso _objPedidoModel.EnumEstado <> CcnEstadoPedidoEnum.Listo Then
                 lblCcnTiempoTranscurrido.ForeColor = ThemeConfig.ColorDanger
+                lblCcnTiempoTranscurrido.Font = ThemeConfig.ObtenerFuenteCuerpo(8.5F, FontStyle.Bold)
+            ElseIf intMinutos >= 10 AndAlso _objPedidoModel.EnumEstado <> CcnEstadoPedidoEnum.Listo Then
+                lblCcnTiempoTranscurrido.ForeColor = ThemeConfig.ColorWarning
                 lblCcnTiempoTranscurrido.Font = ThemeConfig.ObtenerFuenteCuerpo(8.5F, FontStyle.Bold)
             Else
                 lblCcnTiempoTranscurrido.ForeColor = ThemeConfig.ColorTextMuted

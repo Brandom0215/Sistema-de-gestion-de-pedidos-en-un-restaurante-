@@ -47,15 +47,61 @@ Namespace Views.Cocina
 
             If Not String.IsNullOrWhiteSpace(_strClienteLogueado) Then
                 lblCcnTituloPrincipal.Text = $"Menú Digital & Comandas ({_strClienteLogueado})"
-                btnCcnNuevoPedido.Text = "➕ Realizar Pedido"
             End If
 
             SincronizarComandasDesdeDAO()
             RefrescarMonitorComandas()
 
-            ' Iniciar temporizador en tiempo real
-            tmrCcnActualizadorRealTime.Interval = 10000
+            ' Suscribir a notificaciones de persistencia en tiempo real de PedidoDAO
+            PedidoDAO.SuscribirPedidoRegistrado(AddressOf OnPedidoRegistradoDesdeDAO)
+            PedidoDAO.SuscribirPedidoModificado(AddressOf OnPedidoModificadoDesdeDAO)
+
+            ' Iniciar temporizador en tiempo real (3 segundos para respuesta inmediata)
+            tmrCcnActualizadorRealTime.Interval = 3000
             tmrCcnActualizadorRealTime.Start()
+        End Sub
+
+        Private Sub FrmCcnMonitorCocina_FormClosed(ByVal sender As Object, ByVal e As FormClosedEventArgs) Handles MyBase.FormClosed
+            tmrCcnActualizadorRealTime.Stop()
+            PedidoDAO.DesuscribirPedidoRegistrado(AddressOf OnPedidoRegistradoDesdeDAO)
+            PedidoDAO.DesuscribirPedidoModificado(AddressOf OnPedidoModificadoDesdeDAO)
+        End Sub
+
+        ''' <summary>
+        ''' Notificación reactiva inmediata cuando el cliente confirma un pedido en la base de datos.
+        ''' </summary>
+        Private Sub OnPedidoRegistradoDesdeDAO(ByVal idPedido As Integer)
+            If Me.IsDisposed OrElse Not Me.IsHandleCreated Then Return
+
+            If Me.InvokeRequired Then
+                Me.BeginInvoke(New Action(Of Integer)(AddressOf OnPedidoRegistradoDesdeDAO), idPedido)
+                Return
+            End If
+
+            SincronizarComandasDesdeDAO()
+            RefrescarMonitorComandas()
+
+            If _blnCcnSonidoHabilitado Then
+                Try
+                    System.Media.SystemSounds.Asterisk.Play()
+                Catch
+                End Try
+            End If
+        End Sub
+
+        ''' <summary>
+        ''' Notificación reactiva cuando un pedido cambia de estado en Caja o Facturación.
+        ''' </summary>
+        Private Sub OnPedidoModificadoDesdeDAO(ByVal idPedido As Integer)
+            If Me.IsDisposed OrElse Not Me.IsHandleCreated Then Return
+
+            If Me.InvokeRequired Then
+                Me.BeginInvoke(New Action(Of Integer)(AddressOf OnPedidoModificadoDesdeDAO), idPedido)
+                Return
+            End If
+
+            SincronizarComandasDesdeDAO()
+            RefrescarMonitorComandas()
         End Sub
 
         ' =========================================================================
@@ -91,7 +137,6 @@ Namespace Views.Cocina
             lblCcnKpiVentasValor.ForeColor = ThemeConfig.ColorPrimaryDark
 
             ' Estilizado de botones y controles de filtro
-            ThemeConfig.EstilizarBotonPrimario(btnCcnNuevoPedido)
             ThemeConfig.EstilizarBotonSecundario(btnCcnAlertaSonora)
             ThemeConfig.EstilizarBotonSecundario(btnCcnRefrescarManual)
 
@@ -100,7 +145,7 @@ Namespace Views.Cocina
 
         Private Sub InicializarCriteriosOrdenamiento()
             cboCcnCriterioOrden.Items.Clear()
-            cboCcnCriterioOrden.Items.Add("Más antiguos primero (Prioridad)")
+            cboCcnCriterioOrden.Items.Add("⭐ Cola FIFO (Primero en Entrar, Primero en Salir)")
             cboCcnCriterioOrden.Items.Add("Más recientes primero")
             cboCcnCriterioOrden.SelectedIndex = 0
         End Sub
@@ -125,7 +170,7 @@ Namespace Views.Cocina
         ' =========================================================================
 
         ''' <summary>
-        ''' Refresca el lienzo de comandas aplicando filtros, ordenamiento y actualizando los KPIs.
+        ''' Refresca el lienzo de comandas aplicando filtros, ordenamiento FIFO y actualizando los KPIs.
         ''' </summary>
         Public Sub RefrescarMonitorComandas()
             flpCcnContenedorComandas.SuspendLayout()
@@ -144,11 +189,16 @@ Namespace Views.Cocina
             If cboCcnCriterioOrden.SelectedIndex = 1 Then
                 lstFiltrada = lstFiltrada.OrderByDescending(Function(p) p.DtHoraRegistro)
             Else
-                lstFiltrada = lstFiltrada.OrderBy(Function(p) p.DtHoraRegistro)
+                ' Ley de FIFO: Primero en Entrar, Primero en Salir / Atender
+                lstFiltrada = lstFiltrada.OrderBy(Function(p) p.DtHoraRegistro).ThenBy(Function(p) p.IntIdPedido)
             End If
 
-            ' 3. Instanciar y cargar cada tarjeta interactiva
+            ' 3. Instanciar y cargar cada tarjeta interactiva asignando el turno FIFO correspondiente
+            Dim intPosicionFifo As Integer = 1
             For Each objComanda As CcnPedidoModel In lstFiltrada
+                objComanda.IntPosicionFifo = intPosicionFifo
+                intPosicionFifo += 1
+
                 Dim ucTarjeta As New UcCcnTarjetaComanda()
                 ucTarjeta.CargarComanda(objComanda)
                 AddHandler ucTarjeta.CcnCambioEstadoSolicitado, AddressOf OnCcnCambioEstadoSolicitado
@@ -168,6 +218,17 @@ Namespace Views.Cocina
             Dim objPedidoObjetivo As CcnPedidoModel = _lstCcnComandas.FirstOrDefault(Function(p) p.IntIdPedido = intIdPedido)
 
             If objPedidoObjetivo IsNot Nothing Then
+                ' Validación de seguridad: no permitir transición a Entregado si no ha sido pagado
+                If enumNuevoEstado = CcnEstadoPedidoEnum.Entregado AndAlso Not objPedidoObjetivo.BlnEstaPagado Then
+                    MessageBox.Show(
+                        $"No es posible entregar la comanda {objPedidoObjetivo.StrCodigoComanda} porque su pago aún no ha sido confirmado en el Módulo de Cobro / Caja.",
+                        "Entrega No Permitida",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Warning
+                    )
+                    Return
+                End If
+
                 objPedidoObjetivo.EnumEstado = enumNuevoEstado
 
                 ' Sincronizar actualización de ciclo de vida con el repositorio centralizado DAO
@@ -272,15 +333,6 @@ Namespace Views.Cocina
             RefrescarMonitorComandas()
         End Sub
 
-        Private Sub btnCcnNuevoPedido_Click(ByVal sender As Object, ByVal e As EventArgs) Handles btnCcnNuevoPedido.Click
-            Using frmNuevo As New FrmCcnNuevoPedidoDialog(_strClienteLogueado)
-                If frmNuevo.ShowDialog(Me) = DialogResult.OK Then
-                    SincronizarComandasDesdeDAO()
-                    RefrescarMonitorComandas()
-                End If
-            End Using
-        End Sub
-
         Private Sub btnCcnRefrescarManual_Click(ByVal sender As Object, ByVal e As EventArgs) Handles btnCcnRefrescarManual.Click
             SincronizarComandasDesdeDAO()
             RefrescarMonitorComandas()
@@ -291,35 +343,10 @@ Namespace Views.Cocina
             btnCcnAlertaSonora.Text = If(_blnCcnSonidoHabilitado, "🔔", "🔕")
         End Sub
 
+        ''' <summary>
+        ''' Actualiza el cronómetro visual de espera FIFO y recalcula las métricas KPI periódicamente.
+        ''' </summary>
         Private Sub tmrCcnActualizadorRealTime_Tick(ByVal sender As Object, ByVal e As EventArgs) Handles tmrCcnActualizadorRealTime.Tick
-            ' 1. Sincronizar en segundo plano cambios de pago (Caja) o facturación (Facturación PDF) desde PedidoDAO
-            Dim lstDAO As List(Of CcnPedidoModel) = PedidoDAO.ObtenerComandasCocina()
-            If lstDAO IsNot Nothing Then
-                Dim blnRequiereRefrescoVisual As Boolean = False
-                For Each itemDAO In lstDAO
-                    Dim actual = _lstCcnComandas.FirstOrDefault(Function(c) c.IntIdPedido = itemDAO.IntIdPedido)
-                    If actual IsNot Nothing Then
-                        If actual.BlnEstaPagado <> itemDAO.BlnEstaPagado OrElse actual.BlnFacturado <> itemDAO.BlnFacturado Then
-                            actual.BlnEstaPagado = itemDAO.BlnEstaPagado
-                            actual.StrMetodoPago = itemDAO.StrMetodoPago
-                            actual.BlnFacturado = itemDAO.BlnFacturado
-                            actual.StrNumeroFactura = itemDAO.StrNumeroFactura
-                            blnRequiereRefrescoVisual = True
-                        End If
-                    Else
-                        ' Nuevo pedido ingresado por cliente o cajero externamente
-                        _lstCcnComandas.Add(itemDAO)
-                        blnRequiereRefrescoVisual = True
-                    End If
-                Next
-
-                If blnRequiereRefrescoVisual Then
-                    RefrescarMonitorComandas()
-                    Return
-                End If
-            End If
-
-            ' 2. Actualiza los tiempos transcurridos en pantalla de manera fluida
             For Each ctl As Control In flpCcnContenedorComandas.Controls
                 If TypeOf ctl Is UcCcnTarjetaComanda Then
                     DirectCast(ctl, UcCcnTarjetaComanda).ActualizarCronometro()

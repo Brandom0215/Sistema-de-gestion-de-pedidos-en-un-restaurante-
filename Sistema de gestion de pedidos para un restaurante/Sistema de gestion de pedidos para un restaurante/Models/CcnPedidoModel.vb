@@ -48,6 +48,9 @@ Namespace Models
         ''' <summary> Número fiscal de factura asignado (ej. FAC-2026-1001) </summary>
         Public Property StrNumeroFactura As String
 
+        ''' <summary> Posición o turno asignado en la cola según la Ley de FIFO (1 = primero en la fila) </summary>
+        Public Property IntPosicionFifo As Integer
+
         Public Sub New()
             Me.IntIdPedido = 0
             Me.StrCodigoComanda = String.Empty
@@ -153,8 +156,12 @@ Namespace Models
 
         ''' <summary>
         ''' Determina si el pedido puede avanzar al siguiente estado operativo en cocina.
+        ''' Regla de negocio estricta: Todo pedido debe estar PAGADO para poder ser entregado o despachado.
         ''' </summary>
         Public Function PuedeAvanzarEstado() As Boolean
+            If Me.EnumEstado = CcnEstadoPedidoEnum.Listo AndAlso Not Me.BlnEstaPagado Then
+                Return False
+            End If
             Return Me.EnumEstado < CcnEstadoPedidoEnum.Entregado
         End Function
 

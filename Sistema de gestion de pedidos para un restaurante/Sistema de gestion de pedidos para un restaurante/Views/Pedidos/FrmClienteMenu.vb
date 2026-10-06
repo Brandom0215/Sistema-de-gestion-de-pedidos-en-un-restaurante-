@@ -390,6 +390,15 @@ Namespace Views.Pedidos
             Return String.Join(", ", lista)
         End Function
 
+        Private Function ObtenerExtrasEstructurados() As List(Of Tuple(Of String, Integer, Decimal))
+            Dim lista As New List(Of Tuple(Of String, Integer, Decimal))()
+            If chkExtraSoda.Checked Then lista.Add(Tuple.Create("Soda Nacional (Bebida)", Convert.ToInt32(numExtraSoda.Value), 1.50D))
+            If chkExtraJugo.Checked Then lista.Add(Tuple.Create("Chicha de Nance (Bebida)", Convert.ToInt32(numExtraJugo.Value), 2.00D))
+            If chkExtraPapas.Checked Then lista.Add(Tuple.Create("Chicha de Limón c/ Raspadura (Bebida)", Convert.ToInt32(numExtraPapas.Value), 1.75D))
+            If chkExtraEnsalada.Checked Then lista.Add(Tuple.Create("Chicha de Naranja (Bebida)", Convert.ToInt32(numExtraEnsalada.Value), 1.75D))
+            Return lista
+        End Function
+
         Private Sub btnConfirmarPedido_Click(sender As Object, e As EventArgs) Handles btnConfirmarPedido.Click
             If _tablaCarrito.Rows.Count = 0 Then
                 MostrarMensajeAdvertencia("El carrito de compras está vacío. Agregue al menos un plato.", "Carrito Vacío")
@@ -410,31 +419,56 @@ Namespace Views.Pedidos
                 Return
             End If
 
-            ' Resumen del pedido
+            ' Calcular total final con precisión decimal
+            Dim subtotalCarrito As Decimal = 0D
             Dim listaPlatosResumen As New List(Of String)()
             For Each row As DataRow In _tablaCarrito.Rows
+                subtotalCarrito += Convert.ToDecimal(row("Subtotal"))
                 listaPlatosResumen.Add($"{row("Cant")}x {row("Plato")}")
             Next
+
+            Dim extrasMonto As Decimal = 0D
+            If chkExtraSoda.Checked Then extrasMonto += (1.50D * Convert.ToDecimal(numExtraSoda.Value))
+            If chkExtraJugo.Checked Then extrasMonto += (2.00D * Convert.ToDecimal(numExtraJugo.Value))
+            If chkExtraPapas.Checked Then extrasMonto += (1.75D * Convert.ToDecimal(numExtraPapas.Value))
+            If chkExtraEnsalada.Checked Then extrasMonto += (1.75D * Convert.ToDecimal(numExtraEnsalada.Value))
+
+            Dim totalFinal As Decimal = subtotalCarrito + extrasMonto
             Dim descripcionPlatos As String = String.Join(" + ", listaPlatosResumen)
             Dim servicio As String = cboTipoServicio.SelectedItem.ToString()
-            Dim extras As String = ObtenerExtrasSeleccionados()
+            Dim extrasTexto As String = ObtenerExtrasSeleccionados()
+            Dim extrasEstructurados As List(Of Tuple(Of String, Integer, Decimal)) = ObtenerExtrasEstructurados()
 
-            ' Registrar pedido completo en el DAO compartido
-            Dim idPedidoGenerado As Integer = PedidoDAO.Guardar(nombreCliente, mesaODireccion, descripcionPlatos, extras, servicio)
+            ' Registrar pedido completo en la BD / DAO compartido con desglose exacto de cada plato
+            Dim idPedidoGenerado As Integer = PedidoDAO.GuardarPedidoCompleto(
+                nombreCliente,
+                mesaODireccion,
+                servicio,
+                totalFinal,
+                _tablaCarrito,
+                extrasEstructurados,
+                "PENDIENTE",
+                "",
+                "RECIBIDO"
+            )
 
-            MostrarMensajeExito($"¡Pedido #{idPedidoGenerado} registrado con éxito!{vbCrLf}{vbCrLf}Cliente: {nombreCliente}{vbCrLf}Servicio: {servicio} ({mesaODireccion}){vbCrLf}Ítems en Carrito: {descripcionPlatos}{vbCrLf}Extras: {extras}{vbCrLf}Total: {lblMontoTotal.Text}{vbCrLf}{vbCrLf}Su comanda ha sido enviada al Monitor de Cocina KDS y Caja.", "Pedido Confirmado")
+            If idPedidoGenerado > 0 Then
+                MostrarMensajeExito($"¡Pedido #{idPedidoGenerado} registrado con éxito!{vbCrLf}{vbCrLf}👤 Cliente: {nombreCliente}{vbCrLf}📍 Servicio: {servicio} ({mesaODireccion}){vbCrLf}🍽 Menú Elegido: {descripcionPlatos}{vbCrLf}🥤 Bebidas/Extras: {extrasTexto}{vbCrLf}💵 Total a Pagar: ${totalFinal:N2}{vbCrLf}{vbCrLf}⚡ Su comanda ha sido enviada al Monitor de Cocina KDS y entra en la cola prioritaria según la Ley de FIFO (Primero en Entrar, Primero en Salir).", "Pedido Confirmado")
 
-            ' Limpiar carrito e insumos
-            _tablaCarrito.Rows.Clear()
-            chkExtraSoda.Checked = False
-            chkExtraJugo.Checked = False
-            chkExtraPapas.Checked = False
-            chkExtraEnsalada.Checked = False
-            numExtraSoda.Value = 1
-            numExtraJugo.Value = 1
-            numExtraPapas.Value = 1
-            numExtraEnsalada.Value = 1
-            CalcularTotalGeneral()
+                ' Limpiar carrito e insumos
+                _tablaCarrito.Rows.Clear()
+                chkExtraSoda.Checked = False
+                chkExtraJugo.Checked = False
+                chkExtraPapas.Checked = False
+                chkExtraEnsalada.Checked = False
+                numExtraSoda.Value = 1
+                numExtraJugo.Value = 1
+                numExtraPapas.Value = 1
+                numExtraEnsalada.Value = 1
+                CalcularTotalGeneral()
+            Else
+                MostrarMensajeAdvertencia("Ocurrió un error al registrar el pedido en la base de datos.", "Error de Registro")
+            End If
         End Sub
 
     End Class
