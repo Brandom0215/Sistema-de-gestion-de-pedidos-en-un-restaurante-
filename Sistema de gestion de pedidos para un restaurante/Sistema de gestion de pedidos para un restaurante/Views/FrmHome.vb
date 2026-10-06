@@ -98,6 +98,7 @@ Namespace Views
                 btnNavCliente.Text = "  Carta & Pedidos"
                 btnNavCocina.Visible = False
                 btnNavCobroAdmin.Visible = False
+                btnNavFacturacion.Visible = False
                 btnNavMetricas.Visible = False
                 btnNavCatalogo.Visible = False
             Else
@@ -112,23 +113,27 @@ Namespace Views
                         btnNavCocina.Visible = True
                         btnNavCocina.Text = "  Monitor de Cocina"
                         btnNavCobroAdmin.Visible = False
+                        btnNavFacturacion.Visible = False
                         btnNavMetricas.Visible = False
                         btnNavCatalogo.Visible = False
                     Case Models.RolUsuarioEnum.Cajero
-                        ' CAJERO TIENE ACCESO A TOMA DE PEDIDOS Y CAJA/COBROS
+                        ' CAJERO TIENE ACCESO A TOMA DE PEDIDOS, CAJA/COBROS E HISTORIAL DE FACTURAS
                         btnNavCliente.Visible = True
                         btnNavCliente.Text = "  Toma de Pedidos"
                         btnNavCocina.Visible = False
                         btnNavCobroAdmin.Visible = True
                         btnNavCobroAdmin.Text = "  Caja & Cobros"
+                        btnNavFacturacion.Visible = True
+                        btnNavFacturacion.Text = "  Historial Facturas"
                         btnNavMetricas.Visible = False
                         btnNavCatalogo.Visible = False
                     Case Else
                         ' ADMINISTRADOR: ÚNICAMENTE MÉTRICAS/INGRESOS Y GESTIÓN DE MENÚ/PLATOS
-                        ' Todos los demás apartados (Pedidos, Cocina, Caja/Cobros) se quitan de su vista
+                        ' Todos los demás apartados (Pedidos, Cocina, Caja/Cobros, Facturas) se quitan de su vista
                         btnNavCliente.Visible = False
                         btnNavCocina.Visible = False
                         btnNavCobroAdmin.Visible = False
+                        btnNavFacturacion.Visible = False
                         btnNavMetricas.Visible = True
                         btnNavMetricas.Text = "  Métricas & Ingresos"
                         btnNavCatalogo.Visible = True
@@ -144,7 +149,7 @@ Namespace Views
         ''' </summary>
         Private Sub ReorganizarBotonesMenu()
             Dim intPosicionY As Integer = 110
-            Dim arrBotones = {btnNavCliente, btnNavCocina, btnNavCobroAdmin, btnNavMetricas, btnNavCatalogo}
+            Dim arrBotones = {btnNavCliente, btnNavCocina, btnNavCobroAdmin, btnNavFacturacion, btnNavMetricas, btnNavCatalogo}
             For Each btn In arrBotones
                 If btn IsNot Nothing AndAlso btn.Visible Then
                     btn.Location = New Point(6, intPosicionY)
@@ -254,7 +259,7 @@ Namespace Views
             ThemeConfig.EstilizarBotonPrimario(btnAccesoPersonal)
             ThemeConfig.EstilizarBotonEliminar(btnCerrarSesion)
 
-            Dim botonesNav = {btnNavCliente, btnNavCocina, btnNavCobroAdmin, btnNavMetricas, btnNavCatalogo}
+            Dim botonesNav = {btnNavCliente, btnNavCocina, btnNavCobroAdmin, btnNavFacturacion, btnNavMetricas, btnNavCatalogo}
             For Each btn In botonesNav
                 If btn IsNot Nothing Then
                     ThemeConfig.EstilizarBotonNavegacion(btn, False)
@@ -266,7 +271,7 @@ Namespace Views
         Private Sub SeleccionarBotonNavegacion(btnSeleccionado As Button, tituloModulo As String)
             If btnSeleccionado Is Nothing Then Return
 
-            Dim botonesNav = {btnNavCliente, btnNavCocina, btnNavCobroAdmin, btnNavMetricas, btnNavCatalogo}
+            Dim botonesNav = {btnNavCliente, btnNavCocina, btnNavCobroAdmin, btnNavFacturacion, btnNavMetricas, btnNavCatalogo}
             For Each btn In botonesNav
                 If btn IsNot Nothing Then
                     ThemeConfig.EstilizarBotonNavegacion(btn, False)
@@ -300,6 +305,11 @@ Namespace Views
             Dim tituloVista As String = If(_rolUsuario.Contains("Cajero"), "Caja & Procesamiento de Pagos", "Caja y Administración")
             SeleccionarBotonNavegacion(btnNavCobroAdmin, tituloVista)
             AbrirFormularioEnPanel(Of Caja.FrmCajaCobros)()
+        End Sub
+
+        Private Sub btnNavFacturacion_Click(sender As Object, e As EventArgs) Handles btnNavFacturacion.Click
+            SeleccionarBotonNavegacion(btnNavFacturacion, "Historial de Facturación & Archivo Fiscal")
+            AbrirFormularioEnPanel(Of Facturacion.FrmFacturacionPDF)()
         End Sub
 
         Private Sub btnNavMetricas_Click(sender As Object, e As EventArgs) Handles btnNavMetricas.Click

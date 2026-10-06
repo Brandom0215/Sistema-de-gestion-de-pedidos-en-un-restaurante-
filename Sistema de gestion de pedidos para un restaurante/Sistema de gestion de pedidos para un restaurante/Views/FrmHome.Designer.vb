@@ -37,6 +37,7 @@ Namespace Views
     Friend WithEvents btnNavCliente As System.Windows.Forms.Button
     Friend WithEvents btnNavCocina As System.Windows.Forms.Button
     Friend WithEvents btnNavCobroAdmin As System.Windows.Forms.Button
+    Friend WithEvents btnNavFacturacion As System.Windows.Forms.Button
     Friend WithEvents btnNavMetricas As System.Windows.Forms.Button
     Friend WithEvents btnNavCatalogo As System.Windows.Forms.Button
 
@@ -76,6 +77,7 @@ Namespace Views
         Me.btnNavCliente = New System.Windows.Forms.Button()
         Me.btnNavCocina = New System.Windows.Forms.Button()
         Me.btnNavCobroAdmin = New System.Windows.Forms.Button()
+        Me.btnNavFacturacion = New System.Windows.Forms.Button()
         Me.btnNavMetricas = New System.Windows.Forms.Button()
         Me.btnNavCatalogo = New System.Windows.Forms.Button()
 
@@ -110,6 +112,7 @@ Namespace Views
         Me.pnlSidebar.Controls.Add(Me.btnCerrarSesion)
         Me.pnlSidebar.Controls.Add(Me.btnNavCatalogo)
         Me.pnlSidebar.Controls.Add(Me.btnNavMetricas)
+        Me.pnlSidebar.Controls.Add(Me.btnNavFacturacion)
         Me.pnlSidebar.Controls.Add(Me.btnNavCobroAdmin)
         Me.pnlSidebar.Controls.Add(Me.btnNavCocina)
         Me.pnlSidebar.Controls.Add(Me.btnNavCliente)
@@ -232,6 +235,18 @@ Namespace Views
         Me.btnNavCobroAdmin.Text = "  💵 Módulo Cobro / Admin"
         Me.btnNavCobroAdmin.UseVisualStyleBackColor = True
         Me.btnNavCobroAdmin.UseMnemonic = False
+
+        ' 
+        ' btnNavFacturacion
+        ' 
+        Me.btnNavFacturacion.Location = New System.Drawing.Point(6, 284)
+        Me.btnNavFacturacion.Name = "btnNavFacturacion"
+        Me.btnNavFacturacion.Size = New System.Drawing.Size(238, 48)
+        Me.btnNavFacturacion.TabIndex = 5
+        Me.btnNavFacturacion.Text = "  📜 Historial Facturas"
+        Me.btnNavFacturacion.UseVisualStyleBackColor = True
+        Me.btnNavFacturacion.UseMnemonic = False
+        Me.btnNavFacturacion.Visible = False
 
         ' 
         ' btnNavMetricas

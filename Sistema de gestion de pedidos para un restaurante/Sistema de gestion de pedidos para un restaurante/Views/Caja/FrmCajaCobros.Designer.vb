@@ -185,7 +185,8 @@ Namespace Views.Caja
             '
             Me.dgvPedidosPendientes.AllowUserToAddRows = False
             Me.dgvPedidosPendientes.AllowUserToDeleteRows = False
-            Me.dgvPedidosPendientes.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.Fill
+            Me.dgvPedidosPendientes.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.None
+            Me.dgvPedidosPendientes.ScrollBars = System.Windows.Forms.ScrollBars.Both
             Me.dgvPedidosPendientes.BackgroundColor = System.Drawing.Color.White
             Me.dgvPedidosPendientes.BorderStyle = System.Windows.Forms.BorderStyle.None
             Me.dgvPedidosPendientes.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize
