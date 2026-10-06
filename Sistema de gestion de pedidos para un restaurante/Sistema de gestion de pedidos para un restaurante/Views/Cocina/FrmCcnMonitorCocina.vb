@@ -10,8 +10,8 @@ Imports Sistema_de_gestion_de_pedidos_para_un_restaurante.Views.Cocina.Controles
 
 Namespace Views.Cocina
     ''' <summary>
-    ''' Formulario de Monitor de Cocina (KDS - Kitchen Display System).
-    ''' Permite al personal de cocina recibir comandas en tiempo real, monitorear tiempos FIFO,
+    ''' Formulario de Monitor de Cocina y Despacho de Pedidos.
+    ''' Permite al personal de cocina recibir comandas en tiempo real, monitorear tiempos de espera,
     ''' gestionar transiciones de estado (Recibido -> En Preparación -> Listo -> Entregado) y filtrar por canal.
     ''' Conectado bidireccionalmente con el repositorio DAO para reflejar pedidos de clientes,
     ''' pagos realizados en Caja y facturación electrónica PDF.
@@ -145,7 +145,7 @@ Namespace Views.Cocina
 
         Private Sub InicializarCriteriosOrdenamiento()
             cboCcnCriterioOrden.Items.Clear()
-            cboCcnCriterioOrden.Items.Add("⭐ Cola FIFO (Primero en Entrar, Primero en Salir)")
+            cboCcnCriterioOrden.Items.Add("⭐ Por orden de llegada (Atender primeros)")
             cboCcnCriterioOrden.Items.Add("Más recientes primero")
             cboCcnCriterioOrden.SelectedIndex = 0
         End Sub
@@ -170,7 +170,7 @@ Namespace Views.Cocina
         ' =========================================================================
 
         ''' <summary>
-        ''' Refresca el lienzo de comandas aplicando filtros, ordenamiento FIFO y actualizando los KPIs.
+        ''' Refresca el lienzo de comandas aplicando filtros, orden de llegada por turnos y actualizando métricas.
         ''' </summary>
         Public Sub RefrescarMonitorComandas()
             flpCcnContenedorComandas.SuspendLayout()
@@ -185,19 +185,19 @@ Namespace Views.Cocina
                 lstFiltrada = lstFiltrada.Where(Function(p) p.StrTipoServicio.IndexOf("Entrega", StringComparison.OrdinalIgnoreCase) >= 0 OrElse p.StrTipoServicio.IndexOf("Llevar", StringComparison.OrdinalIgnoreCase) >= 0)
             End If
 
-            ' 2. Aplicar Criterio de Ordenamiento (FIFO - más antiguos primero por defecto)
+            ' 2. Aplicar Criterio de Ordenamiento (Por orden de llegada - más antiguos primero por defecto)
             If cboCcnCriterioOrden.SelectedIndex = 1 Then
                 lstFiltrada = lstFiltrada.OrderByDescending(Function(p) p.DtHoraRegistro)
             Else
-                ' Ley de FIFO: Primero en Entrar, Primero en Salir / Atender
+                ' Regla de servicio: Atender primero a quienes llegaron primero (orden de turnos)
                 lstFiltrada = lstFiltrada.OrderBy(Function(p) p.DtHoraRegistro).ThenBy(Function(p) p.IntIdPedido)
             End If
 
-            ' 3. Instanciar y cargar cada tarjeta interactiva asignando el turno FIFO correspondiente
-            Dim intPosicionFifo As Integer = 1
+            ' 3. Instanciar y cargar cada tarjeta interactiva asignando el turno correspondiente
+            Dim intPosicionTurno As Integer = 1
             For Each objComanda As CcnPedidoModel In lstFiltrada
-                objComanda.IntPosicionFifo = intPosicionFifo
-                intPosicionFifo += 1
+                objComanda.IntPosicionFifo = intPosicionTurno
+                intPosicionTurno += 1
 
                 Dim ucTarjeta As New UcCcnTarjetaComanda()
                 ucTarjeta.CargarComanda(objComanda)
@@ -344,7 +344,7 @@ Namespace Views.Cocina
         End Sub
 
         ''' <summary>
-        ''' Actualiza el cronómetro visual de espera FIFO y recalcula las métricas KPI periódicamente.
+        ''' Actualiza el cronómetro visual de tiempo de espera y recalcula las métricas del turno periódicamente.
         ''' </summary>
         Private Sub tmrCcnActualizadorRealTime_Tick(ByVal sender As Object, ByVal e As EventArgs) Handles tmrCcnActualizadorRealTime.Tick
             For Each ctl As Control In flpCcnContenedorComandas.Controls

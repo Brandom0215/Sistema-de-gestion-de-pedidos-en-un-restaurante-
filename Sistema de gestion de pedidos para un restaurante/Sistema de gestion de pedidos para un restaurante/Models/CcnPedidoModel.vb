@@ -48,7 +48,7 @@ Namespace Models
         ''' <summary> Número fiscal de factura asignado (ej. FAC-2026-1001) </summary>
         Public Property StrNumeroFactura As String
 
-        ''' <summary> Posición o turno asignado en la cola según la Ley de FIFO (1 = primero en la fila) </summary>
+        ''' <summary> Posición o turno asignado en la cola según orden de llegada (1 = primero en la fila) </summary>
         Public Property IntPosicionFifo As Integer
 
         Public Sub New()
@@ -200,7 +200,7 @@ Namespace Models
         End Function
 
         ''' <summary>
-        ''' Retorna el tiempo en formato amigable para monitor KDS (ej. 13:45 (Hace 8m)).
+        ''' Retorna el tiempo en formato amigable para el monitor de cocina (ej. 13:45 (Hace 8m)).
         ''' </summary>
         Public Function FormatearTiempoTranscurrido() As String
             Dim strHoraTexto As String = Me.DtHoraRegistro.ToString("HH:mm")

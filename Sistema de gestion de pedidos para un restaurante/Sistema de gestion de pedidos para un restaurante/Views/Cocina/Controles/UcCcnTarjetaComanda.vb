@@ -35,27 +35,27 @@ Namespace Views.Cocina.Controles
 
             _objPedidoModel = objPedido
 
-            ' 1. Identificador de comanda en cabecera con distintivo FIFO (Primero en Entrar, Primero en Salir)
-            Dim strPrefijoFifo As String = If(objPedido.IntPosicionFifo > 0, $"#FIFO-{objPedido.IntPosicionFifo:00} • ", "")
+            ' 1. Identificador de comanda en cabecera con distintivo de Turno (Orden de Llegada)
+            Dim strPrefijoTurno As String = If(objPedido.IntPosicionFifo > 0, $"#Turno-{objPedido.IntPosicionFifo:00} • ", "")
             If objPedido.StrTipoServicio.IndexOf("Llevar", StringComparison.OrdinalIgnoreCase) >= 0 OrElse
                objPedido.StrTipoServicio.IndexOf("Entrega", StringComparison.OrdinalIgnoreCase) >= 0 Then
-                lblCcnTagMesa.Text = $"{strPrefijoFifo}🛍 LLEVAR {objPedido.StrCodigoComanda}"
+                lblCcnTagMesa.Text = $"{strPrefijoTurno}🛍 LLEVAR {objPedido.StrCodigoComanda}"
             Else
                 Dim strMesa As String = If(String.IsNullOrWhiteSpace(objPedido.StrMesaCliente), "MESA", objPedido.StrMesaCliente.ToUpper())
-                lblCcnTagMesa.Text = $"{strPrefijoFifo}{strMesa} {objPedido.StrCodigoComanda}"
+                lblCcnTagMesa.Text = $"{strPrefijoTurno}{strMesa} {objPedido.StrCodigoComanda}"
             End If
 
             ' 2. Imagen del plato principal gastronómico
             Dim strPlatoPrincipal As String = objPedido.ObtenerPlatoPrincipalNombre()
             picCcnMiniaturaPlato.Image = CcnImagenPlatoHelper.GenerarImagenPlato(strPlatoPrincipal, picCcnMiniaturaPlato.Width, picCcnMiniaturaPlato.Height)
 
-            ' 3. Metadatos unificados: Cliente, Servicio y Tiempo de Espera FIFO
+            ' 3. Metadatos unificados: Cliente, Servicio y Tiempo de Espera
             lblCcnNombreCliente.Text = $"👤 Cliente: {If(String.IsNullOrWhiteSpace(objPedido.StrNombreCliente), "Cliente General", objPedido.StrNombreCliente)}"
             lblCcnTipoServicioMesa.Text = objPedido.ObtenerEtiquetaServicioMesa()
 
-            ' Tiempo transcurrido con alerta de semaforización según la Ley de FIFO
+            ' Tiempo transcurrido con alerta de semaforización según el orden de llegada
             Dim intMinutos As Integer = objPedido.ObtenerMinutosTranscurridos()
-            Dim strEsperaInfo As String = If(objPedido.IntPosicionFifo > 0, $"⏱ FIFO [{objPedido.IntPosicionFifo}]: {objPedido.FormatearTiempoTranscurrido()}", $"⏱ Espera: {objPedido.FormatearTiempoTranscurrido()}")
+            Dim strEsperaInfo As String = If(objPedido.IntPosicionFifo > 0, $"⏱ Turno #{objPedido.IntPosicionFifo}: {objPedido.FormatearTiempoTranscurrido()}", $"⏱ Espera: {objPedido.FormatearTiempoTranscurrido()}")
             lblCcnTiempoTranscurrido.Text = strEsperaInfo
 
             If intMinutos >= 15 AndAlso objPedido.EnumEstado <> CcnEstadoPedidoEnum.Listo Then
@@ -289,7 +289,7 @@ Namespace Views.Cocina.Controles
             If _objPedidoModel Is Nothing Then Return
 
             Dim intMinutos As Integer = _objPedidoModel.ObtenerMinutosTranscurridos()
-            Dim strEsperaInfo As String = If(_objPedidoModel.IntPosicionFifo > 0, $"⏱ FIFO [{_objPedidoModel.IntPosicionFifo}]: {_objPedidoModel.FormatearTiempoTranscurrido()}", $"⏱ Espera: {_objPedidoModel.FormatearTiempoTranscurrido()}")
+            Dim strEsperaInfo As String = If(_objPedidoModel.IntPosicionFifo > 0, $"⏱ Turno #{_objPedidoModel.IntPosicionFifo}: {_objPedidoModel.FormatearTiempoTranscurrido()}", $"⏱ Espera: {_objPedidoModel.FormatearTiempoTranscurrido()}")
             lblCcnTiempoTranscurrido.Text = strEsperaInfo
 
             If intMinutos >= 15 AndAlso _objPedidoModel.EnumEstado <> CcnEstadoPedidoEnum.Listo Then

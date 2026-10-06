@@ -488,7 +488,7 @@ Namespace Views.Cocina
             Me.Font = New System.Drawing.Font("Segoe UI", 9.0!, System.Drawing.FontStyle.Regular)
             Me.FormBorderStyle = System.Windows.Forms.FormBorderStyle.None
             Me.Name = "FrmCcnMonitorCocina"
-            Me.Text = "Monitor de Cocina KDS"
+            Me.Text = "Monitor de Cocina y Pedidos"
             Me.pnlCcnHeaderPrincipal.ResumeLayout(False)
             Me.pnlCcnHeaderPrincipal.PerformLayout()
             Me.flpCcnKpisContenedor.ResumeLayout(False)
