@@ -67,7 +67,7 @@ Namespace Views
                 SeleccionarBotonNavegacion(btnNavCocina, "Monitor de Cocina (KDS)")
                 AbrirFormularioEnPanel(Of Cocina.FrmCcnMonitorCocina)()
             ElseIf enumRol = Models.RolUsuarioEnum.Cajero Then
-                SeleccionarBotonNavegacion(btnNavCobroAdmin, "Caja & Procesamiento de Pagos")
+                SeleccionarBotonNavegacion(btnNavCobroAdmin, "Caja y Cobro de Pedidos")
                 AbrirFormularioEnPanel(Of Caja.FrmCajaCobros)()
             Else
                 ' Administrador por defecto en Métricas & Ingresos del Negocio
@@ -122,9 +122,9 @@ Namespace Views
                         btnNavCliente.Text = "  Toma de Pedidos"
                         btnNavCocina.Visible = False
                         btnNavCobroAdmin.Visible = True
-                        btnNavCobroAdmin.Text = "  Caja & Cobros"
+                        btnNavCobroAdmin.Text = "  Caja y Cobros"
                         btnNavFacturacion.Visible = True
-                        btnNavFacturacion.Text = "  Historial Facturas"
+                        btnNavFacturacion.Text = "  Historial de Facturas"
                         btnNavMetricas.Visible = False
                         btnNavCatalogo.Visible = False
                     Case Else
@@ -302,13 +302,13 @@ Namespace Views
         End Sub
 
         Private Sub btnNavCobroAdmin_Click(sender As Object, e As EventArgs) Handles btnNavCobroAdmin.Click
-            Dim tituloVista As String = If(_rolUsuario.Contains("Cajero"), "Caja & Procesamiento de Pagos", "Caja y Administración")
+            Dim tituloVista As String = If(_rolUsuario.Contains("Cajero"), "Caja y Cobro de Pedidos", "Caja y Cobros")
             SeleccionarBotonNavegacion(btnNavCobroAdmin, tituloVista)
             AbrirFormularioEnPanel(Of Caja.FrmCajaCobros)()
         End Sub
 
         Private Sub btnNavFacturacion_Click(sender As Object, e As EventArgs) Handles btnNavFacturacion.Click
-            SeleccionarBotonNavegacion(btnNavFacturacion, "Historial de Facturación & Archivo Fiscal")
+            SeleccionarBotonNavegacion(btnNavFacturacion, "Historial de Facturas")
             AbrirFormularioEnPanel(Of Facturacion.FrmFacturacionPDF)()
         End Sub
 

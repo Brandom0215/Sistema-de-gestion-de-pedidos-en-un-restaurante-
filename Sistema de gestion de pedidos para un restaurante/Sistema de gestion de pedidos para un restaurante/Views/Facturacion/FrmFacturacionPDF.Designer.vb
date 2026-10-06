@@ -116,7 +116,7 @@ Namespace Views.Facturacion
             Me.lblTituloHeader.Name = "lblTituloHeader"
             Me.lblTituloHeader.Size = New System.Drawing.Size(460, 30)
             Me.lblTituloHeader.TabIndex = 0
-            Me.lblTituloHeader.Text = "📜 Historial de Facturación & Archivo Fiscal"
+            Me.lblTituloHeader.Text = "📜 Historial de Facturas"
             '
             ' lblSubtituloHeader
             '
@@ -127,7 +127,7 @@ Namespace Views.Facturacion
             Me.lblSubtituloHeader.Name = "lblSubtituloHeader"
             Me.lblSubtituloHeader.Size = New System.Drawing.Size(710, 17)
             Me.lblSubtituloHeader.TabIndex = 1
-            Me.lblSubtituloHeader.Text = "Consulta histórica de comprobantes emitidos, reimpresión de tickets fiscales y exportación de documentos PDF oficiales."
+            Me.lblSubtituloHeader.Text = "Consulte pedidos cobrados, reimprima recibos o descargue copias en PDF."
             '
             ' pnlContenedor
             '
@@ -166,7 +166,7 @@ Namespace Views.Facturacion
             Me.grpSeleccion.Size = New System.Drawing.Size(540, 240)
             Me.grpSeleccion.TabIndex = 0
             Me.grpSeleccion.TabStop = False
-            Me.grpSeleccion.Text = "1. Seleccione la Orden Cobrada para Emitir Comprobante"
+            Me.grpSeleccion.Text = "1. Seleccione un pedido cobrado"
             '
             ' pnlFiltro
             '
@@ -188,7 +188,7 @@ Namespace Views.Facturacion
             Me.lblBuscar.Name = "lblBuscar"
             Me.lblBuscar.Size = New System.Drawing.Size(45, 15)
             Me.lblBuscar.TabIndex = 0
-            Me.lblBuscar.Text = "Buscar:"
+            Me.lblBuscar.Text = "Buscar pedido:"
             '
             ' txtBuscar
             '
@@ -259,7 +259,7 @@ Namespace Views.Facturacion
             Me.grpDatosFiscales.Size = New System.Drawing.Size(540, 220)
             Me.grpDatosFiscales.TabIndex = 1
             Me.grpDatosFiscales.TabStop = False
-            Me.grpDatosFiscales.Text = "2. Datos Fiscales del Receptor (Requisito RN-009)"
+            Me.grpDatosFiscales.Text = "2. Datos del Cliente / Facturación (Opcional)"
             '
             ' lblRuc
             '
@@ -269,7 +269,7 @@ Namespace Views.Facturacion
             Me.lblRuc.Name = "lblRuc"
             Me.lblRuc.Size = New System.Drawing.Size(95, 15)
             Me.lblRuc.TabIndex = 0
-            Me.lblRuc.Text = "RUC / Cédula (*):"
+            Me.lblRuc.Text = "Cédula o RUC:"
             '
             ' txtRucCedula
             '
@@ -287,7 +287,7 @@ Namespace Views.Facturacion
             Me.lblRazonSocial.Name = "lblRazonSocial"
             Me.lblRazonSocial.Size = New System.Drawing.Size(117, 15)
             Me.lblRazonSocial.TabIndex = 2
-            Me.lblRazonSocial.Text = "Nombre / Razón (*):"
+            Me.lblRazonSocial.Text = "Nombre del cliente:"
             '
             ' txtRazonSocial
             '
@@ -307,7 +307,7 @@ Namespace Views.Facturacion
             Me.lblTelefono.Name = "lblTelefono"
             Me.lblTelefono.Size = New System.Drawing.Size(107, 15)
             Me.lblTelefono.TabIndex = 4
-            Me.lblTelefono.Text = "Teléfono Contacto:"
+            Me.lblTelefono.Text = "Teléfono:"
             '
             ' txtTelefono
             '
@@ -325,7 +325,7 @@ Namespace Views.Facturacion
             Me.lblCorreo.Name = "lblCorreo"
             Me.lblCorreo.Size = New System.Drawing.Size(108, 15)
             Me.lblCorreo.TabIndex = 6
-            Me.lblCorreo.Text = "Correo Electrónico:"
+            Me.lblCorreo.Text = "Correo electrónico:"
             '
             ' txtCorreo
             '
@@ -345,7 +345,7 @@ Namespace Views.Facturacion
             Me.lblDireccion.Name = "lblDireccion"
             Me.lblDireccion.Size = New System.Drawing.Size(91, 15)
             Me.lblDireccion.TabIndex = 8
-            Me.lblDireccion.Text = "Dirección Fiscal:"
+            Me.lblDireccion.Text = "Dirección:"
             '
             ' txtDireccion
             '
@@ -385,7 +385,7 @@ Namespace Views.Facturacion
             Me.btnImprimir.Name = "btnImprimir"
             Me.btnImprimir.Size = New System.Drawing.Size(264, 36)
             Me.btnImprimir.TabIndex = 0
-            Me.btnImprimir.Text = "🖨️ Imprimir Ticket"
+            Me.btnImprimir.Text = "🖨️ Imprimir Recibo"
             Me.btnImprimir.UseVisualStyleBackColor = True
             '
             ' btnEnviarCorreo
@@ -397,7 +397,7 @@ Namespace Views.Facturacion
             Me.btnEnviarCorreo.Name = "btnEnviarCorreo"
             Me.btnEnviarCorreo.Size = New System.Drawing.Size(264, 36)
             Me.btnEnviarCorreo.TabIndex = 1
-            Me.btnEnviarCorreo.Text = "📧 Enviar por Correo"
+            Me.btnEnviarCorreo.Text = "✉️ Enviar por Correo"
             Me.btnEnviarCorreo.UseVisualStyleBackColor = True
             '
             ' btnGuardarComo
@@ -409,7 +409,7 @@ Namespace Views.Facturacion
             Me.btnGuardarComo.Name = "btnGuardarComo"
             Me.btnGuardarComo.Size = New System.Drawing.Size(264, 37)
             Me.btnGuardarComo.TabIndex = 2
-            Me.btnGuardarComo.Text = "💾 Guardar como PDF"
+            Me.btnGuardarComo.Text = "💾 Guardar en PDF"
             Me.btnGuardarComo.UseVisualStyleBackColor = True
             '
             ' btnLimpiar
@@ -421,7 +421,7 @@ Namespace Views.Facturacion
             Me.btnLimpiar.Name = "btnLimpiar"
             Me.btnLimpiar.Size = New System.Drawing.Size(264, 37)
             Me.btnLimpiar.TabIndex = 3
-            Me.btnLimpiar.Text = "🧹 Limpiar"
+            Me.btnLimpiar.Text = "🧹 Limpiar selección"
             Me.btnLimpiar.UseVisualStyleBackColor = True
             '
             ' grpVistaPrevia
@@ -436,7 +436,7 @@ Namespace Views.Facturacion
             Me.grpVistaPrevia.Size = New System.Drawing.Size(405, 550)
             Me.grpVistaPrevia.TabIndex = 1
             Me.grpVistaPrevia.TabStop = False
-            Me.grpVistaPrevia.Text = "Vista Previa de Comprobante Fiscal"
+            Me.grpVistaPrevia.Text = "Vista previa del recibo / factura"
             '
             ' pnlComprobanteVisual
             '
@@ -651,7 +651,7 @@ Namespace Views.Facturacion
             Me.lblTicketSubtotal.Padding = New System.Windows.Forms.Padding(0, 4, 0, 0)
             Me.lblTicketSubtotal.Size = New System.Drawing.Size(349, 20)
             Me.lblTicketSubtotal.TabIndex = 16
-            Me.lblTicketSubtotal.Text = "Subtotal Gravable: $0.00"
+            Me.lblTicketSubtotal.Text = "Subtotal: $0.00"
             Me.lblTicketSubtotal.TextAlign = System.Drawing.ContentAlignment.MiddleRight
             '
             ' lblTicketImpuesto
@@ -662,7 +662,7 @@ Namespace Views.Facturacion
             Me.lblTicketImpuesto.Name = "lblTicketImpuesto"
             Me.lblTicketImpuesto.Size = New System.Drawing.Size(349, 18)
             Me.lblTicketImpuesto.TabIndex = 17
-            Me.lblTicketImpuesto.Text = "ITBMS (7%): $0.00"
+            Me.lblTicketImpuesto.Text = "Impuesto ITBMS (7%): $0.00"
             Me.lblTicketImpuesto.TextAlign = System.Drawing.ContentAlignment.MiddleRight
             '
             ' lblTicketTotal
@@ -675,7 +675,7 @@ Namespace Views.Facturacion
             Me.lblTicketTotal.Padding = New System.Windows.Forms.Padding(0, 4, 0, 0)
             Me.lblTicketTotal.Size = New System.Drawing.Size(349, 28)
             Me.lblTicketTotal.TabIndex = 18
-            Me.lblTicketTotal.Text = "TOTAL PAGADO: $0.00"
+            Me.lblTicketTotal.Text = "TOTAL: $0.00"
             Me.lblTicketTotal.TextAlign = System.Drawing.ContentAlignment.MiddleRight
             '
             ' pnlTicketSep5
@@ -697,7 +697,7 @@ Namespace Views.Facturacion
             Me.lblTicketEstadoFiscal.Padding = New System.Windows.Forms.Padding(0, 6, 0, 0)
             Me.lblTicketEstadoFiscal.Size = New System.Drawing.Size(349, 24)
             Me.lblTicketEstadoFiscal.TabIndex = 20
-            Me.lblTicketEstadoFiscal.Text = "🟢 AUTORIZADO - PROTOCOLO FISCAL DIGITAL"
+            Me.lblTicketEstadoFiscal.Text = "🟢 PEDIDO COBRADO Y REGISTRADO"
             Me.lblTicketEstadoFiscal.TextAlign = System.Drawing.ContentAlignment.MiddleCenter
             '
             ' lblTicketPie
@@ -710,7 +710,7 @@ Namespace Views.Facturacion
             Me.lblTicketPie.Padding = New System.Windows.Forms.Padding(0, 4, 0, 0)
             Me.lblTicketPie.Size = New System.Drawing.Size(349, 30)
             Me.lblTicketPie.TabIndex = 21
-            Me.lblTicketPie.Text = "¡Gracias por su visita y preferencia!" & vbCrLf & "Documento inalterable emitido por SistemaRestaurante"
+            Me.lblTicketPie.Text = "¡Gracias por su visita y preferencia!" & vbCrLf & "Restaurante El Buen Sazón"
             Me.lblTicketPie.TextAlign = System.Drawing.ContentAlignment.MiddleCenter
             '
             ' FrmFacturacionPDF
@@ -724,7 +724,7 @@ Namespace Views.Facturacion
             Me.FormBorderStyle = System.Windows.Forms.FormBorderStyle.None
             Me.Name = "FrmFacturacionPDF"
             Me.Padding = New System.Windows.Forms.Padding(20)
-            Me.Text = "Facturación & Comprobantes PDF"
+            Me.Text = "Historial de Facturas"
             Me.pnlHeader.ResumeLayout(False)
             Me.pnlHeader.PerformLayout()
             Me.pnlContenedor.ResumeLayout(False)

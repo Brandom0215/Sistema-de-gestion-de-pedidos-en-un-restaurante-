@@ -90,7 +90,7 @@ Namespace Views.Caja
             Me.lblTituloHeader.Name = "lblTituloHeader"
             Me.lblTituloHeader.Size = New System.Drawing.Size(350, 30)
             Me.lblTituloHeader.TabIndex = 0
-            Me.lblTituloHeader.Text = "Caja & Procesamiento de Pagos"
+            Me.lblTituloHeader.Text = "Caja y Cobro de Pedidos"
             '
             ' lblSubtituloHeader
             '
@@ -101,7 +101,7 @@ Namespace Views.Caja
             Me.lblSubtituloHeader.Name = "lblSubtituloHeader"
             Me.lblSubtituloHeader.Size = New System.Drawing.Size(640, 17)
             Me.lblSubtituloHeader.TabIndex = 1
-            Me.lblSubtituloHeader.Text = "Aprobación de pagos en efectivo, verificación de cobros y liberación de pedidos hacia cocina KDS (RF-011, CU-006)."
+            Me.lblSubtituloHeader.Text = "Cobro de pedidos pendientes, cálculo de cambio y envío directo a la cocina."
             '
             ' pnlContenedor
             '
@@ -128,7 +128,7 @@ Namespace Views.Caja
             Me.grpListado.Size = New System.Drawing.Size(560, 545)
             Me.grpListado.TabIndex = 0
             Me.grpListado.TabStop = False
-            Me.grpListado.Text = "Comandas Pendientes de Pago (Por Cobrar)"
+            Me.grpListado.Text = "Pedidos pendientes de pago"
             '
             ' pnlFiltros
             '
@@ -150,7 +150,7 @@ Namespace Views.Caja
             Me.lblBuscar.Name = "lblBuscar"
             Me.lblBuscar.Size = New System.Drawing.Size(98, 15)
             Me.lblBuscar.TabIndex = 0
-            Me.lblBuscar.Text = "Buscar Pedido/ID:"
+            Me.lblBuscar.Text = "Buscar pedido:"
             '
             ' txtBuscar
             '
@@ -224,7 +224,7 @@ Namespace Views.Caja
             Me.grpDetalleCobro.Size = New System.Drawing.Size(385, 545)
             Me.grpDetalleCobro.TabIndex = 1
             Me.grpDetalleCobro.TabStop = False
-            Me.grpDetalleCobro.Text = "Terminal de Cobro & Autorización"
+            Me.grpDetalleCobro.Text = "Detalle de la cuenta"
             '
             ' pnlCardCobro
             '
@@ -260,7 +260,7 @@ Namespace Views.Caja
             Me.lblDetallePedidoId.Name = "lblDetallePedidoId"
             Me.lblDetallePedidoId.Size = New System.Drawing.Size(185, 21)
             Me.lblDetallePedidoId.TabIndex = 0
-            Me.lblDetallePedidoId.Text = "Comanda: (Sin Selección)"
+            Me.lblDetallePedidoId.Text = "Pedido: (Ninguno seleccionado)"
             '
             ' lblDetalleCliente
             '
@@ -270,7 +270,7 @@ Namespace Views.Caja
             Me.lblDetalleCliente.Name = "lblDetalleCliente"
             Me.lblDetalleCliente.Size = New System.Drawing.Size(155, 15)
             Me.lblDetalleCliente.TabIndex = 1
-            Me.lblDetalleCliente.Text = "Cliente: Seleccione una orden"
+            Me.lblDetalleCliente.Text = "Cliente: Seleccione un pedido"
             '
             ' lblDetalleMesa
             '
@@ -290,7 +290,7 @@ Namespace Views.Caja
             Me.lblDetallePlato.Name = "lblDetallePlato"
             Me.lblDetallePlato.Size = New System.Drawing.Size(100, 15)
             Me.lblDetallePlato.TabIndex = 3
-            Me.lblDetallePlato.Text = "Plato: Ninguno"
+            Me.lblDetallePlato.Text = "Consumo: Ninguno"
             '
             ' lblDetalleAcomp
             '
@@ -301,7 +301,7 @@ Namespace Views.Caja
             Me.lblDetalleAcomp.Name = "lblDetalleAcomp"
             Me.lblDetalleAcomp.Size = New System.Drawing.Size(130, 15)
             Me.lblDetalleAcomp.TabIndex = 4
-            Me.lblDetalleAcomp.Text = "Acomp: --"
+            Me.lblDetalleAcomp.Text = "Extras: --"
             '
             ' pnlSeparador1
             '
@@ -319,7 +319,7 @@ Namespace Views.Caja
             Me.lblEtiquetaMetodo.Name = "lblEtiquetaMetodo"
             Me.lblEtiquetaMetodo.Size = New System.Drawing.Size(105, 15)
             Me.lblEtiquetaMetodo.TabIndex = 6
-            Me.lblEtiquetaMetodo.Text = "Método de Pago:"
+            Me.lblEtiquetaMetodo.Text = "Forma de pago:"
             '
             ' pnlMetodosPago
             '
@@ -352,7 +352,7 @@ Namespace Views.Caja
             Me.rbTarjeta.Name = "rbTarjeta"
             Me.rbTarjeta.Size = New System.Drawing.Size(95, 19)
             Me.rbTarjeta.TabIndex = 1
-            Me.rbTarjeta.Text = "💳 Tarjeta POS"
+            Me.rbTarjeta.Text = "💳 Tarjeta"
             Me.rbTarjeta.UseVisualStyleBackColor = True
             '
             ' rbDigital
@@ -361,9 +361,9 @@ Namespace Views.Caja
             Me.rbDigital.Font = New System.Drawing.Font("Segoe UI", 8.5F)
             Me.rbDigital.Location = New System.Drawing.Point(200, 5)
             Me.rbDigital.Name = "rbDigital"
-            Me.rbDigital.Size = New System.Drawing.Size(125, 19)
+            Me.rbDigital.Size = New System.Drawing.Size(135, 19)
             Me.rbDigital.TabIndex = 2
-            Me.rbDigital.Text = "📲 QR / Transf."
+            Me.rbDigital.Text = "📲 Transferencia o QR"
             Me.rbDigital.UseVisualStyleBackColor = True
             '
             ' pnlSeparador2
@@ -382,7 +382,7 @@ Namespace Views.Caja
             Me.lblSubtotalEtiqueta.Name = "lblSubtotalEtiqueta"
             Me.lblSubtotalEtiqueta.Size = New System.Drawing.Size(107, 15)
             Me.lblSubtotalEtiqueta.TabIndex = 9
-            Me.lblSubtotalEtiqueta.Text = "Subtotal Gravable:"
+            Me.lblSubtotalEtiqueta.Text = "Subtotal:"
             '
             ' lblSubtotalValor
             '
@@ -400,9 +400,9 @@ Namespace Views.Caja
             Me.lblImpuestoEtiqueta.Font = New System.Drawing.Font("Segoe UI", 9.0F)
             Me.lblImpuestoEtiqueta.Location = New System.Drawing.Point(8, 214)
             Me.lblImpuestoEtiqueta.Name = "lblImpuestoEtiqueta"
-            Me.lblImpuestoEtiqueta.Size = New System.Drawing.Size(95, 15)
+            Me.lblImpuestoEtiqueta.Size = New System.Drawing.Size(120, 15)
             Me.lblImpuestoEtiqueta.TabIndex = 11
-            Me.lblImpuestoEtiqueta.Text = "ITBMS (7.00%):"
+            Me.lblImpuestoEtiqueta.Text = "Impuesto ITBMS (7%):"
             '
             ' lblImpuestoValor
             '
@@ -432,7 +432,7 @@ Namespace Views.Caja
             Me.lblTotalEtiqueta.Name = "lblTotalEtiqueta"
             Me.lblTotalEtiqueta.Size = New System.Drawing.Size(130, 20)
             Me.lblTotalEtiqueta.TabIndex = 0
-            Me.lblTotalEtiqueta.Text = "TOTAL A COBRAR:"
+            Me.lblTotalEtiqueta.Text = "TOTAL A PAGAR:"
             '
             ' lblTotalValor
             '
@@ -464,9 +464,9 @@ Namespace Views.Caja
             Me.lblMontoRecibidoEtiqueta.Font = New System.Drawing.Font("Segoe UI", 9.0F, System.Drawing.FontStyle.Bold)
             Me.lblMontoRecibidoEtiqueta.Location = New System.Drawing.Point(12, 16)
             Me.lblMontoRecibidoEtiqueta.Name = "lblMontoRecibidoEtiqueta"
-            Me.lblMontoRecibidoEtiqueta.Size = New System.Drawing.Size(115, 15)
+            Me.lblMontoRecibidoEtiqueta.Size = New System.Drawing.Size(125, 15)
             Me.lblMontoRecibidoEtiqueta.TabIndex = 0
-            Me.lblMontoRecibidoEtiqueta.Text = "Efectivo Recibido ($):"
+            Me.lblMontoRecibidoEtiqueta.Text = "Dinero recibido ($):"
             '
             ' txtMontoRecibido
             '
@@ -485,7 +485,7 @@ Namespace Views.Caja
             Me.lblCambioEtiqueta.Name = "lblCambioEtiqueta"
             Me.lblCambioEtiqueta.Size = New System.Drawing.Size(122, 17)
             Me.lblCambioEtiqueta.TabIndex = 2
-            Me.lblCambioEtiqueta.Text = "Cambio a Devolver:"
+            Me.lblCambioEtiqueta.Text = "Cambio / Vuelto:"
             '
             ' lblCambioValor
             '
@@ -505,7 +505,7 @@ Namespace Views.Caja
             Me.btnConfirmarCobro.Name = "btnConfirmarCobro"
             Me.btnConfirmarCobro.Size = New System.Drawing.Size(345, 42)
             Me.btnConfirmarCobro.TabIndex = 15
-            Me.btnConfirmarCobro.Text = "✅ Confirmar Cobro & Liberar a Cocina"
+            Me.btnConfirmarCobro.Text = "✅ Confirmar cobro"
             Me.btnConfirmarCobro.UseVisualStyleBackColor = True
             '
             ' btnLimpiar
@@ -515,7 +515,7 @@ Namespace Views.Caja
             Me.btnLimpiar.Name = "btnLimpiar"
             Me.btnLimpiar.Size = New System.Drawing.Size(345, 32)
             Me.btnLimpiar.TabIndex = 16
-            Me.btnLimpiar.Text = "🧹 Limpiar Selección"
+            Me.btnLimpiar.Text = "🧹 Quitar selección"
             Me.btnLimpiar.UseVisualStyleBackColor = True
             '
             ' FrmCajaCobros
