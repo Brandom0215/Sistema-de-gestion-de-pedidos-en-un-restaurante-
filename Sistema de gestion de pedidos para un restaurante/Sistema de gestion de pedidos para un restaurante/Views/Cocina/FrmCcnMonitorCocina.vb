@@ -61,6 +61,10 @@ Namespace Views.Cocina
             tmrCcnActualizadorRealTime.Start()
         End Sub
 
+        Private Sub FrmCcnMonitorCocina_Shown(ByVal sender As Object, ByVal e As EventArgs) Handles MyBase.Shown
+            AjustarAnchoTarjetasExistentes()
+        End Sub
+
         Private Sub FrmCcnMonitorCocina_FormClosed(ByVal sender As Object, ByVal e As FormClosedEventArgs) Handles MyBase.FormClosed
             tmrCcnActualizadorRealTime.Stop()
             PedidoDAO.DesuscribirPedidoRegistrado(AddressOf OnPedidoRegistradoDesdeDAO)
@@ -195,11 +199,14 @@ Namespace Views.Cocina
 
             ' 3. Instanciar y cargar cada tarjeta interactiva asignando el turno correspondiente
             Dim intPosicionTurno As Integer = 1
+            Dim intAnchoResponsivo As Integer = CalcularAnchoOptimoTarjeta()
+
             For Each objComanda As CcnPedidoModel In lstFiltrada
                 objComanda.IntPosicionFifo = intPosicionTurno
                 intPosicionTurno += 1
 
                 Dim ucTarjeta As New UcCcnTarjetaComanda()
+                ucTarjeta.Width = intAnchoResponsivo
                 ucTarjeta.CargarComanda(objComanda)
                 AddHandler ucTarjeta.CcnCambioEstadoSolicitado, AddressOf OnCcnCambioEstadoSolicitado
                 flpCcnContenedorComandas.Controls.Add(ucTarjeta)
@@ -353,6 +360,49 @@ Namespace Views.Cocina
                 End If
             Next
             ActualizarMetricasKpi()
+        End Sub
+
+        ''' <summary>
+        ''' Calcula el ancho óptimo de las tarjetas para que se distribuyan de forma fluida y responsiva
+        ''' ocupando el 100% del ancho útil del monitor sin dejar huecos o espacios vacíos a la derecha.
+        ''' </summary>
+        Private Function CalcularAnchoOptimoTarjeta() As Integer
+            Dim intAnchoDisponible As Integer = flpCcnContenedorComandas.ClientSize.Width - flpCcnContenedorComandas.Padding.Horizontal - SystemInformation.VerticalScrollBarWidth - 4
+            If intAnchoDisponible <= 320 Then Return 320
+
+            ' Estimamos el número ideal de columnas según el ancho disponible (aprox 340px por columna)
+            Dim intColumnas As Integer = Math.Max(1, CInt(Math.Floor(intAnchoDisponible / 330.0)))
+            ' Margen de 20px (Margin = 10 en cada lado de la tarjeta)
+            Dim intEspacioTotalMargenes As Integer = intColumnas * 20
+            Dim intAnchoCalculado As Integer = CInt(Math.Floor((intAnchoDisponible - intEspacioTotalMargenes) / CDbl(intColumnas)))
+
+            Return Math.Max(300, intAnchoCalculado)
+        End Function
+
+        ''' <summary>
+        ''' Ajusta el ancho de todas las tarjetas existentes cuando la ventana cambia de tamaño o resolución.
+        ''' </summary>
+        Private Sub AjustarAnchoTarjetasExistentes()
+            If flpCcnContenedorComandas.Controls.Count = 0 Then Return
+
+            Dim intNuevoAncho As Integer = CalcularAnchoOptimoTarjeta()
+            flpCcnContenedorComandas.SuspendLayout()
+            For Each ctl As Control In flpCcnContenedorComandas.Controls
+                If TypeOf ctl Is UcCcnTarjetaComanda Then
+                    If ctl.Width <> intNuevoAncho Then
+                        ctl.Width = intNuevoAncho
+                    End If
+                End If
+            Next
+            flpCcnContenedorComandas.ResumeLayout(True)
+        End Sub
+
+        Private Sub FrmCcnMonitorCocina_Resize(ByVal sender As Object, ByVal e As EventArgs) Handles MyBase.Resize
+            AjustarAnchoTarjetasExistentes()
+        End Sub
+
+        Private Sub flpCcnContenedorComandas_Resize(ByVal sender As Object, ByVal e As EventArgs) Handles flpCcnContenedorComandas.Resize
+            AjustarAnchoTarjetasExistentes()
         End Sub
 
     End Class
