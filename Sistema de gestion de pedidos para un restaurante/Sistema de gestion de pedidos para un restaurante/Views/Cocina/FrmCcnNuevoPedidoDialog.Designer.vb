@@ -105,7 +105,7 @@ Namespace Views.Cocina
             Me.lblCcnSubtituloModal.Name = "lblCcnSubtituloModal"
             Me.lblCcnSubtituloModal.Size = New System.Drawing.Size(370, 15)
             Me.lblCcnSubtituloModal.TabIndex = 1
-            Me.lblCcnSubtituloModal.Text = "Conecta automáticamente con Cocina (KDS), Caja (Cobros) y Facturación"
+            Me.lblCcnSubtituloModal.Text = "Conecta automáticamente con Cocina, Caja de Cobros y Facturación"
             Me.lblCcnSubtituloModal.UseMnemonic = False
             '
             'lblCcnTituloModal
