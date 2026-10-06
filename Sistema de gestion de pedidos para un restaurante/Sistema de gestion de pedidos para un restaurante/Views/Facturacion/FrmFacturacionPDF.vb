@@ -25,6 +25,9 @@ Namespace Views.Facturacion
         Private _idPedidoInicial As Integer = 0
         Private _bloquearSelectionChanged As Boolean = False
 
+        ' Indicador visual de estado de conexión al servidor
+        Private _btnBadgeConexion As Button
+
         Public Sub New()
             Me.New(0)
         End Sub
@@ -40,15 +43,93 @@ Namespace Views.Facturacion
 
         Private Sub FrmFacturacionPDF_Load(sender As Object, e As EventArgs) Handles MyBase.Load
             AplicarTemaVisual()
+            InicializarControlesConexionBD()
             CargarPedidosPagados()
 
             PedidoDAO.SuscribirPedidoModificado(AddressOf OnPedidoActualizadoDesdeDAO)
             PedidoDAO.SuscribirPedidoRegistrado(AddressOf OnPedidoActualizadoDesdeDAO)
+            ConexionBD.SuscribirModoConexionCambiado(AddressOf OnModoConexionCambiadoDesdeBD)
         End Sub
 
         Private Sub FrmFacturacionPDF_FormClosed(sender As Object, e As FormClosedEventArgs) Handles MyBase.FormClosed
             PedidoDAO.DesuscribirPedidoModificado(AddressOf OnPedidoActualizadoDesdeDAO)
             PedidoDAO.DesuscribirPedidoRegistrado(AddressOf OnPedidoActualizadoDesdeDAO)
+            ConexionBD.DesuscribirModoConexionCambiado(AddressOf OnModoConexionCambiadoDesdeBD)
+        End Sub
+
+        Private Sub InicializarControlesConexionBD()
+            _btnBadgeConexion = New Button() With {
+                .Size = New Size(220, 36),
+                .Location = New Point(btnVolverCaja.Left - 235, 13),
+                .Anchor = AnchorStyles.Top Or AnchorStyles.Right,
+                .Font = ThemeConfig.ObtenerFuenteSubtitulo(8.5F, FontStyle.Bold),
+                .Cursor = Cursors.Hand,
+                .FlatStyle = FlatStyle.Flat,
+                .UseVisualStyleBackColor = False
+            }
+            AddHandler _btnBadgeConexion.Click, AddressOf BtnBadgeConexion_Click
+            pnlHeader.Controls.Add(_btnBadgeConexion)
+
+            ActualizarVisualEstadoBD()
+        End Sub
+
+        Private Sub ActualizarVisualEstadoBD()
+            If _btnBadgeConexion Is Nothing Then Return
+
+            If ConexionBD.ModoConexion = ModoConexionEnum.ServidorPrincipal Then
+                _btnBadgeConexion.Text = $"🟢 Servidor Conectado ({ConexionBD.Host})"
+                _btnBadgeConexion.BackColor = Color.FromArgb(232, 245, 233)
+                _btnBadgeConexion.ForeColor = Color.FromArgb(27, 94, 32)
+                _btnBadgeConexion.FlatAppearance.BorderColor = Color.FromArgb(76, 175, 80)
+            Else
+                _btnBadgeConexion.Text = "🟡 Modo Local (Sin Conexión)"
+                _btnBadgeConexion.BackColor = Color.FromArgb(255, 248, 225)
+                _btnBadgeConexion.ForeColor = Color.FromArgb(179, 90, 0)
+                _btnBadgeConexion.FlatAppearance.BorderColor = Color.FromArgb(255, 179, 0)
+            End If
+        End Sub
+
+        Private Sub BtnBadgeConexion_Click(sender As Object, e As EventArgs)
+            If ConexionBD.ModoConexion = ModoConexionEnum.ServidorPrincipal Then
+                MessageBox.Show(
+                    $"El módulo de facturación está conectado al servidor principal ({ConexionBD.Host}:{ConexionBD.Puerto})." & vbCrLf &
+                    "Las facturas emitidas y consultas fiscales se sincronizan con la base de datos central.",
+                    "Servidor Principal Conectado",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information
+                )
+                Return
+            End If
+
+            If MessageBox.Show(
+                "¿Deseas comprobar si ya es posible restablecer conexión con el servidor principal?",
+                "Comprobar Conexión",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Question) = DialogResult.Yes Then
+
+                Cursor = Cursors.WaitCursor
+                Dim resultado As String = ""
+                Dim reconectado As Boolean = ConexionBD.ReintentarConexionServidor(resultado)
+                Cursor = Cursors.Default
+
+                ActualizarVisualEstadoBD()
+                If reconectado Then
+                    CargarPedidosPagados()
+                    MessageBox.Show(resultado, "Conexión Restablecida", MessageBoxButtons.OK, MessageBoxIcon.Information)
+                Else
+                    MessageBox.Show(resultado, "Aviso del Sistema", MessageBoxButtons.OK, MessageBoxIcon.Information)
+                End If
+            End If
+        End Sub
+
+        Private Sub OnModoConexionCambiadoDesdeBD(nuevoModo As ModoConexionEnum)
+            If Me.IsDisposed OrElse Not Me.IsHandleCreated Then Return
+            If Me.InvokeRequired Then
+                Me.BeginInvoke(New Action(Of ModoConexionEnum)(AddressOf OnModoConexionCambiadoDesdeBD), nuevoModo)
+                Return
+            End If
+            ActualizarVisualEstadoBD()
+            CargarPedidosPagados()
         End Sub
 
         Private Sub OnPedidoActualizadoDesdeDAO(idPedido As Integer)

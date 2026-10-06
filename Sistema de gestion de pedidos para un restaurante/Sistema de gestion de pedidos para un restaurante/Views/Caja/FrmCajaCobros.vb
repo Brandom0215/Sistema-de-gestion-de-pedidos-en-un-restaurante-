@@ -19,12 +19,17 @@ Namespace Views.Caja
         Private _subtotalGravable As Decimal = 0D
         Private _impuestoCalculado As Decimal = 0D
 
+        ' Indicador visual de estado de conexión al servidor
+        Private _btnBadgeConexion As Button
+
         Public Sub New()
             InitializeComponent()
         End Sub
 
         Private Sub FrmCajaCobros_Load(sender As Object, e As EventArgs) Handles MyBase.Load
             AplicarTemaVisual()
+            InicializarControlesConexionBD()
+            VerificarConexionAutomatica()
             CargarPedidosPendientes()
 
             ' Suscribir a notificaciones de persistencia en tiempo real de PedidoDAO
@@ -35,6 +40,115 @@ Namespace Views.Caja
         Private Sub FrmCajaCobros_FormClosed(sender As Object, e As FormClosedEventArgs) Handles MyBase.FormClosed
             PedidoDAO.DesuscribirPedidoRegistrado(AddressOf OnPedidoActualizadoDesdeDAO)
             PedidoDAO.DesuscribirPedidoModificado(AddressOf OnPedidoActualizadoDesdeDAO)
+            ConexionBD.DesuscribirModoConexionCambiado(AddressOf OnModoConexionCambiado)
+        End Sub
+
+        ''' <summary>
+        ''' Configura la insignia visual de estado de conexión en el encabezado de Caja.
+        ''' </summary>
+        Private Sub InicializarControlesConexionBD()
+            _btnBadgeConexion = New Button() With {
+                .Size = New Size(230, 36),
+                .Location = New Point(pnlHeader.Width - 245, 12),
+                .Anchor = AnchorStyles.Top Or AnchorStyles.Right,
+                .Font = ThemeConfig.ObtenerFuenteSubtitulo(8.5F, FontStyle.Bold),
+                .Cursor = Cursors.Hand,
+                .FlatStyle = FlatStyle.Flat,
+                .UseVisualStyleBackColor = False
+            }
+            AddHandler _btnBadgeConexion.Click, AddressOf BtnBadgeConexion_Click
+            pnlHeader.Controls.Add(_btnBadgeConexion)
+
+            ActualizarVisualEstadoBD()
+            ConexionBD.SuscribirModoConexionCambiado(AddressOf OnModoConexionCambiado)
+        End Sub
+
+        ''' <summary>
+        ''' Valida la disponibilidad del servidor central de manera automática al abrir la vista.
+        ''' Si no se detecta red universitaria, activa de inmediato el modo local de respaldo y notifica amigablemente.
+        ''' </summary>
+        Private Sub VerificarConexionAutomatica()
+            If ConexionBD.ModoConexion = ModoConexionEnum.ServidorPrincipal Then
+                Dim msgPrueba As String = ""
+                Dim disponible As Boolean = ConexionBD.ProbarConexion(msgPrueba)
+                If Not disponible Then
+                    ConexionBD.RegistrarFalloServidor()
+                    If Not ConexionBD.AvisoContingenciaMostrado Then
+                        ConexionBD.AvisoContingenciaMostrado = True
+                        MessageBox.Show(
+                            "No fue posible establecer conexión con el servidor principal del restaurante en este momento." & vbCrLf & vbCrLf &
+                            "Para que puedas seguir registrando cobros y atendiendo a los clientes sin interrupciones, el sistema continuará en modo local automáticamente.",
+                            "Aviso del Sistema",
+                            MessageBoxButtons.OK,
+                            MessageBoxIcon.Information
+                        )
+                    End If
+                End If
+            End If
+            ActualizarVisualEstadoBD()
+        End Sub
+
+        Private Sub ActualizarVisualEstadoBD()
+            If _btnBadgeConexion Is Nothing Then Return
+
+            If ConexionBD.ModoConexion = ModoConexionEnum.ServidorPrincipal Then
+                _btnBadgeConexion.Text = $"🟢 Servidor Conectado ({ConexionBD.Host})"
+                _btnBadgeConexion.BackColor = Color.FromArgb(232, 245, 233)
+                _btnBadgeConexion.ForeColor = Color.FromArgb(27, 94, 32)
+                _btnBadgeConexion.FlatAppearance.BorderColor = Color.FromArgb(76, 175, 80)
+            Else
+                _btnBadgeConexion.Text = "🟡 Modo Local (Sin Conexión)"
+                _btnBadgeConexion.BackColor = Color.FromArgb(255, 248, 225)
+                _btnBadgeConexion.ForeColor = Color.FromArgb(179, 90, 0)
+                _btnBadgeConexion.FlatAppearance.BorderColor = Color.FromArgb(255, 179, 0)
+            End If
+        End Sub
+
+        ''' <summary>
+        ''' Al hacer clic sobre la insignia, permite comprobar o restablecer la conexión con el servidor principal.
+        ''' </summary>
+        Private Sub BtnBadgeConexion_Click(sender As Object, e As EventArgs)
+            If ConexionBD.ModoConexion = ModoConexionEnum.ServidorPrincipal Then
+                MessageBox.Show(
+                    $"El sistema se encuentra conectado activamente al servidor principal ({ConexionBD.Host}:{ConexionBD.Puerto})." & vbCrLf &
+                    "Todos los cobros y operaciones se guardan directamente en la base de datos central.",
+                    "Servidor Principal Conectado",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information
+                )
+                Return
+            End If
+
+            If MessageBox.Show(
+                "¿Deseas verificar si ya es posible conectarse al servidor principal del restaurante?",
+                "Comprobar Conexión",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Question) = DialogResult.Yes Then
+
+                Cursor = Cursors.WaitCursor
+                Dim resultado As String = ""
+                Dim reconectado As Boolean = ConexionBD.ReintentarConexionServidor(resultado)
+                Cursor = Cursors.Default
+
+                ActualizarVisualEstadoBD()
+                If reconectado Then
+                    LimpiarDetalle()
+                    CargarPedidosPendientes()
+                    MessageBox.Show(resultado, "Conexión Restablecida", MessageBoxButtons.OK, MessageBoxIcon.Information)
+                Else
+                    MessageBox.Show(resultado, "Aviso del Sistema", MessageBoxButtons.OK, MessageBoxIcon.Information)
+                End If
+            End If
+        End Sub
+
+        Private Sub OnModoConexionCambiado(nuevoModo As ModoConexionEnum)
+            If Me.IsDisposed OrElse Not Me.IsHandleCreated Then Return
+            If Me.InvokeRequired Then
+                Me.BeginInvoke(New Action(Of ModoConexionEnum)(AddressOf OnModoConexionCambiado), nuevoModo)
+                Return
+            End If
+            ActualizarVisualEstadoBD()
+            CargarPedidosPendientes()
         End Sub
 
         ''' <summary>
