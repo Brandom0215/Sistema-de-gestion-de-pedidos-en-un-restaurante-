@@ -59,21 +59,25 @@ Namespace Views.Cocina
 
         Private Sub CargarCatalogoPlatos()
             _dicPreciosPlatos.Clear()
-            _dicPreciosPlatos.Add("Bife de Chorizo a la Brasa ($24.00)", 24.0D)
-            _dicPreciosPlatos.Add("Pollo al Limón y Romero a la Leña ($26.00)", 26.0D)
-            _dicPreciosPlatos.Add("Risotto de Hongos Silvestres ($24.00)", 24.0D)
-            _dicPreciosPlatos.Add("Ceviche Mixto Tradicional ($16.50)", 16.5D)
-            _dicPreciosPlatos.Add("Pasta Fresca al Pesto de Pistacho ($18.00)", 18.0D)
-            _dicPreciosPlatos.Add("Hamburguesa Gourmet Rústica ($12.00)", 12.0D)
-            _dicPreciosPlatos.Add("Lomo a la Brasa Tradicional ($18.50)", 18.5D)
-            _dicPreciosPlatos.Add("Ensalada Oliva & Burrata ($12.50)", 12.5D)
-            _dicPreciosPlatos.Add("Focaccia Artesanal de Romero ($8.00)", 8.0D)
+            Dim dtPlatos As DataTable = PlatoDAO.ObtenerTodos()
+            If dtPlatos IsNot Nothing AndAlso dtPlatos.Rows.Count > 0 Then
+                For Each row As DataRow In dtPlatos.Rows
+                    Dim nombre As String = row("Nombre").ToString()
+                    Dim precio As Decimal = Convert.ToDecimal(row("Precio"))
+                    Dim etiqueta As String = $"{nombre} (${precio:N2})"
+                    If Not _dicPreciosPlatos.ContainsKey(etiqueta) Then
+                        _dicPreciosPlatos.Add(etiqueta, precio)
+                    End If
+                Next
+            End If
 
             cboCcnPlato.Items.Clear()
             For Each strPlato In _dicPreciosPlatos.Keys
                 cboCcnPlato.Items.Add(strPlato)
             Next
-            cboCcnPlato.SelectedIndex = 0
+            If cboCcnPlato.Items.Count > 0 Then
+                cboCcnPlato.SelectedIndex = 0
+            End If
         End Sub
 
         Private Sub InicializarCombos()

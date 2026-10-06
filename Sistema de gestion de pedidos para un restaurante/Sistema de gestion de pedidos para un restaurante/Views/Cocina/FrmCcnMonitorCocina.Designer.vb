@@ -41,7 +41,6 @@ Namespace Views.Cocina
             Me.lblCcnSubtituloVivo = New System.Windows.Forms.Label()
             Me.pnlCcnBarraFiltros = New System.Windows.Forms.Panel()
             Me.pnlCcnAccionesDerecha = New System.Windows.Forms.Panel()
-            Me.btnCcnNuevoPedido = New System.Windows.Forms.Button()
             Me.btnCcnRefrescarManual = New System.Windows.Forms.Button()
             Me.btnCcnAlertaSonora = New System.Windows.Forms.Button()
             Me.cboCcnCriterioOrden = New System.Windows.Forms.ComboBox()
@@ -167,7 +166,7 @@ Namespace Views.Cocina
             Me.lblCcnKpiEnCocinaTitulo.Name = "lblCcnKpiEnCocinaTitulo"
             Me.lblCcnKpiEnCocinaTitulo.Size = New System.Drawing.Size(108, 22)
             Me.lblCcnKpiEnCocinaTitulo.TabIndex = 0
-            Me.lblCcnKpiEnCocinaTitulo.Text = "🍳 En Cocina"
+            Me.lblCcnKpiEnCocinaTitulo.Text = "🍳 En Preparación"
             Me.lblCcnKpiEnCocinaTitulo.TextAlign = System.Drawing.ContentAlignment.MiddleCenter
             Me.lblCcnKpiEnCocinaTitulo.UseMnemonic = False
             '
@@ -339,32 +338,15 @@ Namespace Views.Cocina
             '
             'pnlCcnAccionesDerecha
             '
-            Me.pnlCcnAccionesDerecha.Controls.Add(Me.btnCcnNuevoPedido)
             Me.pnlCcnAccionesDerecha.Controls.Add(Me.btnCcnRefrescarManual)
             Me.pnlCcnAccionesDerecha.Controls.Add(Me.btnCcnAlertaSonora)
             Me.pnlCcnAccionesDerecha.Controls.Add(Me.cboCcnCriterioOrden)
             Me.pnlCcnAccionesDerecha.Controls.Add(Me.lblCcnOrdenEtiqueta)
             Me.pnlCcnAccionesDerecha.Dock = System.Windows.Forms.DockStyle.Right
-            Me.pnlCcnAccionesDerecha.Location = New System.Drawing.Point(475, 4)
+            Me.pnlCcnAccionesDerecha.Location = New System.Drawing.Point(634, 4)
             Me.pnlCcnAccionesDerecha.Name = "pnlCcnAccionesDerecha"
-            Me.pnlCcnAccionesDerecha.Size = New System.Drawing.Size(607, 34)
+            Me.pnlCcnAccionesDerecha.Size = New System.Drawing.Size(448, 34)
             Me.pnlCcnAccionesDerecha.TabIndex = 1
-            '
-            'btnCcnNuevoPedido
-            '
-            Me.btnCcnNuevoPedido.BackColor = System.Drawing.Color.FromArgb(198, 107, 72)
-            Me.btnCcnNuevoPedido.Cursor = System.Windows.Forms.Cursors.Hand
-            Me.btnCcnNuevoPedido.FlatAppearance.BorderSize = 0
-            Me.btnCcnNuevoPedido.FlatStyle = System.Windows.Forms.FlatStyle.Flat
-            Me.btnCcnNuevoPedido.Font = New System.Drawing.Font("Segoe UI", 9.0!, System.Drawing.FontStyle.Bold)
-            Me.btnCcnNuevoPedido.ForeColor = System.Drawing.Color.White
-            Me.btnCcnNuevoPedido.Location = New System.Drawing.Point(446, 2)
-            Me.btnCcnNuevoPedido.Name = "btnCcnNuevoPedido"
-            Me.btnCcnNuevoPedido.Size = New System.Drawing.Size(155, 30)
-            Me.btnCcnNuevoPedido.TabIndex = 4
-            Me.btnCcnNuevoPedido.Text = "➕ Nueva Comanda"
-            Me.btnCcnNuevoPedido.UseVisualStyleBackColor = False
-            Me.btnCcnNuevoPedido.UseMnemonic = False
             '
             'btnCcnRefrescarManual
             '
@@ -554,7 +536,6 @@ Namespace Views.Cocina
         Friend WithEvents cboCcnCriterioOrden As System.Windows.Forms.ComboBox
         Friend WithEvents btnCcnAlertaSonora As System.Windows.Forms.Button
         Friend WithEvents btnCcnRefrescarManual As System.Windows.Forms.Button
-        Friend WithEvents btnCcnNuevoPedido As System.Windows.Forms.Button
         Friend WithEvents flpCcnContenedorComandas As System.Windows.Forms.FlowLayoutPanel
         Friend WithEvents tmrCcnActualizadorRealTime As System.Windows.Forms.Timer
     End Class

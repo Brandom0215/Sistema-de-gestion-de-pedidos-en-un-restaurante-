@@ -198,7 +198,7 @@ Namespace Views.Cocina.Controles
             Me.btnCcnAccionPrincipal.Name = "btnCcnAccionPrincipal"
             Me.btnCcnAccionPrincipal.Size = New System.Drawing.Size(314, 36)
             Me.btnCcnAccionPrincipal.TabIndex = 1
-            Me.btnCcnAccionPrincipal.Text = "🍳 Enviar a Cocina"
+            Me.btnCcnAccionPrincipal.Text = "👨‍🍳 Iniciar Preparación"
             Me.btnCcnAccionPrincipal.UseVisualStyleBackColor = False
             Me.btnCcnAccionPrincipal.UseMnemonic = False
             '
