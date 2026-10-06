@@ -42,7 +42,7 @@ CREATE TABLE platos (
     fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 5. TABLA DE PEDIDOS (CABECERA)
+-- 5. TABLA DE PEDIDOS (CABECERA - CAJA, COCINA Y FACTURACIÓN)
 CREATE TABLE pedidos (
     id_pedido SERIAL PRIMARY KEY,
     nombre_cliente VARCHAR(100) NOT NULL,
@@ -53,7 +53,15 @@ CREATE TABLE pedidos (
     monto_recibido NUMERIC(10, 2) DEFAULT 0.00,
     cambio NUMERIC(10, 2) DEFAULT 0.00,
     metodo_pago VARCHAR(30) DEFAULT 'Efectivo',
-    fecha_hora TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    fecha_hora TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    fecha_cobro TIMESTAMP,
+    facturado BOOLEAN DEFAULT FALSE,
+    numero_factura VARCHAR(50),
+    ruc_cedula VARCHAR(30),
+    razon_social VARCHAR(100),
+    direccion_fiscal TEXT,
+    telefono_cliente VARCHAR(30),
+    correo_cliente VARCHAR(100)
 );
 
 -- 6. TABLA DE DETALLE DE PEDIDOS (ITEMS DEL PEDIDO)
@@ -99,11 +107,15 @@ INSERT INTO platos (nombre_plato, id_categoria, precio, tiempo_preparacion, disp
 ('Lengua Guisada con Arroz y Tajadas', 3, 8.00, '15 min', TRUE, 'Lengua de res tierna guisada en vino y vegetales con tajadas de plátano maduro.'),
 ('Saao de Cerdo con Yuca al Mojo', 3, 6.00, '12 min', TRUE, 'Cerdo frito en trozos sazonado con ajo y limón servido con yuca suave al mojo.');
 
--- 4. PEDIDOS DEMOSTRATIVOS DE PRUEBA
-INSERT INTO pedidos (nombre_cliente, mesa_o_servicio, tipo_servicio, estado, total, monto_recibido, cambio, metodo_pago) VALUES
-('Carlos Mendoza', 'Mesa 04', 'En Mesa', 'Pagado', 10.50, 20.00, 9.50, 'Efectivo'),
-('María Fernández', 'Mesa 02', 'En Mesa', 'Pendiente', 7.50, 0.00, 0.00, 'Pendiente');
+-- 4. PEDIDOS DEMOSTRATIVOS DE PRUEBA (PARA CAJA, FACTURACIÓN Y COCINA)
+INSERT INTO pedidos (nombre_cliente, mesa_o_servicio, tipo_servicio, estado, total, monto_recibido, cambio, metodo_pago, facturado, numero_factura, ruc_cedula, razon_social, direccion_fiscal, telefono_cliente, correo_cliente) VALUES
+('Carlos Mendoza', 'Mesa 04', 'En Mesa', 'Pagado', 10.50, 20.00, 9.50, 'Efectivo', TRUE, 'FAC-2026-1001', '8-800-1234', 'Carlos Mendoza', 'Panamá, Bella Vista', '+507 6200-1122', 'carlos.mendoza@email.com'),
+('María Fernández', 'Mesa 02', 'En Mesa', 'Pendiente', 7.50, 0.00, 0.00, 'Pendiente', FALSE, NULL, NULL, NULL, NULL, NULL, NULL),
+('Roberto Gómez', 'Mesa 09', 'En Mesa', 'Pendiente', 8.50, 0.00, 0.00, 'Pendiente', FALSE, NULL, NULL, NULL, NULL, NULL, NULL),
+('Ana Lucía Torres', 'Llevar', 'Para Llevar', 'Pagado', 7.00, 10.00, 3.00, 'Efectivo', TRUE, 'FAC-2026-1002', '8-750-5678', 'Ana Lucía Torres', 'Penonomé, Coclé', '+507 6555-8899', 'ana.torres@email.com');
 
 INSERT INTO detalle_pedidos (id_pedido, id_plato, cantidad, precio_unitario, acompanamientos) VALUES
 (1, 5, 1, 10.50, 'Patacones Extra, Chicha de Nance'),
-(2, 6, 1, 7.50, 'Chicha de Limón con Raspadura');
+(2, 6, 1, 7.50, 'Chicha de Limón con Raspadura'),
+(3, 7, 1, 8.50, 'Plátano tentación'),
+(4, 1, 2, 3.50, 'Empacado térmico');
