@@ -62,7 +62,7 @@ Namespace Views
                 Dim tituloVista As String = If(usuario.Equals("Invitado", StringComparison.OrdinalIgnoreCase), "Carta & Menú Digital", $"Carta & Menú Digital ({_nombreUsuario})")
                 lblTituloModuloTop.Text = tituloVista
                 SeleccionarBotonNavegacion(btnNavCliente, tituloVista)
-                MostrarModuloClienteEnConstruccion()
+                AbrirFormularioEnPanel(Of Pedidos.FrmClienteMenu)()
             ElseIf enumRol = Models.RolUsuarioEnum.Cocina Then
                 SeleccionarBotonNavegacion(btnNavCocina, "Monitor de Cocina (KDS)")
                 AbrirFormularioEnPanel(Of Cocina.FrmCcnMonitorCocina)()
@@ -273,7 +273,7 @@ Namespace Views
         Private Sub btnNavCliente_Click(sender As Object, e As EventArgs) Handles btnNavCliente.Click
             Dim tituloVista As String = If(_rolUsuario.Contains("Cliente"), "Carta & Menú Digital", "Carta & Pedidos")
             SeleccionarBotonNavegacion(btnNavCliente, tituloVista)
-            MostrarModuloClienteEnConstruccion()
+            AbrirFormularioEnPanel(Of Pedidos.FrmClienteMenu)()
         End Sub
 
         Private Sub btnNavCocina_Click(sender As Object, e As EventArgs) Handles btnNavCocina.Click

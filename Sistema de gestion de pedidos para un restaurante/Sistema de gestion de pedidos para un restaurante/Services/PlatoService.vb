@@ -5,7 +5,7 @@ Imports Sistema_de_gestion_de_pedidos_para_un_restaurante.Models
 
 Namespace Services
     ''' <summary>
-    ''' Implementación orientada a objetos del catálogo de platos del restaurante (POO).
+    ''' Implementación orientada a objetos del catálogo gastronómico autóctono panameño (POO).
     ''' </summary>
     Public Class PlatoService
         Implements IPlatoService
@@ -14,15 +14,25 @@ Namespace Services
         Private _ultimoId As Integer = 0
 
         Public Sub New()
-            ' Catálogo inicial gastronómico categorizado según los requerimientos del restaurante
-            Guardar(New PlatoModel(0, "Mangú Tres Golpes Tradicional", "Desayunos", 350.0D, "10 min", True, "Plátano verde majado con queso frito, salami induveca y huevo."))
-            Guardar(New PlatoModel(0, "Sancocho Criollo Gourmet", "Almuerzos", 450.0D, "15 min", True, "Sancocho dominicano tradicional de 7 carnes con víveres y arroz blanco."))
-            Guardar(New PlatoModel(0, "Chivo Liniero Guisado", "Almuerzos", 650.0D, "20 min", True, "Chivo liniero tierno guisado a fuego lento con orégano silvestre y yuca al mojo."))
-            Guardar(New PlatoModel(0, "Mofongo Especial El Buen Sazón", "Almuerzos", 550.0D, "12 min", True, "Plátano verde majado con ajo silvestre, chicharrón crujiente y caldo de la casa."))
-            Guardar(New PlatoModel(0, "Fettuccine a la Huancaína con Lomo", "Cenas", 580.0D, "15 min", True, "Pastas artesanales en salsa huancaína con tiras de lomo salteado."))
-            Guardar(New PlatoModel(0, "Combo Familiar Platos Armados", "Platos Armados", 1200.0D, "25 min", True, "Pollo horneado, arroz moro, papas fritas, ensalada y jarra de jugo."))
-            Guardar(New PlatoModel(0, "Jarra de Jugo Natural de Chinola", "Bebidas y Sodas", 200.0D, "5 min", True, "Jarra de 1 litro de chinola 100% natural servida con hielo rústico."))
-            Guardar(New PlatoModel(0, "Soda Artesanal de Frutos Rojos", "Bebidas y Sodas", 120.0D, "3 min", True, "Refresco artesanal de frutos rojos con agua con gas y menta."))
+            ' Catálogo gastronómico 100% típico panameño categorizado por Desayunos, Almuerzos y Cenas
+            
+            ' Desayunos Panameños
+            Guardar(New PlatoModel(0, "Hojaldre con Queso Blanco y Salchicha", "Desayunos", 3.5D, "10 min", True, "Hojaldre frita crujiente acompañada de queso blanco artesanal y salchichas guisadas."))
+            Guardar(New PlatoModel(0, "Carimañola de Carne Molida", "Desayunos", 2.5D, "8 min", True, "Fritura tradicional de yuca rellena de carne molida sazonada al estilo panameño."))
+            Guardar(New PlatoModel(0, "Tortilla de Maíz con Chicharrón", "Desayunos", 3.0D, "10 min", True, "Tortilla de maíz amarillo asada a la leña servida con chicharrón crujiente."))
+            Guardar(New PlatoModel(0, "Tamal Panameño en Hoja de Bijao", "Desayunos", 4.0D, "12 min", True, "Tamal de maíz pilado relleno de pollo guisado, aceitunas, alcaparras y pasas."))
+
+            ' Almuerzos Panameños
+            Guardar(New PlatoModel(0, "Pescado Frito con Patacones", "Almuerzos", 10.5D, "18 min", True, "Pescado entero frito al punto dorado servido con patacones crujientes y ensalada de feria."))
+            Guardar(New PlatoModel(0, "Sancocho Panameño de Gallina Criolla", "Almuerzos", 7.5D, "15 min", True, "Sancocho tradicional de gallina de patio con yuca, ñame, culantro y arroz blanco."))
+            Guardar(New PlatoModel(0, "Ropa Vieja con Arroz con Guandú", "Almuerzos", 8.5D, "15 min", True, "Carne desmechada en salsa criolla acompañada de arroz con guandú de olor y plátano tentación."))
+            Guardar(New PlatoModel(0, "Arroz con Pollo y Ensalada de Feria", "Almuerzos", 6.5D, "12 min", True, "Arroz con pollo sazonado con vegetales frescos y ensalada roja de remolacha."))
+
+            ' Cenas Panameñas
+            Guardar(New PlatoModel(0, "Bistec Picado con Hojaldres Calientes", "Cenas", 7.0D, "12 min", True, "Tiras de carne de res salteadas con cebolla y pimentón servidas con hojaldres recién fritas."))
+            Guardar(New PlatoModel(0, "Corvina a la Tipileña con Patacones", "Cenas", 11.0D, "20 min", True, "Filete de corvina en salsa de tomate criollo, ají chombo y especias panameñas."))
+            Guardar(New PlatoModel(0, "Lengua Guisada con Arroz y Tajadas", "Cenas", 8.0D, "15 min", True, "Lengua de res tierna guisada en vino y vegetales con tajadas de plátano maduro."))
+            Guardar(New PlatoModel(0, "Saao de Cerdo con Yuca al Mojo", "Cenas", 6.0D, "12 min", True, "Cerdo frito en trozos sazonado con ajo y limón servido con yuca suave al mojo."))
         End Sub
 
         Public Function ObtenerTodos() As IReadOnlyList(Of PlatoModel) Implements IPlatoService.ObtenerTodos
