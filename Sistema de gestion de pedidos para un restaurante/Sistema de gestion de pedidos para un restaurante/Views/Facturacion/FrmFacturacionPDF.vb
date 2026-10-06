@@ -22,9 +22,16 @@ Namespace Views.Facturacion
         Private _pedidoSeleccionadoRow As DataRow = Nothing
         Private _carpetaFacturas As String
         Private WithEvents _printDocument As New PrintDocument()
+        Private _idPedidoInicial As Integer = 0
+        Private _bloquearSelectionChanged As Boolean = False
 
         Public Sub New()
+            Me.New(0)
+        End Sub
+
+        Public Sub New(idPedidoInicial As Integer)
             InitializeComponent()
+            _idPedidoInicial = idPedidoInicial
             _carpetaFacturas = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "FacturasEmitidas")
             If Not Directory.Exists(_carpetaFacturas) Then
                 Directory.CreateDirectory(_carpetaFacturas)
@@ -34,6 +41,39 @@ Namespace Views.Facturacion
         Private Sub FrmFacturacionPDF_Load(sender As Object, e As EventArgs) Handles MyBase.Load
             AplicarTemaVisual()
             CargarPedidosPagados()
+
+            PedidoDAO.SuscribirPedidoModificado(AddressOf OnPedidoActualizadoDesdeDAO)
+            PedidoDAO.SuscribirPedidoRegistrado(AddressOf OnPedidoActualizadoDesdeDAO)
+        End Sub
+
+        Private Sub FrmFacturacionPDF_FormClosed(sender As Object, e As FormClosedEventArgs) Handles MyBase.FormClosed
+            PedidoDAO.DesuscribirPedidoModificado(AddressOf OnPedidoActualizadoDesdeDAO)
+            PedidoDAO.DesuscribirPedidoRegistrado(AddressOf OnPedidoActualizadoDesdeDAO)
+        End Sub
+
+        Private Sub OnPedidoActualizadoDesdeDAO(idPedido As Integer)
+            If Me.IsDisposed OrElse Not Me.IsHandleCreated Then Return
+
+            If Me.InvokeRequired Then
+                Me.BeginInvoke(New Action(Of Integer)(AddressOf OnPedidoActualizadoDesdeDAO), idPedido)
+                Return
+            End If
+
+            Dim idActual As Integer = _idPedidoSeleccionado
+            CargarPedidosPagados()
+            If idActual > 0 Then
+                SeleccionarPedido(idActual)
+            End If
+        End Sub
+
+        Protected Overrides Sub OnVisibleChanged(e As EventArgs)
+            MyBase.OnVisibleChanged(e)
+            If Me.Visible AndAlso _idPedidoInicial > 0 Then
+                Me.BeginInvoke(New Action(Sub()
+                                             SeleccionarPedido(_idPedidoInicial)
+                                             _idPedidoInicial = 0
+                                         End Sub))
+            End If
         End Sub
 
         ''' <summary>
@@ -58,6 +98,7 @@ Namespace Views.Facturacion
             ThemeConfig.EstilizarBotonSecundario(btnLimpiar)
             ThemeConfig.EstilizarBotonSecundario(btnBuscar)
             ThemeConfig.EstilizarBotonSecundario(btnRefrescar)
+            ThemeConfig.EstilizarBotonSecundario(btnVolverCaja)
 
             pnlComprobanteVisual.BackColor = ThemeConfig.ColorBackgroundCard
 
@@ -78,7 +119,16 @@ Namespace Views.Facturacion
         Public Sub CargarPedidosPagados()
             Try
                 Dim dtPagados = PedidoDAO.ObtenerPedidosPagados()
+                For Each r As DataRow In dtPagados.Rows
+                    If r.Table.Columns.Contains("FechaCobro") AndAlso String.IsNullOrWhiteSpace(r("FechaCobro").ToString()) Then
+                        If r.Table.Columns.Contains("FechaHora") Then
+                            r("FechaCobro") = r("FechaHora")
+                        End If
+                    End If
+                Next
+
                 Dim vista As New DataView(dtPagados)
+                vista.Sort = "ID DESC"
 
                 If Not String.IsNullOrWhiteSpace(txtBuscar.Text) Then
                     Dim criterio As String = txtBuscar.Text.Trim().Replace("'", "''")
@@ -90,50 +140,164 @@ Namespace Views.Facturacion
                     End If
                 End If
 
+                _bloquearSelectionChanged = True
                 dgvPedidosFacturar.DataSource = vista
 
                 If dgvPedidosFacturar.Columns.Count > 0 Then
-                    If dgvPedidosFacturar.Columns.Contains("ID") Then dgvPedidosFacturar.Columns("ID").Width = 45
-                    If dgvPedidosFacturar.Columns.Contains("Cliente") Then dgvPedidosFacturar.Columns("Cliente").Width = 130
-                    If dgvPedidosFacturar.Columns.Contains("Mesa") Then dgvPedidosFacturar.Columns("Mesa").Width = 60
-                    If dgvPedidosFacturar.Columns.Contains("PlatoPrincipal") Then dgvPedidosFacturar.Columns("PlatoPrincipal").Width = 140
-                    If dgvPedidosFacturar.Columns.Contains("Total") Then
-                        dgvPedidosFacturar.Columns("Total").DefaultCellStyle.Format = "C2"
-                        dgvPedidosFacturar.Columns("Total").Width = 70
+                    If dgvPedidosFacturar.Columns.Contains("ID") Then
+                        dgvPedidosFacturar.Columns("ID").HeaderText = "ID"
+                        dgvPedidosFacturar.Columns("ID").Width = 50
                     End If
                     If dgvPedidosFacturar.Columns.Contains("NumeroFactura") Then
                         dgvPedidosFacturar.Columns("NumeroFactura").HeaderText = "No. Factura"
-                        dgvPedidosFacturar.Columns("NumeroFactura").Width = 100
+                        dgvPedidosFacturar.Columns("NumeroFactura").Width = 115
+                    End If
+                    If dgvPedidosFacturar.Columns.Contains("FechaCobro") Then
+                        dgvPedidosFacturar.Columns("FechaCobro").HeaderText = "Fecha Cobrado"
+                        dgvPedidosFacturar.Columns("FechaCobro").Width = 140
+                    End If
+                    If dgvPedidosFacturar.Columns.Contains("Cliente") Then
+                        dgvPedidosFacturar.Columns("Cliente").HeaderText = "Cliente"
+                        dgvPedidosFacturar.Columns("Cliente").Width = 160
+                    End If
+                    If dgvPedidosFacturar.Columns.Contains("Mesa") Then
+                        dgvPedidosFacturar.Columns("Mesa").HeaderText = "Mesa"
+                        dgvPedidosFacturar.Columns("Mesa").Width = 80
+                    End If
+                    If dgvPedidosFacturar.Columns.Contains("PlatoPrincipal") Then
+                        dgvPedidosFacturar.Columns("PlatoPrincipal").HeaderText = "Plato / Consumo"
+                        dgvPedidosFacturar.Columns("PlatoPrincipal").Width = 200
+                    End If
+                    If dgvPedidosFacturar.Columns.Contains("MetodoPago") Then
+                        dgvPedidosFacturar.Columns("MetodoPago").HeaderText = "Método Pago"
+                        dgvPedidosFacturar.Columns("MetodoPago").Width = 110
+                    End If
+                    If dgvPedidosFacturar.Columns.Contains("Total") Then
+                        dgvPedidosFacturar.Columns("Total").HeaderText = "Total"
+                        dgvPedidosFacturar.Columns("Total").DefaultCellStyle.Format = "C2"
+                        dgvPedidosFacturar.Columns("Total").Width = 85
                     End If
 
                     ' Ocultar columnas accesorias
                     Dim columnasOcultas = {"Acompanamientos", "TipoServicio", "FechaHora", "PrecioUnitario", "Subtotal",
-                                           "Impuesto", "Estado", "MetodoPago", "MontoRecibido", "Cambio", "Facturado",
+                                           "Impuesto", "Estado", "MontoRecibido", "Cambio", "Facturado",
                                            "RUC_Cedula", "RazonSocial", "DireccionFiscal", "TelefonoCliente", "CorreoCliente"}
                     For Each col In columnasOcultas
                         If dgvPedidosFacturar.Columns.Contains(col) Then
                             dgvPedidosFacturar.Columns(col).Visible = False
                         End If
                     Next
+
+                    ' Preselección automática del pedido (flujo directo de cobro en caja)
+                    _bloquearSelectionChanged = False
+                    SeleccionarPedido(_idPedidoInicial)
+                Else
+                    _bloquearSelectionChanged = False
                 End If
 
                 If vista.Count = 0 Then
                     LimpiarFormulario()
                 End If
             Catch ex As Exception
+                _bloquearSelectionChanged = False
                 MessageBox.Show($"Ocurrió un error al cargar las órdenes pagadas: {ex.Message}", "Error de Facturación", MessageBoxButtons.OK, MessageBoxIcon.Error)
             End Try
         End Sub
 
+        ''' <summary>
+        ''' Selecciona explícitamente una comanda en la tabla de facturación y carga sus datos.
+        ''' </summary>
+        Public Sub SeleccionarPedido(idPedido As Integer)
+            If dgvPedidosFacturar Is Nothing OrElse dgvPedidosFacturar.Rows.Count = 0 Then Return
+
+            Dim filaSeleccionar As DataGridViewRow = Nothing
+            If idPedido > 0 Then
+                For Each r As DataGridViewRow In dgvPedidosFacturar.Rows
+                    Dim currentId As Integer = 0
+                    Dim rv = TryCast(r.DataBoundItem, DataRowView)
+                    If rv IsNot Nothing AndAlso rv.Row.Table.Columns.Contains("ID") Then
+                        currentId = Convert.ToInt32(rv("ID"))
+                    ElseIf r.Cells("ID").Value IsNot Nothing Then
+                        currentId = Convert.ToInt32(r.Cells("ID").Value)
+                    End If
+
+                    If currentId = idPedido Then
+                        filaSeleccionar = r
+                        Exit For
+                    End If
+                Next
+            End If
+
+            If filaSeleccionar Is Nothing AndAlso dgvPedidosFacturar.Rows.Count > 0 Then
+                filaSeleccionar = dgvPedidosFacturar.Rows(0)
+            End If
+
+            If filaSeleccionar IsNot Nothing Then
+                _bloquearSelectionChanged = True
+                Try
+                    dgvPedidosFacturar.ClearSelection()
+                    filaSeleccionar.Selected = True
+
+                    For Each celda As DataGridViewCell In filaSeleccionar.Cells
+                        If celda.Visible Then
+                            dgvPedidosFacturar.CurrentCell = celda
+                            Exit For
+                        End If
+                    Next
+                Catch
+                Finally
+                    _bloquearSelectionChanged = False
+                End Try
+
+                Dim finalId As Integer = 0
+                Dim rvSelected = TryCast(filaSeleccionar.DataBoundItem, DataRowView)
+                If rvSelected IsNot Nothing AndAlso rvSelected.Row.Table.Columns.Contains("ID") Then
+                    finalId = Convert.ToInt32(rvSelected("ID"))
+                ElseIf filaSeleccionar.Cells("ID").Value IsNot Nothing Then
+                    finalId = Convert.ToInt32(filaSeleccionar.Cells("ID").Value)
+                End If
+
+                If finalId > 0 Then
+                    _idPedidoSeleccionado = finalId
+                    _pedidoSeleccionadoRow = PedidoDAO.ObtenerPedidoPorId(_idPedidoSeleccionado)
+                    If _pedidoSeleccionadoRow IsNot Nothing Then
+                        CargarDatosEnControles(_pedidoSeleccionadoRow)
+                        ActualizarTicketVisual()
+                    End If
+                End If
+
+                ' Mover el foco a un campo de entrada para evitar que DataGridView fuerce el cursor a (0, 0)
+                txtRucCedula.Focus()
+            End If
+        End Sub
+
+        Private Sub btnVolverCaja_Click(sender As Object, e As EventArgs) Handles btnVolverCaja.Click
+            Dim formHome = TryCast(Me.ParentForm, FrmHome)
+            If formHome IsNot Nothing Then
+                formHome.AbrirFormularioEnPanel(Of Caja.FrmCajaCobros)()
+            End If
+        End Sub
+
         Private Sub dgvPedidosFacturar_SelectionChanged(sender As Object, e As EventArgs) Handles dgvPedidosFacturar.SelectionChanged
+            If _bloquearSelectionChanged Then Return
             If dgvPedidosFacturar.SelectedRows.Count > 0 Then
                 Dim row = dgvPedidosFacturar.SelectedRows(0)
-                _idPedidoSeleccionado = Convert.ToInt32(row.Cells("ID").Value)
-                _pedidoSeleccionadoRow = PedidoDAO.ObtenerPedidoPorId(_idPedidoSeleccionado)
+                Dim idRow As Integer = 0
+                Dim rv = TryCast(row.DataBoundItem, DataRowView)
+                If rv IsNot Nothing AndAlso rv.Row.Table.Columns.Contains("ID") Then
+                    idRow = Convert.ToInt32(rv("ID"))
+                ElseIf row.Cells("ID").Value IsNot Nothing Then
+                    idRow = Convert.ToInt32(row.Cells("ID").Value)
+                End If
 
-                If _pedidoSeleccionadoRow IsNot Nothing Then
-                    CargarDatosEnControles(_pedidoSeleccionadoRow)
-                    ActualizarTicketVisual()
+                If idRow > 0 Then
+                    _idPedidoSeleccionado = idRow
+                    _pedidoSeleccionadoRow = PedidoDAO.ObtenerPedidoPorId(_idPedidoSeleccionado)
+
+                    If _pedidoSeleccionadoRow IsNot Nothing Then
+                        CargarDatosEnControles(_pedidoSeleccionadoRow)
+                        ActualizarTicketVisual()
+                    End If
                 End If
             End If
         End Sub

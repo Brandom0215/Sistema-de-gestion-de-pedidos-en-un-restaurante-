@@ -26,6 +26,29 @@ Namespace Views.Caja
         Private Sub FrmCajaCobros_Load(sender As Object, e As EventArgs) Handles MyBase.Load
             AplicarTemaVisual()
             CargarPedidosPendientes()
+
+            ' Suscribir a notificaciones de persistencia en tiempo real de PedidoDAO
+            PedidoDAO.SuscribirPedidoRegistrado(AddressOf OnPedidoActualizadoDesdeDAO)
+            PedidoDAO.SuscribirPedidoModificado(AddressOf OnPedidoActualizadoDesdeDAO)
+        End Sub
+
+        Private Sub FrmCajaCobros_FormClosed(sender As Object, e As FormClosedEventArgs) Handles MyBase.FormClosed
+            PedidoDAO.DesuscribirPedidoRegistrado(AddressOf OnPedidoActualizadoDesdeDAO)
+            PedidoDAO.DesuscribirPedidoModificado(AddressOf OnPedidoActualizadoDesdeDAO)
+        End Sub
+
+        ''' <summary>
+        ''' Notificación reactiva inmediata cuando se registra o actualiza un pedido en el sistema.
+        ''' </summary>
+        Private Sub OnPedidoActualizadoDesdeDAO(idPedido As Integer)
+            If Me.IsDisposed OrElse Not Me.IsHandleCreated Then Return
+
+            If Me.InvokeRequired Then
+                Me.BeginInvoke(New Action(Of Integer)(AddressOf OnPedidoActualizadoDesdeDAO), idPedido)
+                Return
+            End If
+
+            CargarPedidosPendientes()
         End Sub
 
         ''' <summary>
@@ -86,20 +109,36 @@ Namespace Views.Caja
                 lblTotalPendientes.Text = $"Comandas pendientes de cobro: {vista.Count}"
 
                 If dgvPedidosPendientes.Columns.Count > 0 Then
-                    If dgvPedidosPendientes.Columns.Contains("ID") Then dgvPedidosPendientes.Columns("ID").Width = 45
-                    If dgvPedidosPendientes.Columns.Contains("Cliente") Then dgvPedidosPendientes.Columns("Cliente").Width = 140
-                    If dgvPedidosPendientes.Columns.Contains("Mesa") Then dgvPedidosPendientes.Columns("Mesa").Width = 70
-                    If dgvPedidosPendientes.Columns.Contains("PlatoPrincipal") Then dgvPedidosPendientes.Columns("PlatoPrincipal").Width = 150
-                    If dgvPedidosPendientes.Columns.Contains("Total") Then
-                        dgvPedidosPendientes.Columns("Total").DefaultCellStyle.Format = "C2"
-                        dgvPedidosPendientes.Columns("Total").Width = 75
+                    If dgvPedidosPendientes.Columns.Contains("ID") Then
+                        dgvPedidosPendientes.Columns("ID").HeaderText = "ID"
+                        dgvPedidosPendientes.Columns("ID").Width = 50
                     End If
-                    If dgvPedidosPendientes.Columns.Contains("FechaHora") Then dgvPedidosPendientes.Columns("FechaHora").Width = 75
+                    If dgvPedidosPendientes.Columns.Contains("FechaHora") Then
+                        dgvPedidosPendientes.Columns("FechaHora").HeaderText = "Fecha / Hora"
+                        dgvPedidosPendientes.Columns("FechaHora").Width = 140
+                    End If
+                    If dgvPedidosPendientes.Columns.Contains("Cliente") Then
+                        dgvPedidosPendientes.Columns("Cliente").HeaderText = "Cliente"
+                        dgvPedidosPendientes.Columns("Cliente").Width = 160
+                    End If
+                    If dgvPedidosPendientes.Columns.Contains("Mesa") Then
+                        dgvPedidosPendientes.Columns("Mesa").HeaderText = "Mesa"
+                        dgvPedidosPendientes.Columns("Mesa").Width = 80
+                    End If
+                    If dgvPedidosPendientes.Columns.Contains("PlatoPrincipal") Then
+                        dgvPedidosPendientes.Columns("PlatoPrincipal").HeaderText = "Plato / Comanda"
+                        dgvPedidosPendientes.Columns("PlatoPrincipal").Width = 210
+                    End If
+                    If dgvPedidosPendientes.Columns.Contains("Total") Then
+                        dgvPedidosPendientes.Columns("Total").HeaderText = "Total"
+                        dgvPedidosPendientes.Columns("Total").DefaultCellStyle.Format = "C2"
+                        dgvPedidosPendientes.Columns("Total").Width = 85
+                    End If
 
                     ' Ocultar columnas secundarias para mantener la grilla despejada
                     Dim columnasOcultas = {"Acompanamientos", "TipoServicio", "PrecioUnitario", "Subtotal", "Impuesto",
                                            "Estado", "MetodoPago", "MontoRecibido", "Cambio", "Facturado", "NumeroFactura",
-                                           "RUC_Cedula", "RazonSocial", "DireccionFiscal", "TelefonoCliente", "CorreoCliente"}
+                                           "RUC_Cedula", "RazonSocial", "DireccionFiscal", "TelefonoCliente", "CorreoCliente", "FechaCobro"}
                     For Each col In columnasOcultas
                         If dgvPedidosPendientes.Columns.Contains(col) Then
                             dgvPedidosPendientes.Columns(col).Visible = False
@@ -255,23 +294,21 @@ Namespace Views.Caja
                                             $"• Destino: Transmisión inmediata a Cocina KDS"
 
             If ConfirmarAccion(mensajePregunta, "Confirmar Transacción en Caja") Then
-                Dim exito = PedidoDAO.ConfirmarCobro(_idPedidoSeleccionado, metodo, montoRecibido, cambio)
+                Dim idCobrado As Integer = _idPedidoSeleccionado
+                Dim exito = PedidoDAO.ConfirmarCobro(idCobrado, metodo, montoRecibido, cambio)
                 If exito Then
-                    Dim mensajeExito As String = $"¡Cobro de la Comanda #{_idPedidoSeleccionado} registrado exitosamente!" & vbCrLf & vbCrLf &
+                    Dim mensajeExito As String = $"¡Cobro de la Comanda #{idCobrado} registrado exitosamente!" & vbCrLf & vbCrLf &
                                                  $"La orden ha sido autorizada y enviada a la pantalla de cocina (KDS)." & vbCrLf &
                                                  If(cambio > 0, $"Entregar cambio al cliente: ${cambio:N2}", "")
-
-                    Dim idCobrado = _idPedidoSeleccionado
                     MostrarMensajeExito(mensajeExito, "Cobro Exitoso")
                     LimpiarDetalle()
                     CargarPedidosPendientes()
 
-                    ' Opción de facturación inmediata (CU-004 / CU-006)
-                    If ConfirmarAccion($"¿Desea emitir o imprimir el comprobante fiscal de la Comanda #{idCobrado} ahora?", "Facturación Fiscal") Then
-                        Dim formHome = TryCast(Me.ParentForm, FrmHome)
-                        If formHome IsNot Nothing Then
-                            formHome.AbrirFormularioEnPanel(Of Facturacion.FrmFacturacionPDF)()
-                        End If
+                    ' Flujo POS del Mundo Real: Diálogo inmediato de comprobante fiscal para la orden cobrada
+                    If ConfirmarAccion($"¿Desea emitir o imprimir el comprobante fiscal de la Comanda #{idCobrado} ahora?", "Emisión de Comprobante Fiscal") Then
+                        Using dlg As New FrmCobroComprobanteDialog(idCobrado)
+                            dlg.ShowDialog(Me)
+                        End Using
                     End If
                 Else
                     MostrarMensajeError("No se pudo actualizar el estado del pedido en el repositorio.", "Error al Cobrar")

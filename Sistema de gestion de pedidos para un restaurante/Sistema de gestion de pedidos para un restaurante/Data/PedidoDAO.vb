@@ -71,6 +71,7 @@ Namespace Data
             _tablaPedidos.Columns.Add("Acompanamientos", GetType(String))
             _tablaPedidos.Columns.Add("TipoServicio", GetType(String))
             _tablaPedidos.Columns.Add("FechaHora", GetType(String))
+            _tablaPedidos.Columns.Add("FechaCobro", GetType(String))
             _tablaPedidos.Columns.Add("PrecioUnitario", GetType(Decimal))
             _tablaPedidos.Columns.Add("Subtotal", GetType(Decimal))
             _tablaPedidos.Columns.Add("Impuesto", GetType(Decimal))
@@ -142,6 +143,7 @@ Namespace Data
             dr("Acompanamientos") = ""
             dr("TipoServicio") = servicio
             dr("FechaHora") = horaRegistro.ToString("yyyy-MM-dd HH:mm:ss")
+            dr("FechaCobro") = If(estadoPago = "PAGADO", horaRegistro.ToString("yyyy-MM-dd HH:mm:ss"), "")
             dr("PrecioUnitario") = 0D
             dr("Subtotal") = 0D
             dr("Impuesto") = 0D
@@ -335,6 +337,7 @@ Namespace Data
                 dr("Acompanamientos") = If(listaNotasExtras.Count > 0, String.Join(", ", listaNotasExtras), "Sin Extras")
                 dr("TipoServicio") = strServicio
                 dr("FechaHora") = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")
+                dr("FechaCobro") = If(estadoPago = "PAGADO", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"), "")
                 dr("PrecioUnitario") = total
                 dr("Subtotal") = Math.Round(total / 1.07D, 2)
                 dr("Impuesto") = Math.Round(total - CDec(dr("Subtotal")), 2)
@@ -392,6 +395,7 @@ Namespace Data
                 dr("Acompanamientos") = strAcomp
                 dr("TipoServicio") = strServicio
                 dr("FechaHora") = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")
+                dr("FechaCobro") = If(estadoPago = "PAGADO", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"), "")
                 dr("PrecioUnitario") = precioFinal
                 dr("Subtotal") = Math.Round(precioFinal / 1.07D, 2)
                 dr("Impuesto") = Math.Round(precioFinal - CDec(dr("Subtotal")), 2)
@@ -477,6 +481,7 @@ Namespace Data
             For Each row As DataRow In _tablaPedidos.Rows
                 If Convert.ToInt32(row("ID")) = id Then
                     row("Estado") = "PAGADO"
+                    row("FechaCobro") = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")
                     row("MetodoPago") = metodoPago
                     row("MontoRecibido") = montoRecibido
                     row("Cambio") = cambio

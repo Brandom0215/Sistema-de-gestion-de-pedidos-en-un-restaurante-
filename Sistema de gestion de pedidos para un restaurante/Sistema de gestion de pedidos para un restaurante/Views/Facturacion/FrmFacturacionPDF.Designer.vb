@@ -21,6 +21,7 @@ Namespace Views.Facturacion
         <System.Diagnostics.DebuggerStepThrough()>
         Private Sub InitializeComponent()
             Me.pnlHeader = New System.Windows.Forms.Panel()
+            Me.btnVolverCaja = New System.Windows.Forms.Button()
             Me.lblTituloHeader = New System.Windows.Forms.Label()
             Me.lblSubtituloHeader = New System.Windows.Forms.Label()
             Me.pnlContenedor = New System.Windows.Forms.Panel()
@@ -86,6 +87,7 @@ Namespace Views.Facturacion
             '
             ' pnlHeader
             '
+            Me.pnlHeader.Controls.Add(Me.btnVolverCaja)
             Me.pnlHeader.Controls.Add(Me.lblSubtituloHeader)
             Me.pnlHeader.Controls.Add(Me.lblTituloHeader)
             Me.pnlHeader.Dock = System.Windows.Forms.DockStyle.Top
@@ -94,15 +96,27 @@ Namespace Views.Facturacion
             Me.pnlHeader.Size = New System.Drawing.Size(960, 65)
             Me.pnlHeader.TabIndex = 0
             '
+            ' btnVolverCaja
+            '
+            Me.btnVolverCaja.Anchor = CType((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
+            Me.btnVolverCaja.Cursor = System.Windows.Forms.Cursors.Hand
+            Me.btnVolverCaja.Font = New System.Drawing.Font("Segoe UI", 9.5F, System.Drawing.FontStyle.Bold)
+            Me.btnVolverCaja.Location = New System.Drawing.Point(800, 12)
+            Me.btnVolverCaja.Name = "btnVolverCaja"
+            Me.btnVolverCaja.Size = New System.Drawing.Size(155, 38)
+            Me.btnVolverCaja.TabIndex = 2
+            Me.btnVolverCaja.Text = "← Volver a Caja"
+            Me.btnVolverCaja.UseVisualStyleBackColor = True
+            '
             ' lblTituloHeader
             '
             Me.lblTituloHeader.AutoSize = True
             Me.lblTituloHeader.Font = New System.Drawing.Font("Segoe UI", 16.0F, System.Drawing.FontStyle.Bold)
             Me.lblTituloHeader.Location = New System.Drawing.Point(0, 0)
             Me.lblTituloHeader.Name = "lblTituloHeader"
-            Me.lblTituloHeader.Size = New System.Drawing.Size(390, 30)
+            Me.lblTituloHeader.Size = New System.Drawing.Size(460, 30)
             Me.lblTituloHeader.TabIndex = 0
-            Me.lblTituloHeader.Text = "🧾 Facturación & Comprobantes PDF"
+            Me.lblTituloHeader.Text = "📜 Historial de Facturación & Archivo Fiscal"
             '
             ' lblSubtituloHeader
             '
@@ -111,9 +125,9 @@ Namespace Views.Facturacion
             Me.lblSubtituloHeader.ForeColor = System.Drawing.Color.Gray
             Me.lblSubtituloHeader.Location = New System.Drawing.Point(3, 34)
             Me.lblSubtituloHeader.Name = "lblSubtituloHeader"
-            Me.lblSubtituloHeader.Size = New System.Drawing.Size(695, 17)
+            Me.lblSubtituloHeader.Size = New System.Drawing.Size(710, 17)
             Me.lblSubtituloHeader.TabIndex = 1
-            Me.lblSubtituloHeader.Text = "Emisión de facturas fiscales con número correlativo inalterable y generación nativa de documentos PDF (RF-007, RN-009, RN-010, CU-004)."
+            Me.lblSubtituloHeader.Text = "Consulta histórica de comprobantes emitidos, reimpresión de tickets fiscales y exportación de documentos PDF oficiales."
             '
             ' pnlContenedor
             '
@@ -209,7 +223,8 @@ Namespace Views.Facturacion
             '
             Me.dgvPedidosFacturar.AllowUserToAddRows = False
             Me.dgvPedidosFacturar.AllowUserToDeleteRows = False
-            Me.dgvPedidosFacturar.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.Fill
+            Me.dgvPedidosFacturar.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.None
+            Me.dgvPedidosFacturar.ScrollBars = System.Windows.Forms.ScrollBars.Both
             Me.dgvPedidosFacturar.BackgroundColor = System.Drawing.Color.White
             Me.dgvPedidosFacturar.BorderStyle = System.Windows.Forms.BorderStyle.None
             Me.dgvPedidosFacturar.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize
@@ -755,6 +770,7 @@ Namespace Views.Facturacion
         Friend WithEvents btnGuardarComo As Button
         Friend WithEvents btnEnviarCorreo As Button
         Friend WithEvents btnLimpiar As Button
+        Friend WithEvents btnVolverCaja As Button
         Friend WithEvents grpVistaPrevia As GroupBox
         Friend WithEvents pnlComprobanteVisual As Panel
         Friend WithEvents lblTicketRestaurante As Label
