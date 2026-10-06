@@ -21,6 +21,7 @@ Namespace Views.Dashboards
         Friend WithEvents lblTituloDashboard As System.Windows.Forms.Label
         Friend WithEvents lblSubtituloDashboard As System.Windows.Forms.Label
         Friend WithEvents btnRefrescar As System.Windows.Forms.Button
+        Friend WithEvents btnVerDetalleIngresos As System.Windows.Forms.Button
 
         ' Layout Principal
         Friend WithEvents tlpMainLayout As System.Windows.Forms.TableLayoutPanel
@@ -77,6 +78,7 @@ Namespace Views.Dashboards
             Me.lblTituloDashboard = New System.Windows.Forms.Label()
             Me.lblSubtituloDashboard = New System.Windows.Forms.Label()
             Me.btnRefrescar = New System.Windows.Forms.Button()
+            Me.btnVerDetalleIngresos = New System.Windows.Forms.Button()
 
             Me.tlpMainLayout = New System.Windows.Forms.TableLayoutPanel()
 
@@ -141,6 +143,7 @@ Namespace Views.Dashboards
             ' 
             ' pnlHeaderContainer
             ' 
+            Me.pnlHeaderContainer.Controls.Add(Me.btnVerDetalleIngresos)
             Me.pnlHeaderContainer.Controls.Add(Me.btnRefrescar)
             Me.pnlHeaderContainer.Controls.Add(Me.lblSubtituloDashboard)
             Me.pnlHeaderContainer.Controls.Add(Me.lblTituloDashboard)
@@ -149,6 +152,18 @@ Namespace Views.Dashboards
             Me.pnlHeaderContainer.Name = "pnlHeaderContainer"
             Me.pnlHeaderContainer.Size = New System.Drawing.Size(980, 75)
             Me.pnlHeaderContainer.TabIndex = 0
+
+            ' 
+            ' btnVerDetalleIngresos
+            ' 
+            Me.btnVerDetalleIngresos.Anchor = CType((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
+            Me.btnVerDetalleIngresos.Font = New System.Drawing.Font("Segoe UI", 9.0F, System.Drawing.FontStyle.Bold)
+            Me.btnVerDetalleIngresos.Location = New System.Drawing.Point(620, 18)
+            Me.btnVerDetalleIngresos.Name = "btnVerDetalleIngresos"
+            Me.btnVerDetalleIngresos.Size = New System.Drawing.Size(180, 38)
+            Me.btnVerDetalleIngresos.TabIndex = 1
+            Me.btnVerDetalleIngresos.Text = "📈 Ver Reporte Ingresos"
+            Me.btnVerDetalleIngresos.UseVisualStyleBackColor = True
 
             ' 
             ' btnRefrescar

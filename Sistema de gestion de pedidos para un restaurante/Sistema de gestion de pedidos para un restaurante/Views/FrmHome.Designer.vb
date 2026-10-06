@@ -33,10 +33,12 @@ Namespace Views
     Friend WithEvents pnlLogoSeparador As System.Windows.Forms.Panel
     Friend WithEvents pnlBarraIndicadorMenu As System.Windows.Forms.Panel
 
-    ' Botones de Navegación del Sistema (Reorganizados en 3 Áreas Principales)
+    ' Botones de Navegación del Sistema (Reorganizados según Rol)
     Friend WithEvents btnNavCliente As System.Windows.Forms.Button
     Friend WithEvents btnNavCocina As System.Windows.Forms.Button
     Friend WithEvents btnNavCobroAdmin As System.Windows.Forms.Button
+    Friend WithEvents btnNavMetricas As System.Windows.Forms.Button
+    Friend WithEvents btnNavCatalogo As System.Windows.Forms.Button
 
     Friend WithEvents pnlSidebarFooter As System.Windows.Forms.Panel
     Friend WithEvents lblEstadoBaseDatos As System.Windows.Forms.Label
@@ -74,6 +76,8 @@ Namespace Views
         Me.btnNavCliente = New System.Windows.Forms.Button()
         Me.btnNavCocina = New System.Windows.Forms.Button()
         Me.btnNavCobroAdmin = New System.Windows.Forms.Button()
+        Me.btnNavMetricas = New System.Windows.Forms.Button()
+        Me.btnNavCatalogo = New System.Windows.Forms.Button()
 
         Me.pnlSidebarFooter = New System.Windows.Forms.Panel()
         Me.lblEstadoBaseDatos = New System.Windows.Forms.Label()
@@ -104,6 +108,8 @@ Namespace Views
         ' pnlSidebar
         ' 
         Me.pnlSidebar.Controls.Add(Me.btnCerrarSesion)
+        Me.pnlSidebar.Controls.Add(Me.btnNavCatalogo)
+        Me.pnlSidebar.Controls.Add(Me.btnNavMetricas)
         Me.pnlSidebar.Controls.Add(Me.btnNavCobroAdmin)
         Me.pnlSidebar.Controls.Add(Me.btnNavCocina)
         Me.pnlSidebar.Controls.Add(Me.btnNavCliente)
@@ -226,6 +232,30 @@ Namespace Views
         Me.btnNavCobroAdmin.Text = "  💵 Módulo Cobro / Admin"
         Me.btnNavCobroAdmin.UseVisualStyleBackColor = True
         Me.btnNavCobroAdmin.UseMnemonic = False
+
+        ' 
+        ' btnNavMetricas
+        ' 
+        Me.btnNavMetricas.Location = New System.Drawing.Point(6, 110)
+        Me.btnNavMetricas.Name = "btnNavMetricas"
+        Me.btnNavMetricas.Size = New System.Drawing.Size(238, 48)
+        Me.btnNavMetricas.TabIndex = 5
+        Me.btnNavMetricas.Text = "  📊 Métricas & Ingresos"
+        Me.btnNavMetricas.UseVisualStyleBackColor = True
+        Me.btnNavMetricas.UseMnemonic = False
+        Me.btnNavMetricas.Visible = False
+
+        ' 
+        ' btnNavCatalogo
+        ' 
+        Me.btnNavCatalogo.Location = New System.Drawing.Point(6, 168)
+        Me.btnNavCatalogo.Name = "btnNavCatalogo"
+        Me.btnNavCatalogo.Size = New System.Drawing.Size(238, 48)
+        Me.btnNavCatalogo.TabIndex = 6
+        Me.btnNavCatalogo.Text = "  🍽️ Menú & Platos"
+        Me.btnNavCatalogo.UseVisualStyleBackColor = True
+        Me.btnNavCatalogo.UseMnemonic = False
+        Me.btnNavCatalogo.Visible = False
 
         ' 
         ' btnCerrarSesion

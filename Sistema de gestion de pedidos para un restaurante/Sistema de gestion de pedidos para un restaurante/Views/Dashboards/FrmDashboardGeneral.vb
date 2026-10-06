@@ -6,7 +6,7 @@ Imports Sistema_de_gestion_de_pedidos_para_un_restaurante.Theme
 Namespace Views.Dashboards
     ''' <summary>
     ''' Vista principal del Dashboard / Panel de Control General.
-    ''' Incluye resumen ejecutivo de operaciones y la tarjeta destacada de Platos Más Pedidos (RF-013).
+    ''' Incluye resumen ejecutivo de operaciones, ingresos acumulados y la tarjeta destacada de Platos Más Pedidos (RF-013).
     ''' Sincronizado dinámicamente con la capa PedidoDAO.
     ''' </summary>
     Public Class FrmDashboardGeneral
@@ -21,7 +21,7 @@ Namespace Views.Dashboards
         End Sub
 
         ''' <summary>
-        ''' Aplica la paleta visual oficial y fuentes modernas a todos los controles del Dashboard.
+        ''' Aplica la paleta visual oficial, tarjetas estilizadas con acentos modernos y fuentes tipográficas al Dashboard.
         ''' </summary>
         Protected Overrides Sub AplicarTemaVisual()
             MyBase.AplicarTemaVisual()
@@ -29,50 +29,94 @@ Namespace Views.Dashboards
 
             ' Encabezado
             lblTituloDashboard.ForeColor = ThemeConfig.ColorNeutralDark
-            lblTituloDashboard.Font = ThemeConfig.ObtenerFuenteTitulo(16.0F, FontStyle.Bold)
+            lblTituloDashboard.Font = ThemeConfig.ObtenerFuenteTitulo(17.0F, FontStyle.Bold)
             lblSubtituloDashboard.ForeColor = ThemeConfig.ColorTextMuted
             ThemeConfig.EstilizarBotonSecundario(btnRefrescar)
+            ThemeConfig.EstilizarBotonPrimario(btnVerDetalleIngresos)
 
-            ' Tarjetas de Métricas
-            ThemeConfig.AplicarEstiloTarjeta(pnlCardPedidosHoy)
-            ThemeConfig.AplicarEstiloTarjeta(pnlCardCocinaKDS)
-            ThemeConfig.AplicarEstiloTarjeta(pnlCardVentasTotales)
+            ' Tarjetas de Métricas con barra de acento superior y sombras suaves
+            ConfigurarTarjetaMetrica(pnlCardPedidosHoy, lblHeaderPedidosHoy, lblValorPedidosHoy, lblDetallePedidosHoy,
+                                     "📦 PEDIDOS REGISTRADOS HOY", ThemeConfig.ColorSecondary, Color.FromArgb(117, 70, 50))
 
-            lblValorPedidosHoy.Font = ThemeConfig.ObtenerFuenteTitulo(22.0F, FontStyle.Bold)
-            lblValorPedidosHoy.ForeColor = ThemeConfig.ColorPrimary
+            ConfigurarTarjetaMetrica(pnlCardCocinaKDS, lblHeaderCocinaKDS, lblValorCocinaKDS, lblDetalleCocinaKDS,
+                                     "👨‍🍳 COMANDAS EN COCINA (KDS)", ThemeConfig.ColorPrimary, ThemeConfig.ColorPrimary)
 
-            lblValorCocinaKDS.Font = ThemeConfig.ObtenerFuenteTitulo(22.0F, FontStyle.Bold)
-            lblValorCocinaKDS.ForeColor = ThemeConfig.ColorPrimaryDark
+            ConfigurarTarjetaMetrica(pnlCardVentasTotales, lblHeaderVentasTotales, lblValorVentasTotales, lblDetalleVentasTotales,
+                                     "💰 INGRESOS TOTALES DEL DÍA", Color.FromArgb(46, 125, 50), Color.FromArgb(46, 125, 50))
 
-            lblValorVentasTotales.Font = ThemeConfig.ObtenerFuenteTitulo(22.0F, FontStyle.Bold)
-            lblValorVentasTotales.ForeColor = ThemeConfig.ColorNeutralDark
+            pnlCardVentasTotales.Cursor = Cursors.Hand
+            lblDetalleVentasTotales.Text = "📈 Clic para ver desglose diario y arqueo ➜"
 
-            ' Seccion Platos Más Pedidos
+            ' Efecto hover interactivo en tarjeta de ingresos
+            Dim onEnter = Sub() pnlCardVentasTotales.BackColor = Color.FromArgb(253, 248, 245)
+            Dim onLeave = Sub() pnlCardVentasTotales.BackColor = Color.White
+            AddHandler pnlCardVentasTotales.MouseEnter, Sub(s, e) onEnter()
+            AddHandler pnlCardVentasTotales.MouseLeave, Sub(s, e) onLeave()
+            AddHandler lblValorVentasTotales.MouseEnter, Sub(s, e) onEnter()
+            AddHandler lblValorVentasTotales.MouseLeave, Sub(s, e) onLeave()
+            AddHandler lblDetalleVentasTotales.MouseEnter, Sub(s, e) onEnter()
+            AddHandler lblDetalleVentasTotales.MouseLeave, Sub(s, e) onLeave()
+            AddHandler lblHeaderVentasTotales.MouseEnter, Sub(s, e) onEnter()
+            AddHandler lblHeaderVentasTotales.MouseLeave, Sub(s, e) onLeave()
+
+            ' Sección Platos Más Pedidos
             ThemeConfig.AplicarEstiloTarjeta(pnlCardPlatosMasPedidos)
-            lblTituloPlatosMasPedidos.Font = ThemeConfig.ObtenerFuenteSubtitulo(13.0F, FontStyle.Bold)
+            lblTituloPlatosMasPedidos.Font = ThemeConfig.ObtenerFuenteSubtitulo(13.5F, FontStyle.Bold)
             lblTituloPlatosMasPedidos.ForeColor = ThemeConfig.ColorNeutralDark
             lblSubtituloPlatosMasPedidos.ForeColor = ThemeConfig.ColorTextMuted
 
-            ' Ítems individuales
-            EstilizarItemPlato(pnlItemPlato1, lblNombrePlato1, lblCategoriaPlato1, lblOrdenesPlato1, lblPrecioPlato1)
-            EstilizarItemPlato(pnlItemPlato2, lblNombrePlato2, lblCategoriaPlato2, lblOrdenesPlato2, lblPrecioPlato2)
-            EstilizarItemPlato(pnlItemPlato3, lblNombrePlato3, lblCategoriaPlato3, lblOrdenesPlato3, lblPrecioPlato3)
-            EstilizarItemPlato(pnlItemPlato4, lblNombrePlato4, lblCategoriaPlato4, lblOrdenesPlato4, lblPrecioPlato4)
+            ' Ítems individuales con rank badge
+            EstilizarItemPlato(pnlItemPlato1, lblNombrePlato1, lblCategoriaPlato1, lblOrdenesPlato1, lblPrecioPlato1, "#1")
+            EstilizarItemPlato(pnlItemPlato2, lblNombrePlato2, lblCategoriaPlato2, lblOrdenesPlato2, lblPrecioPlato2, "#2")
+            EstilizarItemPlato(pnlItemPlato3, lblNombrePlato3, lblCategoriaPlato3, lblOrdenesPlato3, lblPrecioPlato3, "#3")
+            EstilizarItemPlato(pnlItemPlato4, lblNombrePlato4, lblCategoriaPlato4, lblOrdenesPlato4, lblPrecioPlato4, "#4")
         End Sub
 
-        Private Sub EstilizarItemPlato(pnl As Panel, lblNombre As Label, lblCat As Label, lblOrd As Label, lblPrecio As Label)
-            pnl.BackColor = Color.FromArgb(250, 249, 246)
+        Private Sub ConfigurarTarjetaMetrica(pnl As Panel, lblHeader As Label, lblValor As Label, lblDetalle As Label,
+                                             titulo As String, colorValor As Color, colorAcento As Color)
+            ThemeConfig.AplicarEstiloTarjeta(pnl)
+
+            lblHeader.Text = titulo
+            lblHeader.Font = ThemeConfig.ObtenerFuenteSubtitulo(8.5F, FontStyle.Bold)
+            lblHeader.ForeColor = ThemeConfig.ColorTextMuted
+
+            lblValor.Font = ThemeConfig.ObtenerFuenteTitulo(24.0F, FontStyle.Bold)
+            lblValor.ForeColor = colorValor
+
+            lblDetalle.Font = ThemeConfig.ObtenerFuenteCuerpo(8.5F, FontStyle.Regular)
+            lblDetalle.ForeColor = ThemeConfig.ColorTextMuted
+
+            ' Dibujar una barra superior elegante de acento
+            AddHandler pnl.Paint, Sub(s As Object, e As PaintEventArgs)
+                                      Using brush As New SolidBrush(colorAcento)
+                                          e.Graphics.FillRectangle(brush, 0, 0, pnl.Width, 4)
+                                      End Using
+                                      Using pen As New Pen(ThemeConfig.ColorBorder, 1)
+                                          e.Graphics.DrawRectangle(pen, 0, 0, pnl.Width - 1, pnl.Height - 1)
+                                      End Using
+                                  End Sub
+        End Sub
+
+        Private Sub EstilizarItemPlato(pnl As Panel, lblNombre As Label, lblCat As Label, lblOrd As Label, lblPrecio As Label, rankTag As String)
+            pnl.BackColor = Color.FromArgb(252, 251, 249)
+
             lblNombre.Font = ThemeConfig.ObtenerFuenteSubtitulo(10.5F, FontStyle.Bold)
             lblNombre.ForeColor = ThemeConfig.ColorNeutralDark
 
             lblCat.Font = ThemeConfig.ObtenerFuenteCuerpo(8.5F, FontStyle.Regular)
             lblCat.ForeColor = ThemeConfig.ColorTextMuted
 
-            lblOrd.Font = ThemeConfig.ObtenerFuenteSubtitulo(10.5F, FontStyle.Bold)
+            lblOrd.Font = ThemeConfig.ObtenerFuenteSubtitulo(10.0F, FontStyle.Bold)
             lblOrd.ForeColor = ThemeConfig.ColorPrimary
 
             lblPrecio.Font = ThemeConfig.ObtenerFuenteCuerpo(9.5F, FontStyle.Bold)
             lblPrecio.ForeColor = ThemeConfig.ColorNeutralDark
+
+            AddHandler pnl.Paint, Sub(s As Object, e As PaintEventArgs)
+                                      Using pen As New Pen(Color.FromArgb(235, 230, 222), 1)
+                                          e.Graphics.DrawRectangle(pen, 0, 0, pnl.Width - 1, pnl.Height - 1)
+                                      End Using
+                                  End Sub
         End Sub
 
         ''' <summary>
@@ -94,8 +138,17 @@ Namespace Views.Dashboards
                             enCocina += 1
                         End If
 
-                        ' Estimación de ingresos acumulados por comanda registrada
-                        totalVentas += 15.5D
+                        ' Suma de ingresos acumulados por comanda registrada
+                        If Not IsDBNull(row("Total")) Then
+                            Dim montoFila As Decimal = 0D
+                            If Decimal.TryParse(row("Total").ToString(), montoFila) Then
+                                totalVentas += montoFila
+                            Else
+                                totalVentas += 15.5D
+                            End If
+                        Else
+                            totalVentas += 15.5D
+                        End If
                     Next
                 End If
 
@@ -133,6 +186,16 @@ Namespace Views.Dashboards
 
         Private Sub btnRefrescar_Click(sender As Object, e As EventArgs) Handles btnRefrescar.Click
             CargarResumenMetricas()
+        End Sub
+
+        Private Sub btnVerDetalleIngresos_Click(sender As Object, e As EventArgs) Handles btnVerDetalleIngresos.Click
+            Using frmReporte As New Reportes.FrmReportesVentas()
+                frmReporte.ShowDialog(Me)
+            End Using
+        End Sub
+
+        Private Sub pnlCardVentasTotales_Click(sender As Object, e As EventArgs) Handles pnlCardVentasTotales.Click, lblValorVentasTotales.Click, lblDetalleVentasTotales.Click, lblHeaderVentasTotales.Click
+            btnVerDetalleIngresos_Click(sender, e)
         End Sub
 
     End Class

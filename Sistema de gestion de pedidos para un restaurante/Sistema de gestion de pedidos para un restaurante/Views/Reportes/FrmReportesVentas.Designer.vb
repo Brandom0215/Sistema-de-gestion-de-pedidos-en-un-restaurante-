@@ -139,23 +139,23 @@ Namespace Views.Reportes
             ' lblTituloReportes
             ' 
             Me.lblTituloReportes.AutoSize = True
-            Me.lblTituloReportes.Font = New System.Drawing.Font("Segoe UI", 16.0F, System.Drawing.FontStyle.Bold)
-            Me.lblTituloReportes.Location = New System.Drawing.Point(20, 12)
+            Me.lblTituloReportes.Font = New System.Drawing.Font("Segoe UI", 15.0F, System.Drawing.FontStyle.Bold)
+            Me.lblTituloReportes.Location = New System.Drawing.Point(20, 10)
             Me.lblTituloReportes.Name = "lblTituloReportes"
-            Me.lblTituloReportes.Size = New System.Drawing.Size(370, 37)
-            Me.lblTituloReportes.Text = "Reportes de Ventas y Cierre de Caja"
+            Me.lblTituloReportes.Size = New System.Drawing.Size(370, 35)
+            Me.lblTituloReportes.Text = "Reportes de Ventas y Arqueo"
             Me.lblTituloReportes.UseMnemonic = False
 
             ' 
             ' lblSubtituloReportes
             ' 
             Me.lblSubtituloReportes.AutoSize = True
-            Me.lblSubtituloReportes.Font = New System.Drawing.Font("Segoe UI", 9.0F)
+            Me.lblSubtituloReportes.Font = New System.Drawing.Font("Segoe UI", 8.5F)
             Me.lblSubtituloReportes.ForeColor = System.Drawing.Color.Gray
-            Me.lblSubtituloReportes.Location = New System.Drawing.Point(22, 48)
+            Me.lblSubtituloReportes.Location = New System.Drawing.Point(22, 45)
             Me.lblSubtituloReportes.Name = "lblSubtituloReportes"
-            Me.lblSubtituloReportes.Size = New System.Drawing.Size(420, 20)
-            Me.lblSubtituloReportes.Text = "Consolidado de transacciones, métodos de pago y arqueo de turno (RF-013)"
+            Me.lblSubtituloReportes.Size = New System.Drawing.Size(340, 19)
+            Me.lblSubtituloReportes.Text = "Consolidado fiscal y métodos de pago (RF-013)"
             Me.lblSubtituloReportes.UseMnemonic = False
 
             ' 
@@ -164,7 +164,7 @@ Namespace Views.Reportes
             Me.lblFechaDesde.Anchor = CType((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
             Me.lblFechaDesde.AutoSize = True
             Me.lblFechaDesde.Font = New System.Drawing.Font("Segoe UI", 8.5F, System.Drawing.FontStyle.Bold)
-            Me.lblFechaDesde.Location = New System.Drawing.Point(490, 15)
+            Me.lblFechaDesde.Location = New System.Drawing.Point(385, 27)
             Me.lblFechaDesde.Name = "lblFechaDesde"
             Me.lblFechaDesde.Size = New System.Drawing.Size(55, 19)
             Me.lblFechaDesde.Text = "Desde:"
@@ -174,9 +174,9 @@ Namespace Views.Reportes
             ' 
             Me.dtpFechaInicio.Anchor = CType((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
             Me.dtpFechaInicio.Format = System.Windows.Forms.DateTimePickerFormat.Short
-            Me.dtpFechaInicio.Location = New System.Drawing.Point(490, 36)
+            Me.dtpFechaInicio.Location = New System.Drawing.Point(438, 23)
             Me.dtpFechaInicio.Name = "dtpFechaInicio"
-            Me.dtpFechaInicio.Size = New System.Drawing.Size(110, 27)
+            Me.dtpFechaInicio.Size = New System.Drawing.Size(100, 27)
             Me.dtpFechaInicio.TabIndex = 1
 
             ' 
@@ -185,7 +185,7 @@ Namespace Views.Reportes
             Me.lblFechaHasta.Anchor = CType((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
             Me.lblFechaHasta.AutoSize = True
             Me.lblFechaHasta.Font = New System.Drawing.Font("Segoe UI", 8.5F, System.Drawing.FontStyle.Bold)
-            Me.lblFechaHasta.Location = New System.Drawing.Point(610, 15)
+            Me.lblFechaHasta.Location = New System.Drawing.Point(548, 27)
             Me.lblFechaHasta.Name = "lblFechaHasta"
             Me.lblFechaHasta.Size = New System.Drawing.Size(51, 19)
             Me.lblFechaHasta.Text = "Hasta:"
@@ -195,9 +195,9 @@ Namespace Views.Reportes
             ' 
             Me.dtpFechaFin.Anchor = CType((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
             Me.dtpFechaFin.Format = System.Windows.Forms.DateTimePickerFormat.Short
-            Me.dtpFechaFin.Location = New System.Drawing.Point(610, 36)
+            Me.dtpFechaFin.Location = New System.Drawing.Point(598, 23)
             Me.dtpFechaFin.Name = "dtpFechaFin"
-            Me.dtpFechaFin.Size = New System.Drawing.Size(110, 27)
+            Me.dtpFechaFin.Size = New System.Drawing.Size(100, 27)
             Me.dtpFechaFin.TabIndex = 2
 
             ' 
@@ -205,9 +205,9 @@ Namespace Views.Reportes
             ' 
             Me.btnFiltrar.Anchor = CType((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
             Me.btnFiltrar.Font = New System.Drawing.Font("Segoe UI", 9.0F, System.Drawing.FontStyle.Bold)
-            Me.btnFiltrar.Location = New System.Drawing.Point(730, 33)
+            Me.btnFiltrar.Location = New System.Drawing.Point(710, 21)
             Me.btnFiltrar.Name = "btnFiltrar"
-            Me.btnFiltrar.Size = New System.Drawing.Size(110, 32)
+            Me.btnFiltrar.Size = New System.Drawing.Size(110, 31)
             Me.btnFiltrar.TabIndex = 3
             Me.btnFiltrar.Text = "Filtrar Fechas"
             Me.btnFiltrar.UseVisualStyleBackColor = True
@@ -216,12 +216,12 @@ Namespace Views.Reportes
             ' btnExportarReporte
             ' 
             Me.btnExportarReporte.Anchor = CType((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
-            Me.btnExportarReporte.Font = New System.Drawing.Font("Segoe UI", 9.0F)
-            Me.btnExportarReporte.Location = New System.Drawing.Point(850, 33)
+            Me.btnExportarReporte.Font = New System.Drawing.Font("Segoe UI", 9.0F, System.Drawing.FontStyle.Bold)
+            Me.btnExportarReporte.Location = New System.Drawing.Point(828, 21)
             Me.btnExportarReporte.Name = "btnExportarReporte"
-            Me.btnExportarReporte.Size = New System.Drawing.Size(110, 32)
+            Me.btnExportarReporte.Size = New System.Drawing.Size(135, 31)
             Me.btnExportarReporte.TabIndex = 4
-            Me.btnExportarReporte.Text = "Exportar PDF"
+            Me.btnExportarReporte.Text = "📄 Guardar PDF"
             Me.btnExportarReporte.UseVisualStyleBackColor = True
 
             ' 
@@ -492,9 +492,14 @@ Namespace Views.Reportes
             Me.ClientSize = New System.Drawing.Size(980, 660)
             Me.Controls.Add(Me.tlpMainLayout)
             Me.Controls.Add(Me.pnlHeaderContainer)
-            Me.FormBorderStyle = System.Windows.Forms.FormBorderStyle.None
+            Me.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog
+            Me.MaximizeBox = False
+            Me.MinimizeBox = False
+            Me.ShowInTaskbar = False
             Me.Name = "FrmReportesVentas"
-            Me.Text = "Reportes y Cierre de Caja"
+            Me.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent
+            Me.KeyPreview = True
+            Me.Text = "Reportes de Ventas y Arqueo de Caja (RF-013)"
 
             Me.pnlHeaderContainer.ResumeLayout(False)
             Me.pnlHeaderContainer.PerformLayout()
