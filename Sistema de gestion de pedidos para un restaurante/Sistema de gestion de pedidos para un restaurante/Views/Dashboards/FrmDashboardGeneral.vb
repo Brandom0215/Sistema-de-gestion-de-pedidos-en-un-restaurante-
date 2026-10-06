@@ -81,41 +81,54 @@ Namespace Views.Dashboards
         Public Sub CargarResumenMetricas()
             Try
                 Dim dtPedidos As DataTable = Data.PedidoDAO.ObtenerTodos()
-                Dim totalPedidos As Integer = dtPedidos.Rows.Count
+                Dim totalPedidos As Integer = 0
+                Dim enCocina As Integer = 0
+                Dim totalVentas As Decimal = 0D
+
+                If dtPedidos IsNot Nothing Then
+                    totalPedidos = dtPedidos.Rows.Count
+                    For Each row As DataRow In dtPedidos.Rows
+                        Dim estado As String = row("Estado").ToString()
+                        
+                        If estado.Equals("Pendiente", StringComparison.OrdinalIgnoreCase) OrElse estado.Equals("En Preparación", StringComparison.OrdinalIgnoreCase) Then
+                            enCocina += 1
+                        End If
+
+                        ' Estimación de ingresos acumulados por comanda registrada
+                        totalVentas += 15.5D
+                    Next
+                End If
 
                 lblValorPedidosHoy.Text = totalPedidos.ToString()
-                lblValorCocinaKDS.Text = Math.Max(1, totalPedidos).ToString()
-
-                ' Cálculo estimado de ventas acumuladas
-                Dim totalVentas As Decimal = totalPedidos * 550.0D
-                lblValorVentasTotales.Text = String.Format(New System.Globalization.CultureInfo("es-DO"), "${0:N2}", totalVentas)
+                lblValorCocinaKDS.Text = enCocina.ToString()
+                lblValorVentasTotales.Text = $"$ {totalVentas:N2}"
 
             Catch ex As Exception
                 lblValorPedidosHoy.Text = "3"
                 lblValorCocinaKDS.Text = "2"
-                lblValorVentasTotales.Text = "$1,650.00"
+                lblValorVentasTotales.Text = "$ 46.50"
             End Try
 
             ' Platos más populares del menú del restaurante
-            lblNombrePlato1.Text = "Sancocho Criollo Gourmet"
-            lblCategoriaPlato1.Text = "Especialidades • Tiempo promedio 15 min"
+            lblNombrePlato1.Text = "Sancocho Panameño de Gallina Criolla"
+            lblCategoriaPlato1.Text = "Almuerzos • Especialidad Autóctona"
             lblOrdenesPlato1.Text = "18 ord."
-            lblPrecioPlato1.Text = "$450.00 c/u"
+            lblPrecioPlato1.Text = "$ 7.50 c/u"
 
-            lblNombrePlato2.Text = "Chivo Liniero Guisado"
-            lblCategoriaPlato2.Text = "Platos Fuertes • Especialidad de la Casa"
+            lblNombrePlato2.Text = "Pescado Frito con Patacones"
+            lblCategoriaPlato2.Text = "Almuerzos • Dorado con Ensalada de Feria"
             lblOrdenesPlato2.Text = "14 ord."
-            lblPrecioPlato2.Text = "$650.00 c/u"
+            lblPrecioPlato2.Text = "$ 10.50 c/u"
 
-            lblNombrePlato3.Text = "Mofongo Especial El Buen Sazon"
-            lblCategoriaPlato3.Text = "Autóctonos • Chicharrón Crujiente"
-            lblOrdenesPlato3.Text = "11 ord."
-            lblPrecioPlato3.Text = "$550.00 c/u"
+            lblNombrePlato3.Text = "Hojaldre con Queso Blanco y Salchicha"
+            lblCategoriaPlato3.Text = "Desayunos • Fritura Tradicional"
+            lblOrdenesPlato3.Text = "12 ord."
+            lblPrecioPlato3.Text = "$ 3.50 c/u"
 
-            lblNombrePlato4.Text = "Jarra de Jugo Natural de Chinola"
-            lblCategoriaPlato4.Text = "Bebidas • Selección Fruta Fresca"
-            lblOrdenesPlato4.Text = "22 jarras"
-            lblPrecioPlato4.Text = "$200.00 c/u"
+            lblNombrePlato4.Text = "Chicha de Nance Natural"
+            lblCategoriaPlato4.Text = "Bebidas • Fruta Autóctona Fresca"
+            lblOrdenesPlato4.Text = "24 vasos"
+            lblPrecioPlato4.Text = "$ 2.00 c/u"
         End Sub
 
         Private Sub btnRefrescar_Click(sender As Object, e As EventArgs) Handles btnRefrescar.Click
