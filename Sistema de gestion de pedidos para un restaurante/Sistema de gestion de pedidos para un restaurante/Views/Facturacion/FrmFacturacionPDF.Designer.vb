@@ -116,16 +116,16 @@ Namespace Views.Facturacion
             Me.lblTituloHeader.Name = "lblTituloHeader"
             Me.lblTituloHeader.Size = New System.Drawing.Size(460, 30)
             Me.lblTituloHeader.TabIndex = 0
-            Me.lblTituloHeader.Text = "📜 Historial de Facturas"
+            Me.lblTituloHeader.Text = "Historial de Facturas"
             '
             ' lblSubtituloHeader
             '
             Me.lblSubtituloHeader.AutoSize = True
-            Me.lblSubtituloHeader.Font = New System.Drawing.Font("Segoe UI", 9.5F)
+            Me.lblSubtituloHeader.Font = New System.Drawing.Font("Segoe UI", 10.5F)
             Me.lblSubtituloHeader.ForeColor = System.Drawing.Color.Gray
             Me.lblSubtituloHeader.Location = New System.Drawing.Point(3, 34)
             Me.lblSubtituloHeader.Name = "lblSubtituloHeader"
-            Me.lblSubtituloHeader.Size = New System.Drawing.Size(710, 17)
+            Me.lblSubtituloHeader.Size = New System.Drawing.Size(710, 20)
             Me.lblSubtituloHeader.TabIndex = 1
             Me.lblSubtituloHeader.Text = "Consulte pedidos cobrados, reimprima recibos o descargue copias en PDF."
             '
@@ -159,7 +159,7 @@ Namespace Views.Facturacion
             Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
             Me.grpSeleccion.Controls.Add(Me.dgvPedidosFacturar)
             Me.grpSeleccion.Controls.Add(Me.pnlFiltro)
-            Me.grpSeleccion.Font = New System.Drawing.Font("Segoe UI", 9.0F, System.Drawing.FontStyle.Bold)
+            Me.grpSeleccion.Font = New System.Drawing.Font("Segoe UI", 11.0F, System.Drawing.FontStyle.Bold)
             Me.grpSeleccion.Location = New System.Drawing.Point(0, 0)
             Me.grpSeleccion.Name = "grpSeleccion"
             Me.grpSeleccion.Padding = New System.Windows.Forms.Padding(10)
@@ -177,46 +177,46 @@ Namespace Views.Facturacion
             Me.pnlFiltro.Dock = System.Windows.Forms.DockStyle.Top
             Me.pnlFiltro.Location = New System.Drawing.Point(10, 26)
             Me.pnlFiltro.Name = "pnlFiltro"
-            Me.pnlFiltro.Size = New System.Drawing.Size(520, 36)
+            Me.pnlFiltro.Size = New System.Drawing.Size(520, 42)
             Me.pnlFiltro.TabIndex = 0
             '
             ' lblBuscar
             '
             Me.lblBuscar.AutoSize = True
-            Me.lblBuscar.Font = New System.Drawing.Font("Segoe UI", 8.5F)
+            Me.lblBuscar.Font = New System.Drawing.Font("Segoe UI", 11.0F)
             Me.lblBuscar.Location = New System.Drawing.Point(3, 10)
             Me.lblBuscar.Name = "lblBuscar"
-            Me.lblBuscar.Size = New System.Drawing.Size(45, 15)
+            Me.lblBuscar.Size = New System.Drawing.Size(105, 20)
             Me.lblBuscar.TabIndex = 0
             Me.lblBuscar.Text = "Buscar pedido:"
             '
             ' txtBuscar
             '
-            Me.txtBuscar.Font = New System.Drawing.Font("Segoe UI", 9.0F)
-            Me.txtBuscar.Location = New System.Drawing.Point(52, 6)
+            Me.txtBuscar.Font = New System.Drawing.Font("Segoe UI", 12.0F)
+            Me.txtBuscar.Location = New System.Drawing.Point(114, 6)
             Me.txtBuscar.Name = "txtBuscar"
-            Me.txtBuscar.Size = New System.Drawing.Size(180, 23)
+            Me.txtBuscar.Size = New System.Drawing.Size(180, 29)
             Me.txtBuscar.TabIndex = 1
             '
             ' btnBuscar
             '
-            Me.btnBuscar.Font = New System.Drawing.Font("Segoe UI", 8.0F, System.Drawing.FontStyle.Bold)
-            Me.btnBuscar.Location = New System.Drawing.Point(238, 5)
+            Me.btnBuscar.Font = New System.Drawing.Font("Segoe UI", 10.0F, System.Drawing.FontStyle.Bold)
+            Me.btnBuscar.Location = New System.Drawing.Point(300, 5)
             Me.btnBuscar.Name = "btnBuscar"
-            Me.btnBuscar.Size = New System.Drawing.Size(75, 25)
+            Me.btnBuscar.Size = New System.Drawing.Size(95, 32)
             Me.btnBuscar.TabIndex = 2
-            Me.btnBuscar.Text = "🔍 Buscar"
+            Me.btnBuscar.Text = "Buscar"
             Me.btnBuscar.UseVisualStyleBackColor = True
             '
             ' btnRefrescar
             '
             Me.btnRefrescar.Anchor = CType((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
-            Me.btnRefrescar.Font = New System.Drawing.Font("Segoe UI", 8.0F, System.Drawing.FontStyle.Bold)
-            Me.btnRefrescar.Location = New System.Drawing.Point(420, 5)
+            Me.btnRefrescar.Font = New System.Drawing.Font("Segoe UI", 10.0F, System.Drawing.FontStyle.Bold)
+            Me.btnRefrescar.Location = New System.Drawing.Point(405, 5)
             Me.btnRefrescar.Name = "btnRefrescar"
-            Me.btnRefrescar.Size = New System.Drawing.Size(95, 25)
+            Me.btnRefrescar.Size = New System.Drawing.Size(110, 32)
             Me.btnRefrescar.TabIndex = 3
-            Me.btnRefrescar.Text = "🔄 Actualizar"
+            Me.btnRefrescar.Text = "Actualizar"
             Me.btnRefrescar.UseVisualStyleBackColor = True
             '
             ' dgvPedidosFacturar
@@ -229,13 +229,13 @@ Namespace Views.Facturacion
             Me.dgvPedidosFacturar.BorderStyle = System.Windows.Forms.BorderStyle.None
             Me.dgvPedidosFacturar.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize
             Me.dgvPedidosFacturar.Dock = System.Windows.Forms.DockStyle.Fill
-            Me.dgvPedidosFacturar.Location = New System.Drawing.Point(10, 62)
+            Me.dgvPedidosFacturar.Location = New System.Drawing.Point(10, 68)
             Me.dgvPedidosFacturar.MultiSelect = False
             Me.dgvPedidosFacturar.Name = "dgvPedidosFacturar"
             Me.dgvPedidosFacturar.ReadOnly = True
             Me.dgvPedidosFacturar.RowHeadersVisible = False
             Me.dgvPedidosFacturar.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect
-            Me.dgvPedidosFacturar.Size = New System.Drawing.Size(520, 168)
+            Me.dgvPedidosFacturar.Size = New System.Drawing.Size(520, 162)
             Me.dgvPedidosFacturar.TabIndex = 1
             '
             ' grpDatosFiscales
@@ -252,7 +252,7 @@ Namespace Views.Facturacion
             Me.grpDatosFiscales.Controls.Add(Me.lblRazonSocial)
             Me.grpDatosFiscales.Controls.Add(Me.txtRucCedula)
             Me.grpDatosFiscales.Controls.Add(Me.lblRuc)
-            Me.grpDatosFiscales.Font = New System.Drawing.Font("Segoe UI", 9.0F, System.Drawing.FontStyle.Bold)
+            Me.grpDatosFiscales.Font = New System.Drawing.Font("Segoe UI", 11.0F, System.Drawing.FontStyle.Bold)
             Me.grpDatosFiscales.Location = New System.Drawing.Point(0, 245)
             Me.grpDatosFiscales.Name = "grpDatosFiscales"
             Me.grpDatosFiscales.Padding = New System.Windows.Forms.Padding(12)
@@ -264,28 +264,28 @@ Namespace Views.Facturacion
             ' lblRuc
             '
             Me.lblRuc.AutoSize = True
-            Me.lblRuc.Font = New System.Drawing.Font("Segoe UI", 8.5F, System.Drawing.FontStyle.Bold)
+            Me.lblRuc.Font = New System.Drawing.Font("Segoe UI", 10.0F, System.Drawing.FontStyle.Bold)
             Me.lblRuc.Location = New System.Drawing.Point(12, 30)
             Me.lblRuc.Name = "lblRuc"
-            Me.lblRuc.Size = New System.Drawing.Size(95, 15)
+            Me.lblRuc.Size = New System.Drawing.Size(100, 19)
             Me.lblRuc.TabIndex = 0
             Me.lblRuc.Text = "Cédula o RUC:"
             '
             ' txtRucCedula
             '
-            Me.txtRucCedula.Font = New System.Drawing.Font("Segoe UI", 9.0F)
-            Me.txtRucCedula.Location = New System.Drawing.Point(135, 26)
+            Me.txtRucCedula.Font = New System.Drawing.Font("Segoe UI", 11.0F)
+            Me.txtRucCedula.Location = New System.Drawing.Point(145, 26)
             Me.txtRucCedula.Name = "txtRucCedula"
-            Me.txtRucCedula.Size = New System.Drawing.Size(180, 23)
+            Me.txtRucCedula.Size = New System.Drawing.Size(180, 27)
             Me.txtRucCedula.TabIndex = 1
             '
             ' lblRazonSocial
             '
             Me.lblRazonSocial.AutoSize = True
-            Me.lblRazonSocial.Font = New System.Drawing.Font("Segoe UI", 8.5F, System.Drawing.FontStyle.Bold)
+            Me.lblRazonSocial.Font = New System.Drawing.Font("Segoe UI", 10.0F, System.Drawing.FontStyle.Bold)
             Me.lblRazonSocial.Location = New System.Drawing.Point(12, 65)
             Me.lblRazonSocial.Name = "lblRazonSocial"
-            Me.lblRazonSocial.Size = New System.Drawing.Size(117, 15)
+            Me.lblRazonSocial.Size = New System.Drawing.Size(130, 19)
             Me.lblRazonSocial.TabIndex = 2
             Me.lblRazonSocial.Text = "Nombre del cliente:"
             '
@@ -293,37 +293,37 @@ Namespace Views.Facturacion
             '
             Me.txtRazonSocial.Anchor = CType(((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Left) _
             Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
-            Me.txtRazonSocial.Font = New System.Drawing.Font("Segoe UI", 9.0F)
-            Me.txtRazonSocial.Location = New System.Drawing.Point(135, 61)
+            Me.txtRazonSocial.Font = New System.Drawing.Font("Segoe UI", 11.0F)
+            Me.txtRazonSocial.Location = New System.Drawing.Point(145, 61)
             Me.txtRazonSocial.Name = "txtRazonSocial"
-            Me.txtRazonSocial.Size = New System.Drawing.Size(390, 23)
+            Me.txtRazonSocial.Size = New System.Drawing.Size(380, 27)
             Me.txtRazonSocial.TabIndex = 3
             '
             ' lblTelefono
             '
             Me.lblTelefono.AutoSize = True
-            Me.lblTelefono.Font = New System.Drawing.Font("Segoe UI", 8.5F)
+            Me.lblTelefono.Font = New System.Drawing.Font("Segoe UI", 10.0F)
             Me.lblTelefono.Location = New System.Drawing.Point(12, 100)
             Me.lblTelefono.Name = "lblTelefono"
-            Me.lblTelefono.Size = New System.Drawing.Size(107, 15)
+            Me.lblTelefono.Size = New System.Drawing.Size(63, 19)
             Me.lblTelefono.TabIndex = 4
             Me.lblTelefono.Text = "Teléfono:"
             '
             ' txtTelefono
             '
-            Me.txtTelefono.Font = New System.Drawing.Font("Segoe UI", 9.0F)
-            Me.txtTelefono.Location = New System.Drawing.Point(135, 96)
+            Me.txtTelefono.Font = New System.Drawing.Font("Segoe UI", 11.0F)
+            Me.txtTelefono.Location = New System.Drawing.Point(145, 96)
             Me.txtTelefono.Name = "txtTelefono"
-            Me.txtTelefono.Size = New System.Drawing.Size(180, 23)
+            Me.txtTelefono.Size = New System.Drawing.Size(180, 27)
             Me.txtTelefono.TabIndex = 5
             '
             ' lblCorreo
             '
             Me.lblCorreo.AutoSize = True
-            Me.lblCorreo.Font = New System.Drawing.Font("Segoe UI", 8.5F)
+            Me.lblCorreo.Font = New System.Drawing.Font("Segoe UI", 10.0F)
             Me.lblCorreo.Location = New System.Drawing.Point(12, 135)
             Me.lblCorreo.Name = "lblCorreo"
-            Me.lblCorreo.Size = New System.Drawing.Size(108, 15)
+            Me.lblCorreo.Size = New System.Drawing.Size(124, 19)
             Me.lblCorreo.TabIndex = 6
             Me.lblCorreo.Text = "Correo electrónico:"
             '
@@ -331,30 +331,29 @@ Namespace Views.Facturacion
             '
             Me.txtCorreo.Anchor = CType(((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Left) _
             Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
-            Me.txtCorreo.Font = New System.Drawing.Font("Segoe UI", 9.0F)
-            Me.txtCorreo.Location = New System.Drawing.Point(135, 131)
+            Me.txtCorreo.Font = New System.Drawing.Font("Segoe UI", 11.0F)
+            Me.txtCorreo.Location = New System.Drawing.Point(145, 131)
             Me.txtCorreo.Name = "txtCorreo"
-            Me.txtCorreo.Size = New System.Drawing.Size(390, 23)
+            Me.txtCorreo.Size = New System.Drawing.Size(380, 27)
             Me.txtCorreo.TabIndex = 7
             '
             ' lblDireccion
             '
             Me.lblDireccion.AutoSize = True
-            Me.lblDireccion.Font = New System.Drawing.Font("Segoe UI", 8.5F)
+            Me.lblDireccion.Font = New System.Drawing.Font("Segoe UI", 10.0F)
             Me.lblDireccion.Location = New System.Drawing.Point(12, 170)
             Me.lblDireccion.Name = "lblDireccion"
-            Me.lblDireccion.Size = New System.Drawing.Size(91, 15)
+            Me.lblDireccion.Size = New System.Drawing.Size(68, 19)
             Me.lblDireccion.TabIndex = 8
             Me.lblDireccion.Text = "Dirección:"
             '
             ' txtDireccion
-            '
             Me.txtDireccion.Anchor = CType(((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Left) _
             Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
-            Me.txtDireccion.Font = New System.Drawing.Font("Segoe UI", 9.0F)
-            Me.txtDireccion.Location = New System.Drawing.Point(135, 166)
+            Me.txtDireccion.Font = New System.Drawing.Font("Segoe UI", 11.0F)
+            Me.txtDireccion.Location = New System.Drawing.Point(145, 166)
             Me.txtDireccion.Name = "txtDireccion"
-            Me.txtDireccion.Size = New System.Drawing.Size(390, 23)
+            Me.txtDireccion.Size = New System.Drawing.Size(380, 27)
             Me.txtDireccion.TabIndex = 9
             '
             ' pnlAcciones
@@ -371,57 +370,57 @@ Namespace Views.Facturacion
             Me.pnlAcciones.Controls.Add(Me.btnEnviarCorreo, 1, 0)
             Me.pnlAcciones.Controls.Add(Me.btnGuardarComo, 0, 1)
             Me.pnlAcciones.Controls.Add(Me.btnLimpiar, 1, 1)
-            Me.pnlAcciones.Location = New System.Drawing.Point(0, 460)
+            Me.pnlAcciones.Location = New System.Drawing.Point(0, 455)
             Me.pnlAcciones.Name = "pnlAcciones"
-            Me.pnlAcciones.Size = New System.Drawing.Size(540, 85)
+            Me.pnlAcciones.Size = New System.Drawing.Size(540, 92)
             Me.pnlAcciones.TabIndex = 2
             '
             ' btnImprimir
             '
             Me.btnImprimir.Dock = System.Windows.Forms.DockStyle.Fill
-            Me.btnImprimir.Font = New System.Drawing.Font("Segoe UI", 9.0F, System.Drawing.FontStyle.Bold)
+            Me.btnImprimir.Font = New System.Drawing.Font("Segoe UI", 10.5F, System.Drawing.FontStyle.Bold)
             Me.btnImprimir.Location = New System.Drawing.Point(3, 3)
             Me.btnImprimir.Margin = New System.Windows.Forms.Padding(3)
             Me.btnImprimir.Name = "btnImprimir"
-            Me.btnImprimir.Size = New System.Drawing.Size(264, 36)
+            Me.btnImprimir.Size = New System.Drawing.Size(264, 40)
             Me.btnImprimir.TabIndex = 0
-            Me.btnImprimir.Text = "🖨️ Imprimir Recibo"
+            Me.btnImprimir.Text = "Imprimir Recibo"
             Me.btnImprimir.UseVisualStyleBackColor = True
             '
             ' btnEnviarCorreo
             '
             Me.btnEnviarCorreo.Dock = System.Windows.Forms.DockStyle.Fill
-            Me.btnEnviarCorreo.Font = New System.Drawing.Font("Segoe UI", 9.0F, System.Drawing.FontStyle.Bold)
+            Me.btnEnviarCorreo.Font = New System.Drawing.Font("Segoe UI", 10.5F, System.Drawing.FontStyle.Bold)
             Me.btnEnviarCorreo.Location = New System.Drawing.Point(273, 3)
             Me.btnEnviarCorreo.Margin = New System.Windows.Forms.Padding(3)
             Me.btnEnviarCorreo.Name = "btnEnviarCorreo"
-            Me.btnEnviarCorreo.Size = New System.Drawing.Size(264, 36)
+            Me.btnEnviarCorreo.Size = New System.Drawing.Size(264, 40)
             Me.btnEnviarCorreo.TabIndex = 1
-            Me.btnEnviarCorreo.Text = "✉️ Enviar por Correo"
+            Me.btnEnviarCorreo.Text = "Enviar por Correo"
             Me.btnEnviarCorreo.UseVisualStyleBackColor = True
             '
             ' btnGuardarComo
             '
             Me.btnGuardarComo.Dock = System.Windows.Forms.DockStyle.Fill
-            Me.btnGuardarComo.Font = New System.Drawing.Font("Segoe UI", 9.0F, System.Drawing.FontStyle.Bold)
-            Me.btnGuardarComo.Location = New System.Drawing.Point(3, 45)
+            Me.btnGuardarComo.Font = New System.Drawing.Font("Segoe UI", 10.5F, System.Drawing.FontStyle.Bold)
+            Me.btnGuardarComo.Location = New System.Drawing.Point(3, 49)
             Me.btnGuardarComo.Margin = New System.Windows.Forms.Padding(3)
             Me.btnGuardarComo.Name = "btnGuardarComo"
-            Me.btnGuardarComo.Size = New System.Drawing.Size(264, 37)
+            Me.btnGuardarComo.Size = New System.Drawing.Size(264, 40)
             Me.btnGuardarComo.TabIndex = 2
-            Me.btnGuardarComo.Text = "💾 Guardar en PDF"
+            Me.btnGuardarComo.Text = "Guardar en PDF"
             Me.btnGuardarComo.UseVisualStyleBackColor = True
             '
             ' btnLimpiar
             '
             Me.btnLimpiar.Dock = System.Windows.Forms.DockStyle.Fill
-            Me.btnLimpiar.Font = New System.Drawing.Font("Segoe UI", 8.5F, System.Drawing.FontStyle.Bold)
-            Me.btnLimpiar.Location = New System.Drawing.Point(273, 45)
+            Me.btnLimpiar.Font = New System.Drawing.Font("Segoe UI", 10.0F, System.Drawing.FontStyle.Bold)
+            Me.btnLimpiar.Location = New System.Drawing.Point(273, 49)
             Me.btnLimpiar.Margin = New System.Windows.Forms.Padding(3)
             Me.btnLimpiar.Name = "btnLimpiar"
-            Me.btnLimpiar.Size = New System.Drawing.Size(264, 37)
+            Me.btnLimpiar.Size = New System.Drawing.Size(264, 40)
             Me.btnLimpiar.TabIndex = 3
-            Me.btnLimpiar.Text = "🧹 Limpiar selección"
+            Me.btnLimpiar.Text = "Limpiar Selección"
             Me.btnLimpiar.UseVisualStyleBackColor = True
             '
             ' grpVistaPrevia
