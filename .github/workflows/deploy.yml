@@ -1,0 +1,39 @@
+name: Despliegue Automatico en Servidor Ubuntu
+
+on:
+  push:
+    branches:
+      - main
+      - master
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Conectar por SSH y actualizar servidor
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          password: ${{ secrets.SERVER_PASSWORD }}
+          port: 22
+          script: |
+            # Crear directorio si no existe o ingresar al repositorio existente
+            if [ ! -d "/home/ubuntu/Sistema-de-gestion-de-pedidos-en-un-restaurante-" ]; then
+              git clone https://github.com/Brandom0215/Sistema-de-gestion-de-pedidos-en-un-restaurante-.git /home/ubuntu/Sistema-de-gestion-de-pedidos-en-un-restaurante-
+            fi
+            
+            cd /home/ubuntu/Sistema-de-gestion-de-pedidos-en-un-restaurante-
+            
+            # Traer los ultimos cambios desde GitHub
+            git fetch origin
+            git reset --hard origin/$(git rev-parse --abbrev-ref HEAD)
+            git pull origin main || git pull origin master
+
+            # Ejecutar/actualizar script de base de datos en PostgreSQL
+            if [ -f "Database/Script_PostgreSQL_Restaurante.sql" ]; then
+              sudo -u postgres psql -d restaurante_db -f Database/Script_PostgreSQL_Restaurante.sql || true
+            fi
+            
+            echo "Despliegue completado exitosamente en el servidor Ubuntu."
