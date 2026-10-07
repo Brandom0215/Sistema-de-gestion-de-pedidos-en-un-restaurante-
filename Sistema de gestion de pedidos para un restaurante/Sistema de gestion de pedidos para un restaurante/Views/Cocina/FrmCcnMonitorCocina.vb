@@ -69,6 +69,7 @@ Namespace Views.Cocina
             tmrCcnActualizadorRealTime.Stop()
             PedidoDAO.DesuscribirPedidoRegistrado(AddressOf OnPedidoRegistradoDesdeDAO)
             PedidoDAO.DesuscribirPedidoModificado(AddressOf OnPedidoModificadoDesdeDAO)
+            ThemeConfig.LimpiarYDestruirControles(flpCcnContenedorComandas)
         End Sub
 
         ''' <summary>
@@ -178,7 +179,7 @@ Namespace Views.Cocina
         ''' </summary>
         Public Sub RefrescarMonitorComandas()
             flpCcnContenedorComandas.SuspendLayout()
-            flpCcnContenedorComandas.Controls.Clear()
+            ThemeConfig.LimpiarYDestruirControles(flpCcnContenedorComandas)
 
             ' 1. Filtrar lista según el chip seleccionado
             Dim lstFiltrada As IEnumerable(Of CcnPedidoModel) = _lstCcnComandas.Where(Function(p) p.EnumEstado <> CcnEstadoPedidoEnum.Entregado)
