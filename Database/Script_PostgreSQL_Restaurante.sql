@@ -69,7 +69,8 @@ CREATE TABLE pedidos (
 CREATE TABLE detalle_pedidos (
     id_detalle SERIAL PRIMARY KEY,
     id_pedido INT NOT NULL REFERENCES pedidos(id_pedido) ON DELETE CASCADE,
-    id_plato INT NOT NULL REFERENCES platos(id_plato) ON DELETE RESTRICT,
+    id_plato INT REFERENCES platos(id_plato) ON DELETE RESTRICT,
+    nombre_plato VARCHAR(150),
     cantidad INT NOT NULL CHECK (cantidad > 0),
     precio_unitario NUMERIC(10, 2) NOT NULL,
     acompanamientos TEXT,

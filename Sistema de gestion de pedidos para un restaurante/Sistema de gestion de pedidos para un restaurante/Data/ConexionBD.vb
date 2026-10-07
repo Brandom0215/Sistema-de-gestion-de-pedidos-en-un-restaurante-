@@ -328,6 +328,7 @@ Namespace Data
                         cmd.ExecuteScalar()
                     End Using
                 End Using
+                AsegurarEstructuraTablas()
                 mensajeDiagnostico = $"Conexión exitosa con el servidor en {Host}:{Puerto} ({BaseDatos})."
                 UltimoMensajeEstado = $"Conectado al servidor principal ({Host})"
                 Console.WriteLine($"[CONEXIÓN POSTGRESQL EXITOSA] Servidor: {Host}:{Puerto} | BaseDatos: {BaseDatos} | Usuario: {Usuario}")
@@ -341,6 +342,21 @@ Namespace Data
                 Return False
             End Try
         End Function
+
+        ''' <summary>
+        ''' Ejecuta parches de estructura en la BD PostgreSQL para garantizar compatibilidad multidispositivo.
+        ''' </summary>
+        Public Sub AsegurarEstructuraTablas()
+            If Not DebeUsarPostgreSQL() Then Return
+            Try
+                EjecutarComando("ALTER TABLE detalle_pedidos ALTER COLUMN id_plato DROP NOT NULL;")
+            Catch
+            End Try
+            Try
+                EjecutarComando("ALTER TABLE detalle_pedidos ADD COLUMN IF NOT EXISTS nombre_plato VARCHAR(150);")
+            Catch
+            End Try
+        End Sub
 
         ''' <summary>
         ''' Determina si actualmente se debe intentar operar contra PostgreSQL.
