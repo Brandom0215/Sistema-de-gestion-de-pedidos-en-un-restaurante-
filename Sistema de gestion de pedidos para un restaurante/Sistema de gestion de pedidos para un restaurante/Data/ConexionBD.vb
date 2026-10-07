@@ -27,37 +27,93 @@ Namespace Data
     Public Module ConexionBD
 
         ' =========================================================================
-        ' 1. CONFIGURACIÓN DEL SERVIDOR PRINCIPAL (VPS UTP COCLÉ)
+        ' 1. CONFIGURACIÓN DEL SERVIDOR PRINCIPAL (LECTURA DINÁMICA DE ENTORNO/.ENV)
         ' =========================================================================
         ''' <summary>
-        ''' IP del servidor PostgreSQL universitario (Rango UTP Coclé: 10.196.68.12 al 15).
+        ''' IP del servidor PostgreSQL. Se lee dinámicamente de DB_HOST (.env o entorno).
         ''' </summary>
-        Public Property Host As String = "10.196.68.12"
+        Public Property Host As String = ObtenValorConfig("DB_HOST", "127.0.0.1")
 
         ''' <summary>
-        ''' Puerto de red estándar de PostgreSQL.
+        ''' Puerto de red estándar de PostgreSQL. Se lee dinámicamente de DB_PORT.
         ''' </summary>
-        Public Property Puerto As Integer = 5432
+        Public Property Puerto As Integer = ObtenValorEnteroConfig("DB_PORT", 5432)
 
         ''' <summary>
-        ''' Nombre de la base de datos oficial del restaurante.
+        ''' Nombre de la base de datos. Se lee dinámicamente de DB_NAME.
         ''' </summary>
-        Public Property BaseDatos As String = "RestauranteDB"
+        Public Property BaseDatos As String = ObtenValorConfig("DB_NAME", "restaurante_db")
 
         ''' <summary>
-        ''' Usuario del sistema/base de datos (Proporcionado: ubuntu).
+        ''' Usuario del sistema. Se lee dinámicamente de DB_USER.
         ''' </summary>
-        Public Property Usuario As String = "ubuntu"
+        Public Property Usuario As String = ObtenValorConfig("DB_USER", "postgres")
 
         ''' <summary>
-        ''' Contraseña del servidor universitario (Proporcionada: utpcocle).
+        ''' Contraseña del servidor. Se lee dinámicamente de DB_PASS.
         ''' </summary>
-        Public Property Clave As String = "utpcocle"
+        Public Property Clave As String = ObtenValorConfig("DB_PASS", "")
 
         ''' <summary>
         ''' Tiempo máximo de espera en segundos para detectar disponibilidad de red.
         ''' </summary>
-        Public Property TimeoutSegundos As Integer = 3
+        Public Property TimeoutSegundos As Integer = ObtenValorEnteroConfig("DB_TIMEOUT", 3)
+
+        Private ReadOnly _configDict As New Dictionary(Of String, String)(StringComparer.OrdinalIgnoreCase)
+        Private _configCargada As Boolean = False
+
+        Private Sub CargarDiccionarioConfig()
+            If _configCargada Then Return
+            _configCargada = True
+
+            Dim rutas As String() = {
+                IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ".env"),
+                IO.Path.Combine(IO.Directory.GetCurrentDirectory(), ".env")
+            }
+
+            For Each ruta In rutas
+                If IO.File.Exists(ruta) Then
+                    Try
+                        Dim lineas = IO.File.ReadAllLines(ruta)
+                        For Each linea In lineas
+                            Dim txt = linea.Trim()
+                            If String.IsNullOrWhiteSpace(txt) OrElse txt.StartsWith("#") OrElse txt.StartsWith("//") Then Continue For
+                            If txt.Contains("="c) Then
+                                Dim partes = txt.Split("="c, 2)
+                                Dim k = partes(0).Trim()
+                                Dim v = partes(1).Trim().Trim(""""c, "'"c)
+                                If Not _configDict.ContainsKey(k) Then _configDict(k) = v
+                            End If
+                        Next
+                    Catch
+                    End Try
+                End If
+            Next
+        End Sub
+
+        Private Function ObtenValorConfig(nombreClave As String, valorPorDefecto As String) As String
+            ' 1. Variable de Entorno del Sistema Operativo
+            Dim envVal As String = Environment.GetEnvironmentVariable(nombreClave)
+            If Not String.IsNullOrWhiteSpace(envVal) Then Return envVal.Trim()
+
+            ' 2. Archivo .env local
+            CargarDiccionarioConfig()
+            If _configDict.ContainsKey(nombreClave) AndAlso Not String.IsNullOrWhiteSpace(_configDict(nombreClave)) Then
+                Return _configDict(nombreClave)
+            End If
+
+            ' 3. Valor por defecto genérico
+            Return valorPorDefecto
+        End Function
+
+        Private Function ObtenValorEnteroConfig(nombreClave As String, valorPorDefecto As Integer) As Integer
+            Dim strVal = ObtenValorConfig(nombreClave, "")
+            Dim res As Integer = 0
+            If Not String.IsNullOrWhiteSpace(strVal) AndAlso Integer.TryParse(strVal, res) Then
+                Return res
+            End If
+            Return valorPorDefecto
+        End Function
 
         ' =========================================================================
         ' 2. ESTADO DEL SISTEMA Y GESTIÓN AUTOMÁTICA DE CONEXIÓN
