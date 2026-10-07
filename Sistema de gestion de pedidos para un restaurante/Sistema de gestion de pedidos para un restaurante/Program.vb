@@ -12,6 +12,14 @@ Namespace Global.Sistema_de_gestion_de_pedidos_para_un_restaurante
         Public Sub Main()
             Application.EnableVisualStyles()
             Application.SetCompatibleTextRenderingDefault(False)
+
+            ' Diagnóstico inicial de conexión al servidor
+            Dim diagMsg As String = ""
+            Dim esExitoso As Boolean = Data.ConexionBD.ProbarConexion(diagMsg)
+            Console.WriteLine("==================================================================")
+            Console.WriteLine($"[DIAGNÓSTICO INICIAL] {diagMsg}")
+            Console.WriteLine("==================================================================")
+
             Application.Run(New FrmHome("📲 Cliente (Autoatención)", "Invitado"))
         End Sub
 
