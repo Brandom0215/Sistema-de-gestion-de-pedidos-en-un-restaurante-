@@ -149,7 +149,7 @@ Namespace Views.Cocina
 
         Private Sub InicializarCriteriosOrdenamiento()
             cboCcnCriterioOrden.Items.Clear()
-            cboCcnCriterioOrden.Items.Add("⭐ Por orden de llegada (Atender primeros)")
+            cboCcnCriterioOrden.Items.Add("Por orden de llegada (Atender primeros)")
             cboCcnCriterioOrden.Items.Add("Más recientes primero")
             cboCcnCriterioOrden.SelectedIndex = 0
         End Sub
@@ -306,12 +306,12 @@ Namespace Views.Cocina
                 If _strCcnFiltroServicioActivo.Equals(strClave, StringComparison.OrdinalIgnoreCase) Then
                     btnActual.BackColor = ThemeConfig.ColorPrimary
                     btnActual.ForeColor = Color.White
-                    btnActual.Font = ThemeConfig.ObtenerFuenteCuerpo(9.0F, FontStyle.Bold)
+                    btnActual.Font = ThemeConfig.ObtenerFuenteCuerpo(10.5F, FontStyle.Bold)
                     btnActual.FlatAppearance.BorderSize = 0
                 Else
                     btnActual.BackColor = Color.White
                     btnActual.ForeColor = ThemeConfig.ColorNeutralDark
-                    btnActual.Font = ThemeConfig.ObtenerFuenteCuerpo(9.0F, FontStyle.Regular)
+                    btnActual.Font = ThemeConfig.ObtenerFuenteCuerpo(10.5F, FontStyle.Regular)
                     btnActual.FlatAppearance.BorderColor = ThemeConfig.ColorBorder
                     btnActual.FlatAppearance.BorderSize = 1
                 End If
@@ -368,15 +368,15 @@ Namespace Views.Cocina
         ''' </summary>
         Private Function CalcularAnchoOptimoTarjeta() As Integer
             Dim intAnchoDisponible As Integer = flpCcnContenedorComandas.ClientSize.Width - flpCcnContenedorComandas.Padding.Horizontal - SystemInformation.VerticalScrollBarWidth - 4
-            If intAnchoDisponible <= 320 Then Return 320
+            If intAnchoDisponible <= 350 Then Return 350
 
-            ' Estimamos el número ideal de columnas según el ancho disponible (aprox 340px por columna)
-            Dim intColumnas As Integer = Math.Max(1, CInt(Math.Floor(intAnchoDisponible / 330.0)))
-            ' Margen de 20px (Margin = 10 en cada lado de la tarjeta)
-            Dim intEspacioTotalMargenes As Integer = intColumnas * 20
+            ' Estimamos el número ideal de columnas según el ancho disponible (aprox 370px por comanda para interfaz táctil POS)
+            Dim intColumnas As Integer = Math.Max(1, CInt(Math.Floor(intAnchoDisponible / 370.0)))
+            ' Margen de 24px (Margin = 12 en cada lado de la tarjeta táctil)
+            Dim intEspacioTotalMargenes As Integer = intColumnas * 24
             Dim intAnchoCalculado As Integer = CInt(Math.Floor((intAnchoDisponible - intEspacioTotalMargenes) / CDbl(intColumnas)))
 
-            Return Math.Max(300, intAnchoCalculado)
+            Return Math.Max(340, intAnchoCalculado)
         End Function
 
         ''' <summary>
