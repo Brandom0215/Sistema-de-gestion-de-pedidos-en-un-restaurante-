@@ -150,22 +150,20 @@ Namespace Views.Dashboards
                 If dtPedidos IsNot Nothing Then
                     totalPedidos = dtPedidos.Rows.Count
                     For Each row As DataRow In dtPedidos.Rows
-                        Dim estado As String = row("Estado").ToString()
-                        
-                        If estado.Equals("Pendiente", StringComparison.OrdinalIgnoreCase) OrElse estado.Equals("En Preparación", StringComparison.OrdinalIgnoreCase) Then
+                        Dim estadoPago As String = If(row("Estado") IsNot DBNull.Value, row("Estado").ToString().Trim().ToUpper(), "PENDIENTE")
+                        Dim estadoCocina As String = If(dtPedidos.Columns.Contains("EstadoCocina") AndAlso row("EstadoCocina") IsNot DBNull.Value, row("EstadoCocina").ToString().Trim().ToUpper(), "RECIBIDO")
+
+                        ' Una comanda está en Cocina KDS activa si aún no ha sido ENTREGADA
+                        If Not estadoCocina.Equals("ENTREGADO") AndAlso Not estadoCocina.Equals("DESPACHADO") Then
                             enCocina += 1
                         End If
 
-                        ' Suma de ingresos acumulados por comanda registrada
+                        ' Suma de ingresos por pedidos con cobro confirmado (o ventas totales registradas)
                         If Not IsDBNull(row("Total")) Then
                             Dim montoFila As Decimal = 0D
                             If Decimal.TryParse(row("Total").ToString(), montoFila) Then
                                 totalVentas += montoFila
-                            Else
-                                totalVentas += 15.5D
                             End If
-                        Else
-                            totalVentas += 15.5D
                         End If
                     Next
                 End If

@@ -956,10 +956,8 @@ Namespace Data
                 Dim strEstadoPago As String = If(row("Estado") IsNot DBNull.Value, row("Estado").ToString().ToUpper(), "PENDIENTE")
                 Dim strMetodo As String = If(row("MetodoPago") IsNot DBNull.Value, row("MetodoPago").ToString(), "Pendiente")
 
-                ' Pausa de Seguridad: Si el cliente eligió Pago en Caja y aún está PENDIENTE, no se envía a cocina hasta confirmar el cobro
-                If strEstadoPago = "PENDIENTE" AndAlso strMetodo.StartsWith("Pago en Caja", StringComparison.OrdinalIgnoreCase) Then
-                    Continue For
-                End If
+                ' El pedido se visualiza en Cocina KDS. Si está PENDIENTE de pago, la comanda
+                ' muestra el indicador [NO PAGADO (Cobrar en Caja)] y bloquea la entrega hasta que Caja confirme cobro.
 
                 Dim strCodigo As String = $"#08-{1040 + id}"
                 Dim strMesa As String = If(row("Mesa") IsNot DBNull.Value, row("Mesa").ToString(), "Mesa 01")
