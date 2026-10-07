@@ -65,15 +65,20 @@ Namespace Views.Pedidos
             ThemeConfig.EstilizarBotonSecundario(btnEliminarItemCarrito)
             ThemeConfig.EstilizarBotonSecundario(btnVaciarCarrito)
 
-            ' Estilizado de la grilla del carrito
-            dgvCarrito.BackgroundColor = Color.White
-            dgvCarrito.DefaultCellStyle.SelectionBackColor = Color.FromArgb(248, 236, 231)
-            dgvCarrito.DefaultCellStyle.SelectionForeColor = ThemeConfig.ColorNeutralDark
-            dgvCarrito.ColumnHeadersDefaultCellStyle.BackColor = ThemeConfig.ColorSecondary
-            dgvCarrito.ColumnHeadersDefaultCellStyle.ForeColor = Color.White
-            dgvCarrito.ColumnHeadersDefaultCellStyle.Font = ThemeConfig.ObtenerFuenteSubtitulo(8.5F, FontStyle.Bold)
-            dgvCarrito.EnableHeadersVisualStyles = False
-            dgvCarrito.RowTemplate.Height = 24
+            ' Configurar casillas de selección táctiles con cuadro gigante de 28x28px
+            ThemeConfig.AplicarDibujoTouchCheckBox(chkExtraSoda)
+            ThemeConfig.AplicarDibujoTouchCheckBox(chkExtraJugo)
+            ThemeConfig.AplicarDibujoTouchCheckBox(chkExtraPapas)
+            ThemeConfig.AplicarDibujoTouchCheckBox(chkExtraEnsalada)
+
+            ' Transformar selecciones numéricas en Steppers Táctiles gigantes [-] [1] [+]
+            ThemeConfig.ReemplazarNumericUpDownConTouchStepper(numExtraSoda)
+            ThemeConfig.ReemplazarNumericUpDownConTouchStepper(numExtraJugo)
+            ThemeConfig.ReemplazarNumericUpDownConTouchStepper(numExtraPapas)
+            ThemeConfig.ReemplazarNumericUpDownConTouchStepper(numExtraEnsalada)
+
+            ' Configurar la grilla del carrito optimizada para interacción táctil
+            ThemeConfig.ConfigurarGrillaTouch(dgvCarrito)
         End Sub
 
         Private Sub InicializarEstructuraCarrito()
@@ -91,10 +96,10 @@ Namespace Views.Pedidos
         Private Sub FormatearGrillaCarrito()
             If dgvCarrito.Columns.Count > 0 Then
                 dgvCarrito.Columns("ID").Visible = False
-                dgvCarrito.Columns("Plato").Width = 170
-                dgvCarrito.Columns("Cant").Width = 45
-                dgvCarrito.Columns("Precio").Width = 70
-                dgvCarrito.Columns("Subtotal").Width = 80
+                dgvCarrito.Columns("Plato").Width = 160
+                dgvCarrito.Columns("Cant").Width = 55
+                dgvCarrito.Columns("Precio").Width = 75
+                dgvCarrito.Columns("Subtotal").Width = 85
 
                 dgvCarrito.Columns("Precio").DefaultCellStyle.Format = "$ #,##0.00"
                 dgvCarrito.Columns("Subtotal").DefaultCellStyle.Format = "$ #,##0.00"
@@ -127,7 +132,7 @@ Namespace Views.Pedidos
         End Sub
 
         ''' <summary>
-        ''' Renderiza dinámicamente las tarjetas gastronómicas con PictureBox en el FlowLayoutPanel.
+        ''' Renderiza dinámicamente las tarjetas gastronómicas optimizadas para pantallas táctiles.
         ''' </summary>
         Private Sub CargarTarjetasPlatos()
             flpCatalogoTarjetas.SuspendLayout()
@@ -142,11 +147,13 @@ Namespace Views.Pedidos
             Dim categoriaFiltro As String = cboCategoria.SelectedItem.ToString()
             Dim busqueda As String = txtBuscarPlato.Text.Trim().ToLowerInvariant()
 
-            ' Calcular el ancho óptimo para 4 columnas dinámicas
+            ' Calcular el ancho óptimo para 3 o 4 columnas táctiles según la resolución
             Dim intAnchoDisponible As Integer = flpCatalogoTarjetas.ClientSize.Width - SystemInformation.VerticalScrollBarWidth - 24
             If intAnchoDisponible <= 0 Then intAnchoDisponible = 680
-            Dim intAnchoTarjeta As Integer = (intAnchoDisponible \ 4) - 10
-            If intAnchoTarjeta < 165 Then intAnchoTarjeta = 165
+
+            Dim numColumnas As Integer = If(intAnchoDisponible < 650, 2, If(intAnchoDisponible < 950, 3, 4))
+            Dim intAnchoTarjeta As Integer = (intAnchoDisponible \ numColumnas) - 12
+            If intAnchoTarjeta < 200 Then intAnchoTarjeta = 200
 
             For Each row As DataRow In dtPlatos.Rows
                 Dim idPlato As Integer = Convert.ToInt32(row("ID"))
@@ -168,72 +175,74 @@ Namespace Views.Pedidos
                     Continue For
                 End If
 
-                ' Crear Tarjeta de Plato (Ancho dinámico responsivo para 4 columnas)
+                ' Crear Tarjeta de Plato Táctil (Dimensiones amplias para toque fácil)
                 Dim cardPlato As New Panel With {
                     .Width = intAnchoTarjeta,
-                    .Height = 230,
+                    .Height = 330,
                     .BackColor = Color.White,
-                    .Margin = New Padding(4)
+                    .Margin = New Padding(6)
                 }
                 ThemeConfig.AplicarEstiloTarjeta(cardPlato)
 
-                Dim intAnchoInner As Integer = intAnchoTarjeta - 14
+                Dim intAnchoInner As Integer = intAnchoTarjeta - 16
 
-                ' Imagen vectorial o real mediante PictureBox
+                ' Imagen representativa del plato
                 Dim picFoto As New PictureBox With {
                     .Width = intAnchoInner,
-                    .Height = 88,
-                    .Location = New Point(7, 7),
+                    .Height = 115,
+                    .Location = New Point(8, 8),
                     .SizeMode = PictureBoxSizeMode.CenterImage,
-                    .Image = CcnImagenPlatoHelper.GenerarImagenPlato(nombrePlato, intAnchoInner, 88)
+                    .Image = CcnImagenPlatoHelper.GenerarImagenPlato(nombrePlato, intAnchoInner, 115)
                 }
 
-                ' Título del Plato
+                ' Título del Plato con tipografía amplia táctil
                 Dim lblNombre As New Label With {
                     .Text = nombrePlato,
-                    .Font = ThemeConfig.ObtenerFuenteSubtitulo(8.5F, FontStyle.Bold),
+                    .Font = ThemeConfig.ObtenerFuenteSubtitulo(10.5F, FontStyle.Bold),
                     .ForeColor = ThemeConfig.ColorNeutralDark,
-                    .Location = New Point(7, 98),
-                    .Size = New Size(intAnchoInner, 32),
+                    .Location = New Point(8, 128),
+                    .Size = New Size(intAnchoInner, 34),
                     .UseMnemonic = False
                 }
 
                 ' Etiqueta de Categoría
                 Dim lblCat As New Label With {
                     .Text = categoria,
-                    .Font = ThemeConfig.ObtenerFuenteCuerpo(7.5F, FontStyle.Bold),
+                    .Font = ThemeConfig.ObtenerFuenteCuerpo(8.5F, FontStyle.Bold),
                     .ForeColor = ThemeConfig.ColorPrimary,
-                    .Location = New Point(7, 132),
-                    .Size = New Size(intAnchoInner \ 2, 16),
+                    .Location = New Point(8, 166),
+                    .Size = New Size(intAnchoInner \ 2, 20),
                     .UseMnemonic = False
                 }
 
-                ' Precio
+                ' Precio amplio destacado
                 Dim lblPrecio As New Label With {
                     .Text = $"$ {precio:N2}",
-                    .Font = ThemeConfig.ObtenerFuenteTitulo(9.5F, FontStyle.Bold),
+                    .Font = ThemeConfig.ObtenerFuenteTitulo(11.5F, FontStyle.Bold),
                     .ForeColor = ThemeConfig.ColorSecondary,
-                    .Location = New Point(7 + (intAnchoInner \ 2), 130),
-                    .Size = New Size(intAnchoInner \ 2, 20),
+                    .Location = New Point(8 + (intAnchoInner \ 2), 164),
+                    .Size = New Size(intAnchoInner \ 2, 22),
                     .TextAlign = ContentAlignment.TopRight,
                     .UseMnemonic = False
                 }
 
-                ' Selector de Cantidad
+                ' Selector de Cantidad Táctil (NumericUpDown amplio) - Centrado Horizontall
+                Dim intXStepper As Integer = (intAnchoTarjeta - 130) \ 2
                 Dim numCant As New NumericUpDown With {
-                    .Location = New Point(7, 154),
-                    .Width = 45,
+                    .Location = New Point(intXStepper, 194),
+                    .Width = 130,
+                    .Height = 40,
                     .Minimum = 1,
                     .Maximum = 50,
                     .Value = 1,
-                    .Font = ThemeConfig.ObtenerFuenteCuerpo(8.5F, FontStyle.Regular)
+                    .Font = ThemeConfig.ObtenerFuenteSubtitulo(12.5F, FontStyle.Bold)
                 }
 
-                ' Botón Agregar al Carrito
+                ' Botón Agregar al Carrito (Ancho completo centrado, Fila Inferior)
                 Dim btnAgregar As New Button With {
-                    .Text = "🛒 Agregar",
-                    .Location = New Point(56, 152),
-                    .Size = New Size(intAnchoInner - 49, 28),
+                    .Text = "Agregar al Pedido",
+                    .Location = New Point(8, 242),
+                    .Size = New Size(intAnchoInner, 44),
                     .UseMnemonic = False
                 }
                 ThemeConfig.EstilizarBotonPrimario(btnAgregar)
@@ -249,6 +258,9 @@ Namespace Views.Pedidos
                 cardPlato.Controls.Add(lblPrecio)
                 cardPlato.Controls.Add(numCant)
                 cardPlato.Controls.Add(btnAgregar)
+
+                ' Transformar selector numérico en Stepper Táctil gigante [-] [1] [+]
+                ThemeConfig.ReemplazarNumericUpDownConTouchStepper(numCant)
 
                 flpCatalogoTarjetas.Controls.Add(cardPlato)
             Next
@@ -270,25 +282,31 @@ Namespace Views.Pedidos
                 Return
             End If
 
-            Dim intAnchoTarjeta As Integer = (widthDisponible \ 4) - 10
-            If intAnchoTarjeta < 165 Then intAnchoTarjeta = 165
+            Dim numColumnas As Integer = If(widthDisponible < 650, 2, If(widthDisponible < 950, 3, 4))
+            Dim intAnchoTarjeta As Integer = (widthDisponible \ numColumnas) - 12
+            If intAnchoTarjeta < 200 Then intAnchoTarjeta = 200
 
             For Each ctrl As Control In flpCatalogoTarjetas.Controls
                 If TypeOf ctrl Is Panel Then
                     Dim card As Panel = CType(ctrl, Panel)
                     card.Width = intAnchoTarjeta
-                    Dim intAnchoInner As Integer = intAnchoTarjeta - 14
+                    Dim intAnchoInner As Integer = intAnchoTarjeta - 16
 
                     For Each inner As Control In card.Controls
                         If TypeOf inner Is PictureBox Then
+                            inner.Left = 8
                             inner.Width = intAnchoInner
-                        ElseIf TypeOf inner Is Label AndAlso inner.Location.Y < 120 Then
+                        ElseIf TypeOf inner Is Label AndAlso inner.Location.Y < 150 Then
+                            inner.Left = 8
                             inner.Width = intAnchoInner
                         ElseIf TypeOf inner Is Label AndAlso CType(inner, Label).TextAlign = ContentAlignment.TopRight Then
-                            inner.Left = 7 + (intAnchoInner \ 2)
+                            inner.Left = 8 + (intAnchoInner \ 2)
                             inner.Width = intAnchoInner \ 2
                         ElseIf TypeOf inner Is Button Then
-                            inner.Width = intAnchoInner - 49
+                            inner.Left = 8
+                            inner.Width = intAnchoInner
+                        ElseIf TypeOf inner Is Panel AndAlso Equals(inner.Tag, "TouchStepper") Then
+                            inner.Left = (intAnchoTarjeta - inner.Width) \ 2
                         End If
                     Next
                 End If

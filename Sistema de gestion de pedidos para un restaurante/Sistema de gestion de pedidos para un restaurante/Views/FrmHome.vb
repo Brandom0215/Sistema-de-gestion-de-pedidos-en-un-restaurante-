@@ -21,6 +21,9 @@ Namespace Views
         ''' <summary> Nombre del usuario autenticado </summary>
         Private _nombreUsuario As String = "Invitado"
 
+        ''' <summary> Estado colapsado / desplegado de la barra lateral (Menú Hamburguesa) </summary>
+        Private _sidebarColapsado As Boolean = False
+
         Public Sub New()
             InitializeComponent()
         End Sub
@@ -145,7 +148,7 @@ Namespace Views
         End Sub
 
         ''' <summary>
-        ''' Distribuye verticalmente de forma ordenada los botones principales visibles del sidebar para evitar huecos.
+        ''' Distribuye verticalmente de forma ordenada los botones principales visibles del sidebar adaptándose al modo colapsado/desplegado.
         ''' </summary>
         Private Sub ReorganizarBotonesMenu()
             Dim intPosicionY As Integer = 110
@@ -153,12 +156,49 @@ Namespace Views
             For Each btn In arrBotones
                 If btn IsNot Nothing AndAlso btn.Visible Then
                     btn.Location = New Point(6, intPosicionY)
+                    btn.Width = If(_sidebarColapsado, 58, 238)
                     intPosicionY += 56
                 End If
             Next
+
+            If btnCerrarSesion IsNot Nothing AndAlso btnCerrarSesion.Visible Then
+                btnCerrarSesion.Location = New Point(6, pnlSidebar.Height - 110)
+                btnCerrarSesion.Width = If(_sidebarColapsado, 58, 238)
+            End If
         End Sub
 
+        ''' <summary>
+        ''' Evento Clic del Botón Hamburguesa para desplegar o retraer el menú lateral.
+        ''' </summary>
+        Private Sub btnToggleSidebar_Click(sender As Object, e As EventArgs) Handles btnToggleSidebar.Click
+            _sidebarColapsado = Not _sidebarColapsado
+            AplicarEstadoSidebar()
+        End Sub
 
+        ''' <summary>
+        ''' Aplica la transformación visual del sidebar ocultándolo por completo (100% pantalla completa) o mostrando el menú lateral (250px).
+        ''' </summary>
+        Public Sub AplicarEstadoSidebar()
+            If pnlSidebar Is Nothing OrElse pnlTopBar Is Nothing Then Return
+            pnlSidebar.SuspendLayout()
+            pnlTopBar.SuspendLayout()
+
+            If _sidebarColapsado Then
+                pnlSidebar.Visible = False
+            Else
+                pnlSidebar.Width = 250
+                pnlSidebar.Visible = True
+                AplicarPermisosPorRol()
+            End If
+
+            pnlSidebar.ResumeLayout(True)
+            pnlTopBar.ResumeLayout(True)
+
+            ' Notificar al formulario activo para que adapte su diseño responsivo
+            If _formularioActivo IsNot Nothing Then
+                _formularioActivo.PerformLayout()
+            End If
+        End Sub
 
         ' =========================================================================
         ' MÉTODOS DE ARQUITECTURA: CARGA DESACOPLADA DE FORMULARIOS HIJOS
@@ -226,38 +266,57 @@ Namespace Views
 
         Protected Overrides Sub AplicarTemaVisual()
             MyBase.AplicarTemaVisual()
+            If pnlSidebar Is Nothing OrElse pnlTopBar Is Nothing Then Return
+
             pnlSidebar.BackColor = ThemeConfig.ColorBackgroundSidebar
             pnlTopBar.BackColor = ThemeConfig.ColorBackgroundCard
-            pnlContenedorPrincipal.BackColor = ThemeConfig.ColorBackgroundApp
-            pnlBarraIndicadorMenu.BackColor = ThemeConfig.ColorPrimary
+            If pnlContenedorPrincipal IsNot Nothing Then pnlContenedorPrincipal.BackColor = ThemeConfig.ColorBackgroundApp
+            If pnlBarraIndicadorMenu IsNot Nothing Then pnlBarraIndicadorMenu.BackColor = ThemeConfig.ColorPrimary
+
+            ' Estilizar botón Hamburguesa Táctil
+            If btnToggleSidebar IsNot Nothing Then
+                btnToggleSidebar.FlatStyle = FlatStyle.Flat
+                btnToggleSidebar.FlatAppearance.BorderSize = 0
+                btnToggleSidebar.BackColor = ThemeConfig.ColorPrimaryLight
+                btnToggleSidebar.ForeColor = ThemeConfig.ColorPrimary
+                btnToggleSidebar.Cursor = Cursors.Hand
+            End If
 
             ' Identidad visual del restaurante en sidebar
-            pnlLogoEmblema.BackColor = ThemeConfig.ColorPrimary
-            lblLogoEmblemaTexto.ForeColor = Color.White
-            lblNombreRestaurante.ForeColor = ThemeConfig.ColorNeutralDark
-            lblNombreRestaurante.Font = ThemeConfig.ObtenerFuenteTitulo(12.5F, FontStyle.Bold)
-            lblEsloganRestaurante.ForeColor = ThemeConfig.ColorPrimary
-            lblEsloganRestaurante.Font = ThemeConfig.ObtenerFuenteCuerpo(7.5F, FontStyle.Bold)
-            pnlLogoSeparador.BackColor = ThemeConfig.ColorBorder
+            If pnlLogoEmblema IsNot Nothing Then pnlLogoEmblema.BackColor = ThemeConfig.ColorPrimary
+            If lblLogoEmblemaTexto IsNot Nothing Then lblLogoEmblemaTexto.ForeColor = Color.White
+            If lblNombreRestaurante IsNot Nothing Then
+                lblNombreRestaurante.ForeColor = ThemeConfig.ColorNeutralDark
+                lblNombreRestaurante.Font = ThemeConfig.ObtenerFuenteTitulo(12.5F, FontStyle.Bold)
+            End If
+            If lblEsloganRestaurante IsNot Nothing Then
+                lblEsloganRestaurante.ForeColor = ThemeConfig.ColorPrimary
+                lblEsloganRestaurante.Font = ThemeConfig.ObtenerFuenteCuerpo(7.5F, FontStyle.Bold)
+            End If
+            If pnlLogoSeparador IsNot Nothing Then pnlLogoSeparador.BackColor = ThemeConfig.ColorBorder
 
             ' Barra superior y perfil de usuario
-            lblTituloModuloTop.ForeColor = ThemeConfig.ColorNeutralDark
-            lblTituloModuloTop.Font = ThemeConfig.ObtenerFuenteTitulo(15.0F, FontStyle.Bold)
+            If lblTituloModuloTop IsNot Nothing Then
+                lblTituloModuloTop.ForeColor = ThemeConfig.ColorNeutralDark
+                lblTituloModuloTop.Font = ThemeConfig.ObtenerFuenteTitulo(15.0F, FontStyle.Bold)
+            End If
 
-            lblFechaHoraSistema.ForeColor = ThemeConfig.ColorNeutralDark
-            lblFechaHoraSistema.Font = ThemeConfig.ObtenerFuenteSubtitulo(9.5F, FontStyle.Bold)
+            If lblFechaHoraSistema IsNot Nothing Then
+                lblFechaHoraSistema.ForeColor = ThemeConfig.ColorNeutralDark
+                lblFechaHoraSistema.Font = ThemeConfig.ObtenerFuenteSubtitulo(9.5F, FontStyle.Bold)
+            End If
 
-            pnlAvatar.BackColor = ThemeConfig.ColorPrimaryLight
-            lblAvatarIcono.ForeColor = ThemeConfig.ColorPrimary
+            If pnlAvatar IsNot Nothing Then pnlAvatar.BackColor = ThemeConfig.ColorPrimaryLight
+            If lblAvatarIcono IsNot Nothing Then lblAvatarIcono.ForeColor = ThemeConfig.ColorPrimary
 
-            pnlSidebarFooter.BackColor = ThemeConfig.ColorBackgroundSidebar
-            lblEstadoBaseDatos.ForeColor = ThemeConfig.ColorTertiarySuccess
+            If pnlSidebarFooter IsNot Nothing Then pnlSidebarFooter.BackColor = ThemeConfig.ColorBackgroundSidebar
+            If lblEstadoBaseDatos IsNot Nothing Then lblEstadoBaseDatos.ForeColor = ThemeConfig.ColorTertiarySuccess
 
-            lblNombreUsuario.Text = _nombreUsuario
-            lblRolUsuario.Text = Models.RolUsuarioExtensions.ObtenerEtiqueta(Models.RolUsuarioExtensions.ParsearRol(_rolUsuario))
+            If lblNombreUsuario IsNot Nothing Then lblNombreUsuario.Text = _nombreUsuario
+            If lblRolUsuario IsNot Nothing Then lblRolUsuario.Text = Models.RolUsuarioExtensions.ObtenerEtiqueta(Models.RolUsuarioExtensions.ParsearRol(_rolUsuario))
 
-            ThemeConfig.EstilizarBotonPrimario(btnAccesoPersonal)
-            ThemeConfig.EstilizarBotonEliminar(btnCerrarSesion)
+            If btnAccesoPersonal IsNot Nothing Then ThemeConfig.EstilizarBotonPrimario(btnAccesoPersonal)
+            If btnCerrarSesion IsNot Nothing Then ThemeConfig.EstilizarBotonEliminar(btnCerrarSesion)
 
             Dim botonesNav = {btnNavCliente, btnNavCocina, btnNavCobroAdmin, btnNavFacturacion, btnNavMetricas, btnNavCatalogo}
             For Each btn In botonesNav
