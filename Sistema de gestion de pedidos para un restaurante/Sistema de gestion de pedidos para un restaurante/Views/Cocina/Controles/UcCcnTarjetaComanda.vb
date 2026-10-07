@@ -36,10 +36,10 @@ Namespace Views.Cocina.Controles
             _objPedidoModel = objPedido
 
             ' 1. Identificador de comanda en cabecera con distintivo de Turno (Orden de Llegada)
-            Dim strPrefijoTurno As String = If(objPedido.IntPosicionFifo > 0, $"#Turno-{objPedido.IntPosicionFifo:00} • ", "")
+            Dim strPrefijoTurno As String = If(objPedido.IntPosicionFifo > 0, $"Turno #{objPedido.IntPosicionFifo:00} - ", "")
             If objPedido.StrTipoServicio.IndexOf("Llevar", StringComparison.OrdinalIgnoreCase) >= 0 OrElse
                objPedido.StrTipoServicio.IndexOf("Entrega", StringComparison.OrdinalIgnoreCase) >= 0 Then
-                lblCcnTagMesa.Text = $"{strPrefijoTurno}🛍 LLEVAR {objPedido.StrCodigoComanda}"
+                lblCcnTagMesa.Text = $"{strPrefijoTurno}LLEVAR {objPedido.StrCodigoComanda}"
             Else
                 Dim strMesa As String = If(String.IsNullOrWhiteSpace(objPedido.StrMesaCliente), "MESA", objPedido.StrMesaCliente.ToUpper())
                 lblCcnTagMesa.Text = $"{strPrefijoTurno}{strMesa} {objPedido.StrCodigoComanda}"
@@ -50,23 +50,23 @@ Namespace Views.Cocina.Controles
             picCcnMiniaturaPlato.Image = CcnImagenPlatoHelper.GenerarImagenPlato(strPlatoPrincipal, picCcnMiniaturaPlato.Width, picCcnMiniaturaPlato.Height)
 
             ' 3. Metadatos unificados: Cliente, Servicio y Tiempo de Espera
-            lblCcnNombreCliente.Text = $"👤 Cliente: {If(String.IsNullOrWhiteSpace(objPedido.StrNombreCliente), "Cliente General", objPedido.StrNombreCliente)}"
+            lblCcnNombreCliente.Text = $"Cliente: {If(String.IsNullOrWhiteSpace(objPedido.StrNombreCliente), "Cliente General", objPedido.StrNombreCliente)}"
             lblCcnTipoServicioMesa.Text = objPedido.ObtenerEtiquetaServicioMesa()
 
             ' Tiempo transcurrido con alerta de semaforización según el orden de llegada
             Dim intMinutos As Integer = objPedido.ObtenerMinutosTranscurridos()
-            Dim strEsperaInfo As String = If(objPedido.IntPosicionFifo > 0, $"⏱ Turno #{objPedido.IntPosicionFifo}: {objPedido.FormatearTiempoTranscurrido()}", $"⏱ Espera: {objPedido.FormatearTiempoTranscurrido()}")
+            Dim strEsperaInfo As String = If(objPedido.IntPosicionFifo > 0, $"Turno #{objPedido.IntPosicionFifo}: {objPedido.FormatearTiempoTranscurrido()}", $"Espera: {objPedido.FormatearTiempoTranscurrido()}")
             lblCcnTiempoTranscurrido.Text = strEsperaInfo
 
             If intMinutos >= 15 AndAlso objPedido.EnumEstado <> CcnEstadoPedidoEnum.Listo Then
                 lblCcnTiempoTranscurrido.ForeColor = ThemeConfig.ColorDanger
-                lblCcnTiempoTranscurrido.Font = ThemeConfig.ObtenerFuenteCuerpo(8.5F, FontStyle.Bold)
+                lblCcnTiempoTranscurrido.Font = ThemeConfig.ObtenerFuenteCuerpo(10.5F, FontStyle.Bold)
             ElseIf intMinutos >= 10 AndAlso objPedido.EnumEstado <> CcnEstadoPedidoEnum.Listo Then
                 lblCcnTiempoTranscurrido.ForeColor = ThemeConfig.ColorWarning
-                lblCcnTiempoTranscurrido.Font = ThemeConfig.ObtenerFuenteCuerpo(8.5F, FontStyle.Bold)
+                lblCcnTiempoTranscurrido.Font = ThemeConfig.ObtenerFuenteCuerpo(10.5F, FontStyle.Bold)
             Else
                 lblCcnTiempoTranscurrido.ForeColor = ThemeConfig.ColorTextMuted
-                lblCcnTiempoTranscurrido.Font = ThemeConfig.ObtenerFuenteCuerpo(8.0F, FontStyle.Regular)
+                lblCcnTiempoTranscurrido.Font = ThemeConfig.ObtenerFuenteCuerpo(10.0F, FontStyle.Regular)
             End If
 
             ' 4. Estado de Preparación y Badge
@@ -74,15 +74,15 @@ Namespace Views.Cocina.Controles
 
             ' 5. Estado de Pago (Pagado / No Pagado) y Facturación
             If objPedido.BlnEstaPagado Then
-                Dim strDetallePago As String = If(Not String.IsNullOrWhiteSpace(objPedido.StrMetodoPago), $"🟢 PAGADO ({objPedido.StrMetodoPago})", "🟢 PAGADO")
+                Dim strDetallePago As String = If(Not String.IsNullOrWhiteSpace(objPedido.StrMetodoPago), $"PAGADO ({objPedido.StrMetodoPago})", "PAGADO")
                 If objPedido.BlnFacturado AndAlso Not String.IsNullOrWhiteSpace(objPedido.StrNumeroFactura) Then
-                    strDetallePago &= $" • 🧾 {objPedido.StrNumeroFactura}"
+                    strDetallePago &= $" - Factura: {objPedido.StrNumeroFactura}"
                 End If
                 lblCcnBadgePago.Text = strDetallePago
                 lblCcnBadgePago.BackColor = ThemeConfig.ColorTertiaryLight
                 lblCcnBadgePago.ForeColor = ThemeConfig.ColorTertiarySuccess
             Else
-                lblCcnBadgePago.Text = "🔴 NO PAGADO (Cobrar en Caja)"
+                lblCcnBadgePago.Text = "NO PAGADO (Cobrar en Caja)"
                 lblCcnBadgePago.BackColor = Color.FromArgb(252, 235, 235)
                 lblCcnBadgePago.ForeColor = ThemeConfig.ColorDanger
             End If
@@ -100,30 +100,30 @@ Namespace Views.Cocina.Controles
             Select Case enumEstado
                 Case CcnEstadoPedidoEnum.Recibido
                     pnlCcnBordeSuperior.BackColor = ThemeConfig.ColorWarning
-                    lblCcnBadgeEstado.Text = "⏳ En Espera"
+                    lblCcnBadgeEstado.Text = "En Espera"
                     lblCcnBadgeEstado.BackColor = Color.FromArgb(254, 243, 230)
                     lblCcnBadgeEstado.ForeColor = ThemeConfig.ColorWarning
-                    btnCcnAccionPrincipal.Text = "👨‍🍳 Iniciar Preparación"
+                    btnCcnAccionPrincipal.Text = "Iniciar Preparación"
                     btnCcnAccionPrincipal.BackColor = ThemeConfig.ColorPrimary
 
                 Case CcnEstadoPedidoEnum.EnPreparacion
                     pnlCcnBordeSuperior.BackColor = ThemeConfig.ColorPrimary
-                    lblCcnBadgeEstado.Text = "🔥 En Preparación"
+                    lblCcnBadgeEstado.Text = "En Preparación"
                     lblCcnBadgeEstado.BackColor = ThemeConfig.ColorPrimaryLight
                     lblCcnBadgeEstado.ForeColor = ThemeConfig.ColorPrimaryDark
-                    btnCcnAccionPrincipal.Text = "✔ Marcar Listo"
+                    btnCcnAccionPrincipal.Text = "Marcar Listo"
                     btnCcnAccionPrincipal.BackColor = ThemeConfig.ColorTertiarySuccess
 
                 Case CcnEstadoPedidoEnum.Listo
                     pnlCcnBordeSuperior.BackColor = ThemeConfig.ColorTertiarySuccess
-                    lblCcnBadgeEstado.Text = "✔ Listo para Servir"
+                    lblCcnBadgeEstado.Text = "Listo para Servir"
                     lblCcnBadgeEstado.BackColor = ThemeConfig.ColorTertiaryLight
                     lblCcnBadgeEstado.ForeColor = ThemeConfig.ColorTertiarySuccess
                     If _objPedidoModel IsNot Nothing AndAlso _objPedidoModel.BlnEstaPagado Then
-                        btnCcnAccionPrincipal.Text = "📦 Despachar / Entregado"
+                        btnCcnAccionPrincipal.Text = "Despachar / Entregado"
                         btnCcnAccionPrincipal.BackColor = ThemeConfig.ColorSecondary
                     Else
-                        btnCcnAccionPrincipal.Text = "🔒 Bloqueado (Cobrar en Caja)"
+                        btnCcnAccionPrincipal.Text = "Bloqueado (Cobrar en Caja)"
                         btnCcnAccionPrincipal.BackColor = ThemeConfig.ColorDanger
                     End If
 
@@ -159,16 +159,16 @@ Namespace Views.Cocina.Controles
                     ' 1. Fila de Encabezado del Plato (Nombre a la izquierda, Precio a la derecha)
                     Dim pnlHeaderPlato As New Panel With {
                         .Dock = DockStyle.Top,
-                        .Height = 24,
+                        .Height = 28,
                         .BackColor = Color.Transparent
                     }
 
                     Dim lblPrecioFila As New Label With {
                         .Text = $"${objItem.CalcularSubtotal():N2}",
-                        .Font = ThemeConfig.ObtenerFuenteCuerpo(9.0F, FontStyle.Regular),
+                        .Font = ThemeConfig.ObtenerFuenteCuerpo(10.0F, FontStyle.Regular),
                         .ForeColor = ThemeConfig.ColorTextMuted,
                         .Dock = DockStyle.Right,
-                        .Width = 65,
+                        .Width = 75,
                         .TextAlign = ContentAlignment.TopRight,
                         .UseMnemonic = False
                     }
@@ -176,7 +176,7 @@ Namespace Views.Cocina.Controles
 
                     Dim lblNombreFila As New Label With {
                         .Text = $"{objItem.IntCantidad}x  {objItem.StrNombrePlato}",
-                        .Font = ThemeConfig.ObtenerFuenteCuerpo(9.5F, FontStyle.Bold),
+                        .Font = ThemeConfig.ObtenerFuenteCuerpo(11.5F, FontStyle.Bold),
                         .ForeColor = ThemeConfig.ColorNeutralDark,
                         .Dock = DockStyle.Fill,
                         .TextAlign = ContentAlignment.MiddleLeft,
@@ -190,11 +190,11 @@ Namespace Views.Cocina.Controles
                     If Not String.IsNullOrWhiteSpace(objItem.StrNotasAcompanamiento) Then
                         Dim lblNotasFila As New Label With {
                             .Text = $"   {objItem.StrNotasAcompanamiento}",
-                            .Font = ThemeConfig.ObtenerFuenteCuerpo(8.5F, FontStyle.Regular),
+                            .Font = ThemeConfig.ObtenerFuenteCuerpo(9.5F, FontStyle.Regular),
                             .ForeColor = ThemeConfig.ColorTextMuted,
                             .Dock = DockStyle.Top,
                             .AutoSize = True,
-                            .Padding = New Padding(10, 1, 0, 2),
+                            .Padding = New Padding(12, 2, 0, 4),
                             .UseMnemonic = False
                         }
                         pnlFilaPlato.Controls.Add(lblNotasFila)
@@ -206,14 +206,14 @@ Namespace Views.Cocina.Controles
                             .BackColor = Color.FromArgb(255, 248, 230),
                             .BorderStyle = BorderStyle.FixedSingle,
                             .Dock = DockStyle.Top,
-                            .Height = 26,
-                            .Margin = New Padding(0, 4, 0, 4)
+                            .Height = 32,
+                            .Margin = New Padding(0, 5, 0, 5)
                         }
 
                         Dim lblAlerta As New Label With {
-                            .Text = If(Not String.IsNullOrWhiteSpace(objItem.StrMensajeAlerta), $" ⚠ {objItem.StrMensajeAlerta}", " ⚠ CELÍACO: Estrictamente Sin Gluten"),
+                            .Text = If(Not String.IsNullOrWhiteSpace(objItem.StrMensajeAlerta), $" ALERTA: {objItem.StrMensajeAlerta}", " ALERTA: CELÍACO - Estrictamente Sin Gluten"),
                             .ForeColor = Color.FromArgb(180, 100, 20),
-                            .Font = ThemeConfig.ObtenerFuenteCuerpo(8.2F, FontStyle.Bold),
+                            .Font = ThemeConfig.ObtenerFuenteCuerpo(9.5F, FontStyle.Bold),
                             .Dock = DockStyle.Fill,
                             .TextAlign = ContentAlignment.MiddleLeft,
                             .UseMnemonic = False
@@ -238,7 +238,7 @@ Namespace Views.Cocina.Controles
             ' Validación estricta de cobro previo al despacho:
             If _objPedidoModel.EnumEstado = CcnEstadoPedidoEnum.Listo AndAlso Not _objPedidoModel.BlnEstaPagado Then
                 MessageBox.Show(
-                    $"⛔ DESPACHO BLOQUEADO:{Environment.NewLine}{Environment.NewLine}" &
+                    $"DESPACHO BLOQUEADO:{Environment.NewLine}{Environment.NewLine}" &
                     $"La comanda {_objPedidoModel.StrCodigoComanda} para {_objPedidoModel.StrNombreCliente} ({_objPedidoModel.ObtenerEtiquetaServicioMesa()}) " &
                     $"aún NO ha sido pagada en Caja (Monto: ${_objPedidoModel.CalcularTotal():N2}).{Environment.NewLine}{Environment.NewLine}" &
                     $"Por política del restaurante, todo producto debe ser pagado antes de ser entregado o despachado al cliente. " &
@@ -289,18 +289,18 @@ Namespace Views.Cocina.Controles
             If _objPedidoModel Is Nothing Then Return
 
             Dim intMinutos As Integer = _objPedidoModel.ObtenerMinutosTranscurridos()
-            Dim strEsperaInfo As String = If(_objPedidoModel.IntPosicionFifo > 0, $"⏱ Turno #{_objPedidoModel.IntPosicionFifo}: {_objPedidoModel.FormatearTiempoTranscurrido()}", $"⏱ Espera: {_objPedidoModel.FormatearTiempoTranscurrido()}")
+            Dim strEsperaInfo As String = If(_objPedidoModel.IntPosicionFifo > 0, $"Turno #{_objPedidoModel.IntPosicionFifo}: {_objPedidoModel.FormatearTiempoTranscurrido()}", $"Espera: {_objPedidoModel.FormatearTiempoTranscurrido()}")
             lblCcnTiempoTranscurrido.Text = strEsperaInfo
 
             If intMinutos >= 15 AndAlso _objPedidoModel.EnumEstado <> CcnEstadoPedidoEnum.Listo Then
                 lblCcnTiempoTranscurrido.ForeColor = ThemeConfig.ColorDanger
-                lblCcnTiempoTranscurrido.Font = ThemeConfig.ObtenerFuenteCuerpo(8.5F, FontStyle.Bold)
+                lblCcnTiempoTranscurrido.Font = ThemeConfig.ObtenerFuenteCuerpo(10.5F, FontStyle.Bold)
             ElseIf intMinutos >= 10 AndAlso _objPedidoModel.EnumEstado <> CcnEstadoPedidoEnum.Listo Then
                 lblCcnTiempoTranscurrido.ForeColor = ThemeConfig.ColorWarning
-                lblCcnTiempoTranscurrido.Font = ThemeConfig.ObtenerFuenteCuerpo(8.5F, FontStyle.Bold)
+                lblCcnTiempoTranscurrido.Font = ThemeConfig.ObtenerFuenteCuerpo(10.5F, FontStyle.Bold)
             Else
                 lblCcnTiempoTranscurrido.ForeColor = ThemeConfig.ColorTextMuted
-                lblCcnTiempoTranscurrido.Font = ThemeConfig.ObtenerFuenteCuerpo(8.0F, FontStyle.Regular)
+                lblCcnTiempoTranscurrido.Font = ThemeConfig.ObtenerFuenteCuerpo(10.0F, FontStyle.Regular)
             End If
         End Sub
 
