@@ -516,12 +516,13 @@ Namespace Data
                 ' Si PostgreSQL está activo, persistir en la base de datos y obtener el ID generado
                 If ConexionBD.DebeUsarPostgreSQL() Then
                     Try
-                        Dim sqlPG As String = "INSERT INTO pedidos (nombre_cliente, mesa_o_servicio, tipo_servicio, estado, total, monto_recibido, cambio, metodo_pago, correo_cliente) " &
-                                              "VALUES (@cliente, @mesa, @servicio, @estado, @total, @monto, @cambio, @metodo, @correo) RETURNING id_pedido;"
+                        Dim sqlPG As String = "INSERT INTO pedidos (nombre_cliente, mesa_o_servicio, tipo_servicio, estado, estado_cocina, total, monto_recibido, cambio, metodo_pago, correo_cliente) " &
+                                              "VALUES (@cliente, @mesa, @servicio, @estado, @estadoCocina, @total, @monto, @cambio, @metodo, @correo) RETURNING id_pedido;"
                         Dim pCliente As New NpgsqlParameter("@cliente", strCliente)
                         Dim pMesa As New NpgsqlParameter("@mesa", strMesa)
                         Dim pServicio As New NpgsqlParameter("@servicio", strServicio)
                         Dim pEstado As New NpgsqlParameter("@estado", If(estadoPago.Equals("PAGADO", StringComparison.OrdinalIgnoreCase), "Pagado", "Pendiente"))
+                        Dim pEstadoCocina As New NpgsqlParameter("@estadoCocina", If(String.IsNullOrWhiteSpace(estadoCocina), "RECIBIDO", estadoCocina.Trim().ToUpper()))
                         Dim pTotal As New NpgsqlParameter("@total", total)
                         Dim pMonto As New NpgsqlParameter("@monto", If(estadoPago.Equals("PAGADO", StringComparison.OrdinalIgnoreCase), total, 0D))
                         Dim pCambio As New NpgsqlParameter("@cambio", 0D)
@@ -531,7 +532,7 @@ Namespace Data
                         Using conn = ConexionBD.CrearConexion()
                             conn.Open()
                             Using cmd As New NpgsqlCommand(sqlPG, conn)
-                                cmd.Parameters.AddRange({pCliente, pMesa, pServicio, pEstado, pTotal, pMonto, pCambio, pMetodo, pCorreo})
+                                cmd.Parameters.AddRange({pCliente, pMesa, pServicio, pEstado, pEstadoCocina, pTotal, pMonto, pCambio, pMetodo, pCorreo})
                                 Dim res = cmd.ExecuteScalar()
                                 If res IsNot Nothing AndAlso Not DBNull.Value.Equals(res) Then
                                     idNuevo = Convert.ToInt32(res)
