@@ -20,6 +20,11 @@ Namespace Global.Sistema_de_gestion_de_pedidos_para_un_restaurante
             Console.WriteLine($"[DIAGNÓSTICO INICIAL] {diagMsg}")
             Console.WriteLine("==================================================================")
 
+            ' Si la conexión falla, mostrar una alerta clara al usuario/compañero en pantalla
+            If Not esExitoso Then
+                MessageBox.Show($"Atención de Conexión al Servidor PostgreSQL:{Environment.NewLine}{Environment.NewLine}{diagMsg}{Environment.NewLine}{Environment.NewLine}El sistema continuará funcionando en Modo Local de contingencia.", "Estado de Red - Restaurante El Buen Sazón", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+            End If
+
             Application.Run(New FrmHome("📲 Cliente (Autoatención)", "Invitado"))
         End Sub
 
