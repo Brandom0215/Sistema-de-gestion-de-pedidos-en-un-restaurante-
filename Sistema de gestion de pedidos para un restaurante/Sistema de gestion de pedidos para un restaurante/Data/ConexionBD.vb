@@ -27,37 +27,90 @@ Namespace Data
     Public Module ConexionBD
 
         ' =========================================================================
-        ' 1. CONFIGURACIÓN DEL SERVIDOR PRINCIPAL (LECTURA DINÁMICA DE ENTORNO/.ENV)
-        ' =========================================================================
-        ''' <summary>
-        ''' IP del servidor PostgreSQL. Se lee dinámicamente de DB_HOST (.env o entorno).
-        ''' </summary>
-        Public Property Host As String = ObtenValorConfig("DB_HOST", "127.0.0.1")
+        Private _hostCustom As String = Nothing
+        Private _puertoCustom As Integer? = Nothing
+        Private _baseDatosCustom As String = Nothing
+        Private _usuarioCustom As String = Nothing
+        Private _claveCustom As String = Nothing
+        Private _timeoutCustom As Integer? = Nothing
 
         ''' <summary>
-        ''' Puerto de red estándar de PostgreSQL. Se lee dinámicamente de DB_PORT.
+        ''' IP del servidor PostgreSQL universitario (VM 106 asignada).
         ''' </summary>
-        Public Property Puerto As Integer = ObtenValorEnteroConfig("DB_PORT", 5432)
+        Public Property Host As String
+            Get
+                If Not String.IsNullOrWhiteSpace(_hostCustom) Then Return _hostCustom
+                Return ObtenValorConfig("DB_HOST", "10.196.68.15")
+            End Get
+            Set(value As String)
+                _hostCustom = value
+            End Set
+        End Property
 
         ''' <summary>
-        ''' Nombre de la base de datos. Se lee dinámicamente de DB_NAME.
+        ''' Puerto de red estándar de PostgreSQL.
         ''' </summary>
-        Public Property BaseDatos As String = ObtenValorConfig("DB_NAME", "restaurante_db")
+        Public Property Puerto As Integer
+            Get
+                If _puertoCustom.HasValue Then Return _puertoCustom.Value
+                Return ObtenValorEnteroConfig("DB_PORT", 5432)
+            End Get
+            Set(value As Integer)
+                _puertoCustom = value
+            End Set
+        End Property
 
         ''' <summary>
-        ''' Usuario del sistema. Se lee dinámicamente de DB_USER.
+        ''' Nombre de la base de datos oficial del restaurante.
         ''' </summary>
-        Public Property Usuario As String = ObtenValorConfig("DB_USER", "postgres")
+        Public Property BaseDatos As String
+            Get
+                If Not String.IsNullOrWhiteSpace(_baseDatosCustom) Then Return _baseDatosCustom
+                Return ObtenValorConfig("DB_NAME", "restaurante_db")
+            End Get
+            Set(value As String)
+                _baseDatosCustom = value
+            End Set
+        End Property
 
         ''' <summary>
-        ''' Contraseña del servidor. Se lee dinámicamente de DB_PASS.
+        ''' Usuario del sistema/base de datos.
         ''' </summary>
-        Public Property Clave As String = ObtenValorConfig("DB_PASS", "")
+        Public Property Usuario As String
+            Get
+                If Not String.IsNullOrWhiteSpace(_usuarioCustom) Then Return _usuarioCustom
+                Return ObtenValorConfig("DB_USER", "usuario_restaurante")
+            End Get
+            Set(value As String)
+                _usuarioCustom = value
+            End Set
+        End Property
+
+        ''' <summary>
+        ''' Contraseña del servidor universitario.
+        ''' </summary>
+        Public Property Clave As String
+            Get
+                If Not String.IsNullOrWhiteSpace(_claveCustom) Then Return _claveCustom
+                Return ObtenValorConfig("DB_PASS", "utpcocle15")
+            End Get
+            Set(value As String)
+                _claveCustom = value
+            End Set
+        End Property
 
         ''' <summary>
         ''' Tiempo máximo de espera en segundos para detectar disponibilidad de red.
         ''' </summary>
-        Public Property TimeoutSegundos As Integer = ObtenValorEnteroConfig("DB_TIMEOUT", 3)
+        Public Property TimeoutSegundos As Integer
+            Get
+                If _timeoutCustom.HasValue Then Return _timeoutCustom.Value
+                Return ObtenValorEnteroConfig("DB_TIMEOUT", 3)
+            End Get
+            Set(value As Integer)
+                _timeoutCustom = value
+            End Set
+        End Property
 
         Private _configDict As Dictionary(Of String, String) = Nothing
         Private _configCargada As Boolean = False
