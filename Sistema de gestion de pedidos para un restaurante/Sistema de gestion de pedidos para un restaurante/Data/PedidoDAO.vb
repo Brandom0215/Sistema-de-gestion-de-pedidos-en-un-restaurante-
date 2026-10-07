@@ -90,6 +90,7 @@ Namespace Data
             _tablaPedidos.Columns.Add("DireccionFiscal", GetType(String))
             _tablaPedidos.Columns.Add("TelefonoCliente", GetType(String))
             _tablaPedidos.Columns.Add("CorreoCliente", GetType(String))
+            _tablaPedidos.PrimaryKey = New DataColumn() {_tablaPedidos.Columns("ID")}
 
             ' 2. Tabla Detalle de Pedidos (equivalente a 'detalle_pedidos' en BD)
             _tablaDetallePedidos = New DataTable("DetallePedidos")
@@ -102,6 +103,7 @@ Namespace Data
             _tablaDetallePedidos.Columns.Add("Acompanamientos", GetType(String))
             _tablaDetallePedidos.Columns.Add("EsAlertaCeliaco", GetType(Boolean))
             _tablaDetallePedidos.Columns.Add("MensajeAlerta", GetType(String))
+            _tablaDetallePedidos.PrimaryKey = New DataColumn() {_tablaDetallePedidos.Columns("ID")}
 
             ' Cargar pedidos iniciales ordenados cronológicamente respetando la Ley de FIFO
             ' (El más antiguo llegó hace 18 min -> Posición FIFO #1)
@@ -276,13 +278,7 @@ Namespace Data
                     Dim id As Integer = Convert.ToInt32(rowBD("ID"))
                     If id > _ultimoId Then _ultimoId = id
 
-                    Dim filaExistente As DataRow = Nothing
-                    For Each r As DataRow In _tablaPedidos.Rows
-                        If Convert.ToInt32(r("ID")) = id Then
-                            filaExistente = r
-                            Exit For
-                        End If
-                    Next
+                    Dim filaExistente As DataRow = _tablaPedidos.Rows.Find(id)
 
                     If filaExistente Is Nothing Then
                         filaExistente = _tablaPedidos.NewRow()
@@ -312,13 +308,7 @@ Namespace Data
                     Dim idDet As Integer = Convert.ToInt32(rowBD("ID"))
                     If idDet > _ultimoIdDetalle Then _ultimoIdDetalle = idDet
 
-                    Dim filaExistente As DataRow = Nothing
-                    For Each r As DataRow In _tablaDetallePedidos.Rows
-                        If Convert.ToInt32(r("ID")) = idDet Then
-                            filaExistente = r
-                            Exit For
-                        End If
-                    Next
+                    Dim filaExistente As DataRow = _tablaDetallePedidos.Rows.Find(idDet)
 
                     If filaExistente Is Nothing Then
                         filaExistente = _tablaDetallePedidos.NewRow()
@@ -530,11 +520,10 @@ Namespace Data
         ''' Busca un pedido por su identificador único. Si está habilitado PostgreSQL y no existe en caché, consulta la BD.
         ''' </summary>
         Public Function ObtenerPedidoPorId(id As Integer) As DataRow
-            For Each row As DataRow In _tablaPedidos.Rows
-                If Convert.ToInt32(row("ID")) = id Then
-                    Return row
-                End If
-            Next
+            Dim rowEnMemoria As DataRow = _tablaPedidos.Rows.Find(id)
+            If rowEnMemoria IsNot Nothing Then
+                Return rowEnMemoria
+            End If
 
             If ConexionBD.DebeUsarPostgreSQL() Then
                 Try
@@ -571,11 +560,7 @@ Namespace Data
                     Dim dt = ConexionBD.EjecutarConsultaDataTable(sql, pId)
                     If dt IsNot Nothing AndAlso dt.Rows.Count > 0 Then
                         SincronizarTablaPedidosDesdeBD(dt)
-                        For Each row As DataRow In _tablaPedidos.Rows
-                            If Convert.ToInt32(row("ID")) = id Then
-                                Return row
-                            End If
-                        Next
+                        Return _tablaPedidos.Rows.Find(id)
                     End If
                 Catch ex As Exception
                     ConexionBD.RegistrarFalloServidor(ex.Message)
@@ -804,24 +789,23 @@ Namespace Data
         ''' Actualiza la información de un pedido existente por ID.
         ''' </summary>
         Public Function Actualizar(id As Integer, cliente As String, mesa As String, plato As String, acomp As String, servicio As String) As Boolean
-            For Each row As DataRow In _tablaPedidos.Rows
-                If Convert.ToInt32(row("ID")) = id Then
-                    row("Cliente") = cliente.Trim()
-                    row("Mesa") = mesa.Trim()
-                    row("PlatoPrincipal") = plato.Trim()
-                    row("Acompanamientos") = acomp.Trim()
-                    row("TipoServicio") = servicio.Trim()
+            Dim row = _tablaPedidos.Rows.Find(id)
+            If row IsNot Nothing Then
+                row("Cliente") = cliente.Trim()
+                row("Mesa") = mesa.Trim()
+                row("PlatoPrincipal") = plato.Trim()
+                row("Acompanamientos") = acomp.Trim()
+                row("TipoServicio") = servicio.Trim()
 
-                    Dim precioFinal As Decimal = ExtraerPrecioPlato(plato)
-                    row("PrecioUnitario") = precioFinal
-                    row("Subtotal") = Math.Round(precioFinal / 1.07D, 2)
-                    row("Impuesto") = Math.Round(precioFinal - CDec(row("Subtotal")), 2)
-                    row("Total") = precioFinal
+                Dim precioFinal As Decimal = ExtraerPrecioPlato(plato)
+                row("PrecioUnitario") = precioFinal
+                row("Subtotal") = Math.Round(precioFinal / 1.07D, 2)
+                row("Impuesto") = Math.Round(precioFinal - CDec(row("Subtotal")), 2)
+                row("Total") = precioFinal
 
-                    DispararPedidoModificado(id)
-                    Return True
-                End If
-            Next
+                DispararPedidoModificado(id)
+                Return True
+            End If
             Return False
         End Function
 
@@ -842,21 +826,20 @@ Namespace Data
                 End Try
             End If
 
-            For i As Integer = _tablaPedidos.Rows.Count - 1 To 0 Step -1
-                If Convert.ToInt32(_tablaPedidos.Rows(i)("ID")) = id Then
-                    _tablaPedidos.Rows.RemoveAt(i)
+            Dim rowEliminar = _tablaPedidos.Rows.Find(id)
+            If rowEliminar IsNot Nothing Then
+                _tablaPedidos.Rows.Remove(rowEliminar)
 
-                    ' Eliminar detalles en cascada
-                    For j As Integer = _tablaDetallePedidos.Rows.Count - 1 To 0 Step -1
-                        If Convert.ToInt32(_tablaDetallePedidos.Rows(j)("IdPedido")) = id Then
-                            _tablaDetallePedidos.Rows.RemoveAt(j)
-                        End If
-                    Next
+                ' Eliminar detalles en cascada
+                For j As Integer = _tablaDetallePedidos.Rows.Count - 1 To 0 Step -1
+                    If Convert.ToInt32(_tablaDetallePedidos.Rows(j)("IdPedido")) = id Then
+                        _tablaDetallePedidos.Rows.RemoveAt(j)
+                    End If
+                Next
 
-                    DispararPedidoModificado(id)
-                    Return True
-                End If
-            Next
+                DispararPedidoModificado(id)
+                Return True
+            End If
             Return False
         End Function
 
@@ -891,18 +874,16 @@ Namespace Data
             End If
 
             ' Sincronizar en memoria para actualización inmediata de vistas y cocina KDS
+            Dim rowCobro = _tablaPedidos.Rows.Find(id)
             Dim encontradoMemoria As Boolean = False
-            For Each row As DataRow In _tablaPedidos.Rows
-                If Convert.ToInt32(row("ID")) = id Then
-                    row("Estado") = "PAGADO"
-                    row("FechaCobro") = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")
-                    row("MetodoPago") = metodoPago
-                    row("MontoRecibido") = montoRecibido
-                    row("Cambio") = cambio
-                    encontradoMemoria = True
-                    Exit For
-                End If
-            Next
+            If rowCobro IsNot Nothing Then
+                rowCobro("Estado") = "PAGADO"
+                rowCobro("FechaCobro") = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")
+                rowCobro("MetodoPago") = metodoPago
+                rowCobro("MontoRecibido") = montoRecibido
+                rowCobro("Cambio") = cambio
+                encontradoMemoria = True
+            End If
 
             DispararPedidoModificado(id)
             DispararPedidoRegistrado(id)
@@ -933,23 +914,22 @@ Namespace Data
                 End Try
             End If
 
-            For Each row As DataRow In _tablaPedidos.Rows
-                If Convert.ToInt32(row("ID")) = id Then
-                    If CBool(row("Facturado")) AndAlso Not String.IsNullOrEmpty(row("NumeroFactura").ToString()) Then
-                        Return row("NumeroFactura").ToString()
-                    End If
-
-                    row("Facturado") = True
-                    row("NumeroFactura") = correlativo
-                    row("RUC_Cedula") = rucCedula.Trim()
-                    row("RazonSocial") = razonSocial.Trim()
-                    row("DireccionFiscal") = direccion.Trim()
-                    row("TelefonoCliente") = telefono.Trim()
-                    row("CorreoCliente") = correo.Trim()
-                    DispararPedidoModificado(id)
-                    Return correlativo
+            Dim rowFac = _tablaPedidos.Rows.Find(id)
+            If rowFac IsNot Nothing Then
+                If CBool(rowFac("Facturado")) AndAlso Not String.IsNullOrEmpty(rowFac("NumeroFactura").ToString()) Then
+                    Return rowFac("NumeroFactura").ToString()
                 End If
-            Next
+
+                rowFac("Facturado") = True
+                rowFac("NumeroFactura") = correlativo
+                rowFac("RUC_Cedula") = rucCedula.Trim()
+                rowFac("RazonSocial") = razonSocial.Trim()
+                rowFac("DireccionFiscal") = direccion.Trim()
+                rowFac("TelefonoCliente") = telefono.Trim()
+                rowFac("CorreoCliente") = correo.Trim()
+                DispararPedidoModificado(id)
+                Return correlativo
+            End If
 
             DispararPedidoModificado(id)
             Return correlativo
@@ -993,13 +973,12 @@ Namespace Data
             End If
 
             ' 3. Sincronizar en memoria y notificar a los observadores reactivos
-            For Each row As DataRow In _tablaPedidos.Rows
-                If Convert.ToInt32(row("ID")) = id Then
-                    row("EstadoCocina") = estadoCocinaNormalizado
-                    DispararPedidoModificado(id)
-                    Return True
-                End If
-            Next
+            Dim rowCocina = _tablaPedidos.Rows.Find(id)
+            If rowCocina IsNot Nothing Then
+                rowCocina("EstadoCocina") = estadoCocinaNormalizado
+                DispararPedidoModificado(id)
+                Return True
+            End If
 
             DispararPedidoModificado(id)
             Return True

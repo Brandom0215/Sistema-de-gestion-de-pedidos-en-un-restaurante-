@@ -515,6 +515,13 @@ Namespace Views.Caja
             End If
         End Sub
 
+        Private Sub txtBuscar_KeyDown(sender As Object, e As KeyEventArgs) Handles txtBuscar.KeyDown
+            If e.KeyCode = Keys.Enter Then
+                e.SuppressKeyPress = True
+                CargarPedidosPendientes()
+            End If
+        End Sub
+
         Private Sub btnBuscar_Click(sender As Object, e As EventArgs) Handles btnBuscar.Click
             CargarPedidosPendientes()
         End Sub

@@ -12,15 +12,29 @@ Namespace Services
     ''' </summary>
     Public Module CcnImagenPlatoHelper
 
+        ' Cache en memoria de miniaturas ya renderizadas para eliminar I/O de disco y reescalado de CPU
+        Private ReadOnly _cacheImagenes As New Dictionary(Of String, Bitmap)(StringComparer.OrdinalIgnoreCase)
+        Private ReadOnly _lockCache As New Object()
+        Private _cacheRutasArchivos As Dictionary(Of String, String) = Nothing
+        Private ReadOnly _lockRutas As New Object()
+
         ''' <summary>
-        ''' Genera o carga la imagen de alta resolución del plato solicitado.
-        ''' Si existe un archivo real en Resources/Platos, lo carga automáticamente.
+        ''' Genera o carga la imagen del plato solicitado utilizando caché en memoria (Cero I/O y Cero CPU tras primera carga).
+        ''' Si existe un archivo real en Resources/Platos, lo carga y lo almacena para reutilización instantánea.
         ''' </summary>
         Public Function GenerarImagenPlato(ByVal strNombrePlato As String,
                                            Optional ByVal intAncho As Integer = 80,
                                            Optional ByVal intAlto As Integer = 65) As Bitmap
             If intAncho <= 0 Then intAncho = 80
             If intAlto <= 0 Then intAlto = 65
+
+            Dim claveCache As String = $"{If(strNombrePlato, "").Trim().ToLowerInvariant()}_{intAncho}_{intAlto}"
+
+            SyncLock _lockCache
+                If _cacheImagenes.ContainsKey(claveCache) Then
+                    Return _cacheImagenes(claveCache)
+                End If
+            End SyncLock
 
             ' 0. Buscar si existe una imagen real en la carpeta Resources/Platos
             Dim strRutaReal As String = BuscarRutaImagenReal(strNombrePlato)
@@ -52,6 +66,12 @@ Namespace Services
 
                                 gReal.DrawImage(imgOriginal, New Rectangle(0, 0, intAncho, intAlto), srcRect, GraphicsUnit.Pixel)
                             End Using
+
+                            SyncLock _lockCache
+                                If Not _cacheImagenes.ContainsKey(claveCache) Then
+                                    _cacheImagenes(claveCache) = bmpReal
+                                End If
+                            End SyncLock
                             Return bmpReal
                         End Using
                     End Using
@@ -142,47 +162,77 @@ Namespace Services
                 End Using
             End Using
 
+            SyncLock _lockCache
+                If Not _cacheImagenes.ContainsKey(claveCache) Then
+                    _cacheImagenes(claveCache) = bmp
+                End If
+            End SyncLock
+
             Return bmp
         End Function
+
+        Private Sub InicializarIndiceArchivos()
+            If _cacheRutasArchivos IsNot Nothing Then Return
+
+            SyncLock _lockRutas
+                If _cacheRutasArchivos IsNot Nothing Then Return
+
+                Dim dictIndex As New Dictionary(Of String, String)(StringComparer.OrdinalIgnoreCase)
+                Dim lstCarpetasCandidatas As New List(Of String) From {
+                    Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", "Platos"),
+                    Path.Combine(Directory.GetCurrentDirectory(), "Resources", "Platos")
+                }
+
+                Dim dirActual As New DirectoryInfo(AppDomain.CurrentDomain.BaseDirectory)
+                For i As Integer = 1 To 6
+                    If dirActual IsNot Nothing Then
+                        Dim rutaProyectada As String = Path.Combine(dirActual.FullName, "Resources", "Platos")
+                        If Not lstCarpetasCandidatas.Contains(rutaProyectada) Then
+                            lstCarpetasCandidatas.Add(rutaProyectada)
+                        End If
+                        dirActual = dirActual.Parent
+                    End If
+                Next
+
+                For Each strCarpeta In lstCarpetasCandidatas
+                    If Directory.Exists(strCarpeta) Then
+                        For Each strArchivo In Directory.GetFiles(strCarpeta, "*.*")
+                            Dim ext As String = Path.GetExtension(strArchivo).ToLowerInvariant()
+                            If ext = ".jpg" OrElse ext = ".jpeg" OrElse ext = ".png" OrElse ext = ".bmp" OrElse ext = ".webp" Then
+                                Dim strNombreSinExt As String = Path.GetFileNameWithoutExtension(strArchivo)
+                                Dim strNorm = NormalizarTexto(strNombreSinExt)
+                                If Not dictIndex.ContainsKey(strNorm) Then
+                                    dictIndex(strNorm) = strArchivo
+                                End If
+                            End If
+                        Next
+                    End If
+                Next
+
+                _cacheRutasArchivos = dictIndex
+            End SyncLock
+        End Sub
 
         Private Function BuscarRutaImagenReal(strNombrePlato As String) As String
             If String.IsNullOrWhiteSpace(strNombrePlato) Then Return String.Empty
 
-            Dim lstCarpetasCandidatas As New List(Of String) From {
-                Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", "Platos"),
-                Path.Combine(Directory.GetCurrentDirectory(), "Resources", "Platos")
-            }
-
-            Dim dirActual As New DirectoryInfo(AppDomain.CurrentDomain.BaseDirectory)
-            For i As Integer = 1 To 6
-                If dirActual IsNot Nothing Then
-                    Dim rutaProyectada As String = Path.Combine(dirActual.FullName, "Resources", "Platos")
-                    If Not lstCarpetasCandidatas.Contains(rutaProyectada) Then
-                        lstCarpetasCandidatas.Add(rutaProyectada)
-                    End If
-                    dirActual = dirActual.Parent
-                End If
-            Next
+            InicializarIndiceArchivos()
 
             Dim strNombreNormalizado As String = NormalizarTexto(strNombrePlato)
 
-            For Each strCarpeta In lstCarpetasCandidatas
-                If Directory.Exists(strCarpeta) Then
-                    For Each strArchivo In Directory.GetFiles(strCarpeta, "*.*")
-                        Dim ext As String = Path.GetExtension(strArchivo).ToLowerInvariant()
-                        If ext = ".jpg" OrElse ext = ".jpeg" OrElse ext = ".png" OrElse ext = ".bmp" OrElse ext = ".webp" Then
-                            Dim strNombreArchivoSinExt As String = Path.GetFileNameWithoutExtension(strArchivo)
-                            Dim strArchivoNormalizado As String = NormalizarTexto(strNombreArchivoSinExt)
+            SyncLock _lockRutas
+                If _cacheRutasArchivos IsNot Nothing Then
+                    If _cacheRutasArchivos.ContainsKey(strNombreNormalizado) Then
+                        Return _cacheRutasArchivos(strNombreNormalizado)
+                    End If
 
-                            If strNombreNormalizado.Equals(strArchivoNormalizado, StringComparison.OrdinalIgnoreCase) OrElse
-                               strNombreNormalizado.Contains(strArchivoNormalizado) OrElse
-                               strArchivoNormalizado.Contains(strNombreNormalizado) Then
-                                Return strArchivo
-                            End If
+                    For Each kvp In _cacheRutasArchivos
+                        If strNombreNormalizado.Contains(kvp.Key) OrElse kvp.Key.Contains(strNombreNormalizado) Then
+                            Return kvp.Value
                         End If
                     Next
                 End If
-            Next
+            End SyncLock
 
             Return String.Empty
         End Function
