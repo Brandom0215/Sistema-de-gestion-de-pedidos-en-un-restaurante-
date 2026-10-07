@@ -300,6 +300,47 @@ Namespace Data
         End Sub
 
         ''' <summary>
+        ''' Sincroniza las líneas de detalle obtenidas desde PostgreSQL con la tabla local.
+        ''' </summary>
+        Private Sub SincronizarTablaDetallesDesdeBD(dtDetalleBD As DataTable)
+            If dtDetalleBD Is Nothing Then Return
+            SyncLock _tablaDetallePedidos
+                For Each rowBD As DataRow In dtDetalleBD.Rows
+                    Dim idDet As Integer = Convert.ToInt32(rowBD("ID"))
+                    If idDet > _ultimoIdDetalle Then _ultimoIdDetalle = idDet
+
+                    Dim filaExistente As DataRow = Nothing
+                    For Each r As DataRow In _tablaDetallePedidos.Rows
+                        If Convert.ToInt32(r("ID")) = idDet Then
+                            filaExistente = r
+                            Exit For
+                        End If
+                    Next
+
+                    If filaExistente Is Nothing Then
+                        filaExistente = _tablaDetallePedidos.NewRow()
+                        filaExistente("ID") = idDet
+                        _tablaDetallePedidos.Rows.Add(filaExistente)
+                    End If
+
+                    For Each col As DataColumn In dtDetalleBD.Columns
+                        If _tablaDetallePedidos.Columns.Contains(col.ColumnName) AndAlso rowBD(col) IsNot DBNull.Value Then
+                            Try
+                                filaExistente(col.ColumnName) = rowBD(col)
+                            Catch
+                            End Try
+                        End If
+                    Next
+
+                    Dim strPlato As String = If(filaExistente("Plato") IsNot DBNull.Value, filaExistente("Plato").ToString(), "")
+                    Dim blnCeliaco As Boolean = strPlato.IndexOf("CELÍACO", StringComparison.OrdinalIgnoreCase) >= 0 OrElse strPlato.IndexOf("SIN GLUTEN", StringComparison.OrdinalIgnoreCase) >= 0
+                    filaExistente("EsAlertaCeliaco") = blnCeliaco
+                    filaExistente("MensajeAlerta") = If(blnCeliaco, "CELÍACO: Estrictamente Sin Gluten", "")
+                Next
+            End SyncLock
+        End Sub
+
+        ''' <summary>
         ''' Obtiene la tabla completa de pedidos registrados. Consulta PostgreSQL si está activo; si no, retorna el registro local.
         ''' </summary>
         Public Function ObtenerTodos() As DataTable
@@ -310,7 +351,7 @@ Namespace Data
                         "  p.id_pedido AS ""ID"", " &
                         "  p.nombre_cliente AS ""Cliente"", " &
                         "  p.mesa_o_servicio AS ""Mesa"", " &
-                        "  COALESCE((SELECT STRING_AGG(pl.nombre_plato, ' + ') FROM detalle_pedidos dp JOIN platos pl ON dp.id_plato = pl.id_plato WHERE dp.id_pedido = p.id_pedido), 'Plato del Menú') AS ""PlatoPrincipal"", " &
+                        "  COALESCE((SELECT STRING_AGG(COALESCE(dp.nombre_plato, pl.nombre_plato, 'Plato del Menú'), ' + ') FROM detalle_pedidos dp LEFT JOIN platos pl ON dp.id_plato = pl.id_plato WHERE dp.id_pedido = p.id_pedido), 'Plato del Menú') AS ""PlatoPrincipal"", " &
                         "  COALESCE((SELECT STRING_AGG(dp.acompanamientos, ', ') FROM detalle_pedidos dp WHERE dp.id_pedido = p.id_pedido AND dp.acompanamientos IS NOT NULL AND dp.acompanamientos <> ''), 'Sin notas adicionales') AS ""Acompanamientos"", " &
                         "  p.tipo_servicio AS ""TipoServicio"", " &
                         "  TO_CHAR(p.fecha_hora, 'YYYY-MM-DD HH24:MI:SS') AS ""FechaHora"", " &
@@ -337,6 +378,28 @@ Namespace Data
                     Dim dtPG = ConexionBD.EjecutarConsultaDataTable(sql)
                     If dtPG IsNot Nothing AndAlso dtPG.Columns.Count > 0 Then
                         SincronizarTablaPedidosDesdeBD(dtPG)
+
+                        ' Cargar también los detalles del pedido desde PostgreSQL
+                        Try
+                            Dim sqlDetalles As String =
+                                "SELECT " &
+                                "  dp.id_detalle AS ""ID"", " &
+                                "  dp.id_pedido AS ""IdPedido"", " &
+                                "  COALESCE(dp.nombre_plato, pl.nombre_plato, 'Plato del Menú') AS ""Plato"", " &
+                                "  dp.cantidad AS ""Cantidad"", " &
+                                "  dp.precio_unitario AS ""PrecioUnitario"", " &
+                                "  dp.subtotal AS ""Subtotal"", " &
+                                "  COALESCE(dp.acompanamientos, '') AS ""Acompanamientos"" " &
+                                "FROM detalle_pedidos dp " &
+                                "LEFT JOIN platos pl ON dp.id_plato = pl.id_plato;"
+
+                            Dim dtDetallesPG = ConexionBD.EjecutarConsultaDataTable(sqlDetalles)
+                            If dtDetallesPG IsNot Nothing Then
+                                SincronizarTablaDetallesDesdeBD(dtDetallesPG)
+                            End If
+                        Catch
+                        End Try
+
                         Return dtPG
                     End If
                 Catch ex As Exception
@@ -366,7 +429,7 @@ Namespace Data
                         "  p.id_pedido AS ""ID"", " &
                         "  p.nombre_cliente AS ""Cliente"", " &
                         "  p.mesa_o_servicio AS ""Mesa"", " &
-                        "  COALESCE((SELECT STRING_AGG(pl.nombre_plato, ' + ') FROM detalle_pedidos dp JOIN platos pl ON dp.id_plato = pl.id_plato WHERE dp.id_pedido = p.id_pedido), 'Plato del Menú') AS ""PlatoPrincipal"", " &
+                        "  COALESCE((SELECT STRING_AGG(COALESCE(dp.nombre_plato, pl.nombre_plato, 'Plato del Menú'), ' + ') FROM detalle_pedidos dp LEFT JOIN platos pl ON dp.id_plato = pl.id_plato WHERE dp.id_pedido = p.id_pedido), 'Plato del Menú') AS ""PlatoPrincipal"", " &
                         "  COALESCE((SELECT STRING_AGG(dp.acompanamientos, ', ') FROM detalle_pedidos dp WHERE dp.id_pedido = p.id_pedido AND dp.acompanamientos IS NOT NULL AND dp.acompanamientos <> ''), 'Sin notas adicionales') AS ""Acompanamientos"", " &
                         "  p.tipo_servicio AS ""TipoServicio"", " &
                         "  TO_CHAR(p.fecha_hora, 'YYYY-MM-DD HH24:MI:SS') AS ""FechaHora"", " &
@@ -419,7 +482,7 @@ Namespace Data
                         "  p.id_pedido AS ""ID"", " &
                         "  p.nombre_cliente AS ""Cliente"", " &
                         "  p.mesa_o_servicio AS ""Mesa"", " &
-                        "  COALESCE((SELECT STRING_AGG(pl.nombre_plato, ' + ') FROM detalle_pedidos dp JOIN platos pl ON dp.id_plato = pl.id_plato WHERE dp.id_pedido = p.id_pedido), 'Plato del Menú') AS ""PlatoPrincipal"", " &
+                        "  COALESCE((SELECT STRING_AGG(COALESCE(dp.nombre_plato, pl.nombre_plato, 'Plato del Menú'), ' + ') FROM detalle_pedidos dp LEFT JOIN platos pl ON dp.id_plato = pl.id_plato WHERE dp.id_pedido = p.id_pedido), 'Plato del Menú') AS ""PlatoPrincipal"", " &
                         "  COALESCE((SELECT STRING_AGG(dp.acompanamientos, ', ') FROM detalle_pedidos dp WHERE dp.id_pedido = p.id_pedido AND dp.acompanamientos IS NOT NULL AND dp.acompanamientos <> ''), 'Sin notas adicionales') AS ""Acompanamientos"", " &
                         "  p.tipo_servicio AS ""TipoServicio"", " &
                         "  TO_CHAR(p.fecha_hora, 'YYYY-MM-DD HH24:MI:SS') AS ""FechaHora"", " &
@@ -477,7 +540,7 @@ Namespace Data
                         "  p.id_pedido AS ""ID"", " &
                         "  p.nombre_cliente AS ""Cliente"", " &
                         "  p.mesa_o_servicio AS ""Mesa"", " &
-                        "  COALESCE((SELECT STRING_AGG(pl.nombre_plato, ' + ') FROM detalle_pedidos dp JOIN platos pl ON dp.id_plato = pl.id_plato WHERE dp.id_pedido = p.id_pedido), 'Plato del Menú') AS ""PlatoPrincipal"", " &
+                        "  COALESCE((SELECT STRING_AGG(COALESCE(dp.nombre_plato, pl.nombre_plato, 'Plato del Menú'), ' + ') FROM detalle_pedidos dp LEFT JOIN platos pl ON dp.id_plato = pl.id_plato WHERE dp.id_pedido = p.id_pedido), 'Plato del Menú') AS ""PlatoPrincipal"", " &
                         "  COALESCE((SELECT STRING_AGG(dp.acompanamientos, ', ') FROM detalle_pedidos dp WHERE dp.id_pedido = p.id_pedido AND dp.acompanamientos IS NOT NULL AND dp.acompanamientos <> ''), 'Sin notas adicionales') AS ""Acompanamientos"", " &
                         "  p.tipo_servicio AS ""TipoServicio"", " &
                         "  TO_CHAR(p.fecha_hora, 'YYYY-MM-DD HH24:MI:SS') AS ""FechaHora"", " &
