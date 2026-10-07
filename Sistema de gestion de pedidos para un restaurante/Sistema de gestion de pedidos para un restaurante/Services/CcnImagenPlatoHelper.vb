@@ -26,13 +26,34 @@ Namespace Services
             Dim strRutaReal As String = BuscarRutaImagenReal(strNombrePlato)
             If Not String.IsNullOrEmpty(strRutaReal) AndAlso File.Exists(strRutaReal) Then
                 Try
-                    Using imgOriginal As Image = Image.FromFile(strRutaReal)
-                        Dim bmpReal As New Bitmap(intAncho, intAlto)
-                        Using gReal As Graphics = Graphics.FromImage(bmpReal)
-                            gReal.InterpolationMode = InterpolationMode.HighQualityBicubic
-                            gReal.DrawImage(imgOriginal, 0, 0, intAncho, intAlto)
+                    Dim bytesImagen As Byte() = File.ReadAllBytes(strRutaReal)
+                    Using ms As New MemoryStream(bytesImagen)
+                        Using imgOriginal As Image = Image.FromStream(ms)
+                            Dim bmpReal As New Bitmap(intAncho, intAlto)
+                            Using gReal As Graphics = Graphics.FromImage(bmpReal)
+                                gReal.SmoothingMode = SmoothingMode.AntiAlias
+                                gReal.InterpolationMode = InterpolationMode.HighQualityBicubic
+                                gReal.PixelOffsetMode = PixelOffsetMode.HighQuality
+
+                                ' Ajuste proporcional inteligente (Center-Crop Cover)
+                                Dim floatRatioDst As Single = CSng(intAncho) / CSng(intAlto)
+                                Dim floatRatioSrc As Single = CSng(imgOriginal.Width) / CSng(imgOriginal.Height)
+                                Dim srcRect As Rectangle
+
+                                If floatRatioSrc > floatRatioDst Then
+                                    Dim cropWidth As Integer = CInt(imgOriginal.Height * floatRatioDst)
+                                    Dim cropX As Integer = (imgOriginal.Width - cropWidth) \ 2
+                                    srcRect = New Rectangle(cropX, 0, cropWidth, imgOriginal.Height)
+                                Else
+                                    Dim cropHeight As Integer = CInt(imgOriginal.Width / floatRatioDst)
+                                    Dim cropY As Integer = (imgOriginal.Height - cropHeight) \ 2
+                                    srcRect = New Rectangle(0, cropY, imgOriginal.Width, cropHeight)
+                                End If
+
+                                gReal.DrawImage(imgOriginal, New Rectangle(0, 0, intAncho, intAlto), srcRect, GraphicsUnit.Pixel)
+                            End Using
+                            Return bmpReal
                         End Using
-                        Return bmpReal
                     End Using
                 Catch
                     ' Si la imagen no se puede leer, continuar con el gráfico por defecto
@@ -126,23 +147,57 @@ Namespace Services
 
         Private Function BuscarRutaImagenReal(strNombrePlato As String) As String
             If String.IsNullOrWhiteSpace(strNombrePlato) Then Return String.Empty
-            Dim strBaseDir As String = AppDomain.CurrentDomain.BaseDirectory
-            Dim strRutaCarpeta As String = Path.Combine(strBaseDir, "Resources", "Platos")
-            If Not Directory.Exists(strRutaCarpeta) Then
-                strRutaCarpeta = Path.Combine(Directory.GetCurrentDirectory(), "Resources", "Platos")
-            End If
 
-            If Not Directory.Exists(strRutaCarpeta) Then Return String.Empty
+            Dim lstCarpetasCandidatas As New List(Of String) From {
+                Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", "Platos"),
+                Path.Combine(Directory.GetCurrentDirectory(), "Resources", "Platos")
+            }
 
-            Dim strNombreLimpio As String = strNombrePlato.ToLowerInvariant()
-            For Each archivo In Directory.GetFiles(strRutaCarpeta)
-                Dim nombreArchivoSinExt As String = Path.GetFileNameWithoutExtension(archivo).ToLowerInvariant()
-                If strNombreLimpio.Contains(nombreArchivoSinExt) OrElse nombreArchivoSinExt.Contains(strNombreLimpio) Then
-                    Return archivo
+            Dim dirActual As New DirectoryInfo(AppDomain.CurrentDomain.BaseDirectory)
+            For i As Integer = 1 To 6
+                If dirActual IsNot Nothing Then
+                    Dim rutaProyectada As String = Path.Combine(dirActual.FullName, "Resources", "Platos")
+                    If Not lstCarpetasCandidatas.Contains(rutaProyectada) Then
+                        lstCarpetasCandidatas.Add(rutaProyectada)
+                    End If
+                    dirActual = dirActual.Parent
+                End If
+            Next
+
+            Dim strNombreNormalizado As String = NormalizarTexto(strNombrePlato)
+
+            For Each strCarpeta In lstCarpetasCandidatas
+                If Directory.Exists(strCarpeta) Then
+                    For Each strArchivo In Directory.GetFiles(strCarpeta, "*.*")
+                        Dim ext As String = Path.GetExtension(strArchivo).ToLowerInvariant()
+                        If ext = ".jpg" OrElse ext = ".jpeg" OrElse ext = ".png" OrElse ext = ".bmp" OrElse ext = ".webp" Then
+                            Dim strNombreArchivoSinExt As String = Path.GetFileNameWithoutExtension(strArchivo)
+                            Dim strArchivoNormalizado As String = NormalizarTexto(strNombreArchivoSinExt)
+
+                            If strNombreNormalizado.Equals(strArchivoNormalizado, StringComparison.OrdinalIgnoreCase) OrElse
+                               strNombreNormalizado.Contains(strArchivoNormalizado) OrElse
+                               strArchivoNormalizado.Contains(strNombreNormalizado) Then
+                                Return strArchivo
+                            End If
+                        End If
+                    Next
                 End If
             Next
 
             Return String.Empty
+        End Function
+
+        Private Function NormalizarTexto(strTexto As String) As String
+            If String.IsNullOrWhiteSpace(strTexto) Then Return String.Empty
+            Dim strNormalizado As String = strTexto.Normalize(System.Text.NormalizationForm.FormD)
+            Dim sb As New System.Text.StringBuilder()
+            For Each c As Char In strNormalizado
+                Dim uc As System.Globalization.UnicodeCategory = System.Globalization.CharUnicodeInfo.GetUnicodeCategory(c)
+                If uc <> System.Globalization.UnicodeCategory.NonSpacingMark Then
+                    sb.Append(c)
+                End If
+            Next
+            Return sb.ToString().ToLowerInvariant().Trim()
         End Function
 
     End Module

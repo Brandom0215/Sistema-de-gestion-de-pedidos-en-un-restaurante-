@@ -45,6 +45,7 @@ Namespace Views
     Friend WithEvents lblEstadoBaseDatos As System.Windows.Forms.Label
 
     ' Controles de TopBar
+    Friend WithEvents btnToggleSidebar As System.Windows.Forms.Button
     Friend WithEvents lblTituloModuloTop As System.Windows.Forms.Label
     Friend WithEvents lblFechaHoraSistema As System.Windows.Forms.Label
     Friend WithEvents pnlUserProfile As System.Windows.Forms.Panel
@@ -85,6 +86,7 @@ Namespace Views
         Me.lblEstadoBaseDatos = New System.Windows.Forms.Label()
 
         Me.lblTituloModuloTop = New System.Windows.Forms.Label()
+        Me.btnToggleSidebar = New System.Windows.Forms.Button()
         Me.lblFechaHoraSistema = New System.Windows.Forms.Label()
         Me.pnlUserProfile = New System.Windows.Forms.Panel()
         Me.pnlAvatar = New System.Windows.Forms.Panel()
@@ -308,6 +310,7 @@ Namespace Views
         ' 
         ' pnlTopBar
         ' 
+        Me.pnlTopBar.Controls.Add(Me.btnToggleSidebar)
         Me.pnlTopBar.Controls.Add(Me.btnAccesoPersonal)
         Me.pnlTopBar.Controls.Add(Me.lblTituloModuloTop)
         Me.pnlTopBar.Controls.Add(Me.pnlUserProfile)
@@ -315,16 +318,27 @@ Namespace Views
         Me.pnlTopBar.Dock = System.Windows.Forms.DockStyle.Top
         Me.pnlTopBar.Location = New System.Drawing.Point(250, 0)
         Me.pnlTopBar.Name = "pnlTopBar"
-        Me.pnlTopBar.Size = New System.Drawing.Size(1000, 75)
+        Me.pnlTopBar.Size = New System.Drawing.Size(1000, 85)
         Me.pnlTopBar.TabIndex = 1
+        ' 
+        ' btnToggleSidebar
+        ' 
+        Me.btnToggleSidebar.Font = New System.Drawing.Font("Segoe UI", 16.0F, System.Drawing.FontStyle.Bold)
+        Me.btnToggleSidebar.Location = New System.Drawing.Point(12, 18)
+        Me.btnToggleSidebar.Name = "btnToggleSidebar"
+        Me.btnToggleSidebar.Size = New System.Drawing.Size(48, 48)
+        Me.btnToggleSidebar.TabIndex = 0
+        Me.btnToggleSidebar.Text = "☰"
+        Me.btnToggleSidebar.UseVisualStyleBackColor = True
+        Me.btnToggleSidebar.UseMnemonic = False
         ' 
         ' btnAccesoPersonal
         ' 
         Me.btnAccesoPersonal.Anchor = CType((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
-        Me.btnAccesoPersonal.Font = New System.Drawing.Font("Segoe UI", 9.5F, System.Drawing.FontStyle.Bold)
-        Me.btnAccesoPersonal.Location = New System.Drawing.Point(400, 18)
+        Me.btnAccesoPersonal.Font = New System.Drawing.Font("Segoe UI", 10.5F, System.Drawing.FontStyle.Bold)
+        Me.btnAccesoPersonal.Location = New System.Drawing.Point(340, 18)
         Me.btnAccesoPersonal.Name = "btnAccesoPersonal"
-        Me.btnAccesoPersonal.Size = New System.Drawing.Size(175, 40)
+        Me.btnAccesoPersonal.Size = New System.Drawing.Size(185, 48)
         Me.btnAccesoPersonal.TabIndex = 3
         Me.btnAccesoPersonal.Text = "Acceso Personal"
         Me.btnAccesoPersonal.UseVisualStyleBackColor = True
@@ -333,10 +347,10 @@ Namespace Views
         ' lblTituloModuloTop
         ' 
         Me.lblTituloModuloTop.AutoSize = True
-        Me.lblTituloModuloTop.Font = New System.Drawing.Font("Segoe UI", 15.0F, System.Drawing.FontStyle.Bold)
-        Me.lblTituloModuloTop.Location = New System.Drawing.Point(22, 20)
+        Me.lblTituloModuloTop.Font = New System.Drawing.Font("Segoe UI", 16.5F, System.Drawing.FontStyle.Bold)
+        Me.lblTituloModuloTop.Location = New System.Drawing.Point(68, 24)
         Me.lblTituloModuloTop.Name = "lblTituloModuloTop"
-        Me.lblTituloModuloTop.Size = New System.Drawing.Size(265, 32)
+        Me.lblTituloModuloTop.Size = New System.Drawing.Size(280, 36)
         Me.lblTituloModuloTop.Text = "Carta & Menú Digital"
         Me.lblTituloModuloTop.UseMnemonic = False
         ' 
@@ -344,10 +358,10 @@ Namespace Views
         ' 
         Me.lblFechaHoraSistema.Anchor = CType((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
         Me.lblFechaHoraSistema.AutoSize = True
-        Me.lblFechaHoraSistema.Font = New System.Drawing.Font("Segoe UI", 9.5F, System.Drawing.FontStyle.Bold)
-        Me.lblFechaHoraSistema.Location = New System.Drawing.Point(595, 26)
+        Me.lblFechaHoraSistema.Font = New System.Drawing.Font("Segoe UI", 11.0F, System.Drawing.FontStyle.Bold)
+        Me.lblFechaHoraSistema.Location = New System.Drawing.Point(545, 31)
         Me.lblFechaHoraSistema.Name = "lblFechaHoraSistema"
-        Me.lblFechaHoraSistema.Size = New System.Drawing.Size(185, 21)
+        Me.lblFechaHoraSistema.Size = New System.Drawing.Size(205, 23)
         Me.lblFechaHoraSistema.Text = "Lunes, 05 oct. • 16:00:00"
         ' 
         ' pnlUserProfile
@@ -356,27 +370,27 @@ Namespace Views
         Me.pnlUserProfile.Controls.Add(Me.lblRolUsuario)
         Me.pnlUserProfile.Controls.Add(Me.lblNombreUsuario)
         Me.pnlUserProfile.Controls.Add(Me.pnlAvatar)
-        Me.pnlUserProfile.Location = New System.Drawing.Point(795, 12)
+        Me.pnlUserProfile.Location = New System.Drawing.Point(765, 14)
         Me.pnlUserProfile.Name = "pnlUserProfile"
-        Me.pnlUserProfile.Size = New System.Drawing.Size(190, 52)
+        Me.pnlUserProfile.Size = New System.Drawing.Size(220, 56)
         ' 
         ' pnlAvatar
         ' 
         Me.pnlAvatar.BackColor = System.Drawing.Color.FromArgb(248, 236, 231)
         Me.pnlAvatar.Controls.Add(Me.lblAvatarIcono)
-        Me.pnlAvatar.Location = New System.Drawing.Point(4, 8)
+        Me.pnlAvatar.Location = New System.Drawing.Point(4, 7)
         Me.pnlAvatar.Name = "pnlAvatar"
-        Me.pnlAvatar.Size = New System.Drawing.Size(36, 36)
+        Me.pnlAvatar.Size = New System.Drawing.Size(42, 42)
         Me.pnlAvatar.TabIndex = 0
         ' 
         ' lblAvatarIcono
         ' 
         Me.lblAvatarIcono.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.lblAvatarIcono.Font = New System.Drawing.Font("Segoe UI", 10.5F, System.Drawing.FontStyle.Bold)
+        Me.lblAvatarIcono.Font = New System.Drawing.Font("Segoe UI", 12.0F, System.Drawing.FontStyle.Bold)
         Me.lblAvatarIcono.ForeColor = System.Drawing.Color.FromArgb(198, 107, 72)
         Me.lblAvatarIcono.Location = New System.Drawing.Point(0, 0)
         Me.lblAvatarIcono.Name = "lblAvatarIcono"
-        Me.lblAvatarIcono.Size = New System.Drawing.Size(36, 36)
+        Me.lblAvatarIcono.Size = New System.Drawing.Size(42, 42)
         Me.lblAvatarIcono.Text = "I"
         Me.lblAvatarIcono.TextAlign = System.Drawing.ContentAlignment.MiddleCenter
         Me.lblAvatarIcono.UseMnemonic = False
@@ -384,29 +398,29 @@ Namespace Views
         ' lblNombreUsuario
         ' 
         Me.lblNombreUsuario.AutoSize = True
-        Me.lblNombreUsuario.Font = New System.Drawing.Font("Segoe UI", 9.5F, System.Drawing.FontStyle.Bold)
-        Me.lblNombreUsuario.Location = New System.Drawing.Point(46, 6)
+        Me.lblNombreUsuario.Font = New System.Drawing.Font("Segoe UI", 10.5F, System.Drawing.FontStyle.Bold)
+        Me.lblNombreUsuario.Location = New System.Drawing.Point(52, 7)
         Me.lblNombreUsuario.Name = "lblNombreUsuario"
-        Me.lblNombreUsuario.Size = New System.Drawing.Size(70, 21)
+        Me.lblNombreUsuario.Size = New System.Drawing.Size(78, 23)
         Me.lblNombreUsuario.Text = "Invitado"
         ' 
         ' lblRolUsuario
         ' 
         Me.lblRolUsuario.AutoSize = True
-        Me.lblRolUsuario.Font = New System.Drawing.Font("Segoe UI", 8.0F)
+        Me.lblRolUsuario.Font = New System.Drawing.Font("Segoe UI", 9.0F)
         Me.lblRolUsuario.ForeColor = System.Drawing.Color.Gray
-        Me.lblRolUsuario.Location = New System.Drawing.Point(46, 27)
+        Me.lblRolUsuario.Location = New System.Drawing.Point(52, 30)
         Me.lblRolUsuario.Name = "lblRolUsuario"
-        Me.lblRolUsuario.Size = New System.Drawing.Size(130, 19)
+        Me.lblRolUsuario.Size = New System.Drawing.Size(145, 20)
         Me.lblRolUsuario.Text = "Cliente (Autoatención)"
 
         ' 
         ' pnlContenedorPrincipal
         ' 
         Me.pnlContenedorPrincipal.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.pnlContenedorPrincipal.Location = New System.Drawing.Point(250, 75)
+        Me.pnlContenedorPrincipal.Location = New System.Drawing.Point(250, 85)
         Me.pnlContenedorPrincipal.Name = "pnlContenedorPrincipal"
-        Me.pnlContenedorPrincipal.Size = New System.Drawing.Size(1000, 675)
+        Me.pnlContenedorPrincipal.Size = New System.Drawing.Size(1000, 665)
         Me.pnlContenedorPrincipal.TabIndex = 2
 
         ' 

@@ -131,7 +131,7 @@ Namespace Theme
             btn.FlatAppearance.BorderSize = 0
             btn.BackColor = ColorPrimary
             btn.ForeColor = Color.White
-            btn.Font = ObtenerFuenteCuerpo(9.5F, FontStyle.Bold)
+            btn.Font = ObtenerFuenteCuerpo(10.5F, FontStyle.Bold)
             btn.Cursor = Cursors.Hand
         End Sub
 
@@ -144,7 +144,7 @@ Namespace Theme
             btn.FlatAppearance.BorderSize = 1
             btn.BackColor = ColorBackgroundCard
             btn.ForeColor = ColorNeutralDark
-            btn.Font = ObtenerFuenteCuerpo(9.0F, FontStyle.Bold)
+            btn.Font = ObtenerFuenteCuerpo(10.0F, FontStyle.Bold)
             btn.Cursor = Cursors.Hand
         End Sub
 
@@ -156,7 +156,7 @@ Namespace Theme
             btn.FlatAppearance.BorderSize = 0
             btn.BackColor = Color.FromArgb(190, 60, 60)
             btn.ForeColor = Color.White
-            btn.Font = ObtenerFuenteCuerpo(9.0F, FontStyle.Bold)
+            btn.Font = ObtenerFuenteCuerpo(10.0F, FontStyle.Bold)
             btn.Cursor = Cursors.Hand
         End Sub
 
@@ -164,12 +164,258 @@ Namespace Theme
         ''' Estiliza un Label como Badge / Pill.
         ''' </summary>
         Public Sub EstilizarBadge(lbl As Label, fondo As Color, texto As Color)
-
             lbl.BackColor = fondo
             lbl.ForeColor = texto
             lbl.Font = ObtenerFuenteCuerpo(8.5F, FontStyle.Bold)
             lbl.TextAlign = ContentAlignment.MiddleCenter
         End Sub
+
+        ''' <summary>
+        ''' Estiliza una DataGridView optimizándola para pantallas táctiles (Touch POS / KDS).
+        ''' Incrementa la altura de filas y encabezados para permitir toque de dedos sin errores.
+        ''' </summary>
+        Public Sub ConfigurarGrillaTouch(dgv As DataGridView)
+            dgv.BackgroundColor = Color.White
+            dgv.DefaultCellStyle.SelectionBackColor = ColorPrimaryLight
+            dgv.DefaultCellStyle.SelectionForeColor = ColorNeutralDark
+            dgv.DefaultCellStyle.Font = ObtenerFuenteCuerpo(10.5F, FontStyle.Regular)
+            dgv.ColumnHeadersDefaultCellStyle.BackColor = ColorSecondary
+            dgv.ColumnHeadersDefaultCellStyle.ForeColor = Color.White
+            dgv.ColumnHeadersDefaultCellStyle.Font = ObtenerFuenteSubtitulo(10.5F, FontStyle.Bold)
+            dgv.EnableHeadersVisualStyles = False
+            dgv.RowTemplate.Height = 42
+            dgv.ColumnHeadersHeight = 40
+            dgv.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.DisableResizing
+        End Sub
+
+        ''' <summary>
+        ''' Renderiza una casilla de selección (CheckBox) con un cuadro táctil gigante de 28x28px
+        ''' y una marca de verificado (✔) visible, optimizada para interacción con dedos.
+        ''' </summary>
+        Public Sub AplicarDibujoTouchCheckBox(chk As CheckBox)
+            chk.AutoSize = False
+            chk.Height = Math.Max(chk.Height, 44)
+            chk.Font = ObtenerFuenteSubtitulo(11.5F, FontStyle.Bold)
+            chk.Cursor = Cursors.Hand
+
+            ' Forzar invalidez y repintado al cambiar de estado Checked
+            AddHandler chk.CheckedChanged, Sub(s As Object, e As EventArgs)
+                                                chk.Invalidate()
+                                            End Sub
+
+            AddHandler chk.Paint, Sub(sender As Object, e As PaintEventArgs)
+                Dim c As CheckBox = CType(sender, CheckBox)
+                e.Graphics.Clear(c.BackColor)
+                e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias
+
+                ' Dibujar caja del checkbox táctil de 28x28px
+                Dim boxSize As Integer = 28
+                Dim boxRect As New Rectangle(2, (c.Height - boxSize) \ 2, boxSize, boxSize)
+
+                If c.Checked Then
+                    Using brushFondo As New SolidBrush(ColorPrimary),
+                          penBorde As New Pen(ColorPrimaryDark, 2.0F)
+                        e.Graphics.FillRectangle(brushFondo, boxRect)
+                        e.Graphics.DrawRectangle(penBorde, boxRect)
+
+                        ' Dibujar marca de verificado (✔) en blanco grueso
+                        Using penCheck As New Pen(Color.White, 3.5F)
+                            e.Graphics.DrawLines(penCheck, {
+                                New Point(boxRect.Left + 5, boxRect.Top + 14),
+                                New Point(boxRect.Left + 11, boxRect.Top + 21),
+                                New Point(boxRect.Left + 22, boxRect.Top + 7)
+                            })
+                        End Using
+                    End Using
+                Else
+                    Using brushFondo As New SolidBrush(Color.White),
+                          penBorde As New Pen(ColorBorder, 2.0F)
+                        e.Graphics.FillRectangle(brushFondo, boxRect)
+                        e.Graphics.DrawRectangle(penBorde, boxRect)
+                    End Using
+                End If
+
+                ' Dibujar texto de la etiqueta al lado del cuadro gigante de 28x28px
+                Dim textRect As New Rectangle(38, 0, c.Width - 40, c.Height)
+                TextRenderer.DrawText(e.Graphics, c.Text, c.Font, textRect, c.ForeColor, TextFormatFlags.VerticalCenter Or TextFormatFlags.Left Or TextFormatFlags.WordBreak)
+            End Sub
+        End Sub
+
+        ''' <summary>
+        ''' Reemplaza la apariencia visual de un NumericUpDown por un Stepper Táctil gigante con botones [-] y [+] de 40x40px,
+        ''' manteniendo sincronización bidireccional con el control NumericUpDown original y todos sus eventos.
+        ''' </summary>
+        Public Sub ReemplazarNumericUpDownConTouchStepper(num As NumericUpDown)
+            If num Is Nothing OrElse num.Parent Is Nothing Then Return
+
+            Dim parent = num.Parent
+            num.Visible = False
+
+            Dim pnlStepper As New Panel With {
+                .Size = New Size(130, 42),
+                .Location = num.Location,
+                .BackColor = Color.White,
+                .Tag = "TouchStepper"
+            }
+
+            ' Botón Menos [-] (40x40px táctil)
+            Dim btnMenos As New Button With {
+                .Text = "-",
+                .Font = ObtenerFuenteTitulo(15.0F, FontStyle.Bold),
+                .Size = New Size(40, 40),
+                .Location = New Point(1, 1),
+                .FlatStyle = FlatStyle.Flat,
+                .BackColor = ColorBackgroundSidebar,
+                .ForeColor = ColorNeutralDark,
+                .Cursor = Cursors.Hand,
+                .Enabled = num.Enabled,
+                .UseMnemonic = False
+            }
+            btnMenos.FlatAppearance.BorderSize = 1
+            btnMenos.FlatAppearance.BorderColor = ColorBorder
+
+            ' Label de Valor Centrado (44x40px)
+            Dim lblValor As New Label With {
+                .Text = num.Value.ToString(),
+                .Font = ObtenerFuenteTitulo(13.0F, FontStyle.Bold),
+                .Size = New Size(44, 40),
+                .Location = New Point(43, 1),
+                .TextAlign = ContentAlignment.MiddleCenter,
+                .ForeColor = ColorNeutralDark,
+                .Enabled = num.Enabled,
+                .UseMnemonic = False
+            }
+
+            ' Botón Más [+] (40x40px táctil terracota)
+            Dim btnMas As New Button With {
+                .Text = "+",
+                .Font = ObtenerFuenteTitulo(15.0F, FontStyle.Bold),
+                .Size = New Size(40, 40),
+                .Location = New Point(89, 1),
+                .FlatStyle = FlatStyle.Flat,
+                .BackColor = If(num.Enabled, ColorPrimary, Color.LightGray),
+                .ForeColor = If(num.Enabled, Color.White, Color.DarkGray),
+                .Cursor = Cursors.Hand,
+                .Enabled = num.Enabled,
+                .UseMnemonic = False
+            }
+            btnMas.FlatAppearance.BorderSize = 0
+
+            ' Eventos de interacción y actualización sincronizada
+            AddHandler btnMenos.Click, Sub(s, e)
+                If num.Value > num.Minimum Then
+                    num.Value -= 1
+                End If
+            End Sub
+
+            AddHandler btnMas.Click, Sub(s, e)
+                If num.Value < num.Maximum Then
+                    num.Value += 1
+                End If
+            End Sub
+
+            AddHandler num.ValueChanged, Sub(s, e)
+                lblValor.Text = Convert.ToInt32(num.Value).ToString()
+            End Sub
+
+            AddHandler num.EnabledChanged, Sub(s, e)
+                btnMenos.Enabled = num.Enabled
+                btnMas.Enabled = num.Enabled
+                lblValor.Enabled = num.Enabled
+                If num.Enabled Then
+                    btnMas.BackColor = ColorPrimary
+                    btnMas.ForeColor = Color.White
+                    btnMenos.BackColor = ColorBackgroundSidebar
+                    lblValor.ForeColor = ColorNeutralDark
+                Else
+                    btnMas.BackColor = Color.FromArgb(220, 220, 220)
+                    btnMas.ForeColor = Color.Gray
+                    btnMenos.BackColor = Color.FromArgb(235, 235, 235)
+                    lblValor.ForeColor = Color.Gray
+                End If
+            End Sub
+
+            pnlStepper.Controls.Add(btnMenos)
+            pnlStepper.Controls.Add(lblValor)
+            pnlStepper.Controls.Add(btnMas)
+
+            parent.Controls.Add(pnlStepper)
+        End Sub
+
+        ''' <summary>
+        ''' Crea un selector de cantidad táctil (Touch Stepper) con botones gigantes [-] y [+] 
+        ''' de 40x40px separados por un contador central en negrita.
+        ''' </summary>
+        Public Function CrearControlTouchStepper(initialValue As Integer, minValue As Integer, maxValue As Integer, onValueChanged As Action(Of Integer)) As Panel
+            Dim pnlStepper As New Panel With {
+                .Size = New Size(136, 42),
+                .BackColor = Color.White
+            }
+
+            Dim valorActual As Integer = initialValue
+
+            ' Botón Menos [-] (40x40px táctil)
+            Dim btnMenos As New Button With {
+                .Text = "-",
+                .Font = ObtenerFuenteTitulo(15.0F, FontStyle.Bold),
+                .Size = New Size(40, 40),
+                .Location = New Point(1, 1),
+                .FlatStyle = FlatStyle.Flat,
+                .BackColor = ColorBackgroundSidebar,
+                .ForeColor = ColorNeutralDark,
+                .Cursor = Cursors.Hand,
+                .UseMnemonic = False
+            }
+            btnMenos.FlatAppearance.BorderSize = 1
+            btnMenos.FlatAppearance.BorderColor = ColorBorder
+
+            ' Contador central [ 1 ]
+            Dim lblValor As New Label With {
+                .Text = valorActual.ToString(),
+                .Font = ObtenerFuenteTitulo(12.5F, FontStyle.Bold),
+                .Size = New Size(50, 40),
+                .Location = New Point(43, 1),
+                .TextAlign = ContentAlignment.MiddleCenter,
+                .ForeColor = ColorNeutralDark,
+                .UseMnemonic = False
+            }
+
+            ' Botón Más [+] (40x40px táctil terracota)
+            Dim btnMas As New Button With {
+                .Text = "+",
+                .Font = ObtenerFuenteTitulo(15.0F, FontStyle.Bold),
+                .Size = New Size(40, 40),
+                .Location = New Point(95, 1),
+                .FlatStyle = FlatStyle.Flat,
+                .BackColor = ColorPrimary,
+                .ForeColor = Color.White,
+                .Cursor = Cursors.Hand,
+                .UseMnemonic = False
+            }
+            btnMas.FlatAppearance.BorderSize = 0
+
+            AddHandler btnMenos.Click, Sub(s, e)
+                If valorActual > minValue Then
+                    valorActual -= 1
+                    lblValor.Text = valorActual.ToString()
+                    onValueChanged?.Invoke(valorActual)
+                End If
+            End Sub
+
+            AddHandler btnMas.Click, Sub(s, e)
+                If valorActual < maxValue Then
+                    valorActual += 1
+                    lblValor.Text = valorActual.ToString()
+                    onValueChanged?.Invoke(valorActual)
+                End If
+            End Sub
+
+            pnlStepper.Controls.Add(btnMenos)
+            pnlStepper.Controls.Add(lblValor)
+            pnlStepper.Controls.Add(btnMas)
+
+            Return pnlStepper
+        End Function
 
     End Module
 End Namespace
