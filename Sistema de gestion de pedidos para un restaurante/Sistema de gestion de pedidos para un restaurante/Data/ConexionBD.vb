@@ -353,6 +353,18 @@ Namespace Data
         Public Sub AsegurarEstructuraTablas()
             If Not DebeUsarPostgreSQL() Then Return
             Try
+                EjecutarComando("ALTER TABLE pedidos DROP CONSTRAINT IF EXISTS pedidos_tipo_servicio_check;")
+            Catch
+            End Try
+            Try
+                EjecutarComando("ALTER TABLE pedidos DROP CONSTRAINT IF EXISTS pedidos_estado_check;")
+            Catch
+            End Try
+            Try
+                EjecutarComando("ALTER TABLE pedidos DROP CONSTRAINT IF EXISTS pedidos_estado_cocina_check;")
+            Catch
+            End Try
+            Try
                 EjecutarComando("ALTER TABLE detalle_pedidos ALTER COLUMN id_plato DROP NOT NULL;")
             Catch
             End Try
