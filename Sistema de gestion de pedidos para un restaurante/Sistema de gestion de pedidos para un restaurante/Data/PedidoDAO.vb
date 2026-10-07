@@ -173,30 +173,33 @@ Namespace Data
             _ultimoIdDetalle += 1
             Dim subtotal As Decimal = Math.Round(cantidad * precioUnitario, 2)
 
+            Dim strPlatoLimpio As String = If(String.IsNullOrWhiteSpace(plato), "Plato del Menú", plato.Trim())
+
             If ConexionBD.DebeUsarPostgreSQL() Then
                 Try
-                    ' Intento de persistencia en detalle_pedidos de PostgreSQL
-                    Dim sqlDetalle As String = "INSERT INTO detalle_pedidos (id_pedido, nombre_plato, cantidad, precio_unitario, subtotal, acompanamientos) " &
-                                               "VALUES (@idPed, @plato, @cant, @precio, @subtotal, @acomp);"
+                    Dim idPlatoCatalogo As Integer = PlatoDAO.ObtenerIdPorNombre(strPlatoLimpio)
+                    Dim sqlDetalle As String = "INSERT INTO detalle_pedidos (id_pedido, id_plato, nombre_plato, cantidad, precio_unitario, acompanamientos) " &
+                                               "VALUES (@idPed, @idPlato, @plato, @cant, @precio, @acomp);"
                     Dim pIdPed As New NpgsqlParameter("@idPed", idPedido)
-                    Dim pPlato As New NpgsqlParameter("@plato", plato.Trim())
+                    Dim pIdPlato As New NpgsqlParameter("@idPlato", idPlatoCatalogo)
+                    Dim pPlato As New NpgsqlParameter("@plato", strPlatoLimpio)
                     Dim pCant As New NpgsqlParameter("@cant", cantidad)
                     Dim pPrecio As New NpgsqlParameter("@precio", precioUnitario)
-                    Dim pSub As New NpgsqlParameter("@subtotal", subtotal)
                     Dim pAcomp As New NpgsqlParameter("@acomp", notas.Trim())
-                    ConexionBD.EjecutarComando(sqlDetalle, pIdPed, pPlato, pCant, pPrecio, pSub, pAcomp)
+                    ConexionBD.EjecutarComando(sqlDetalle, pIdPed, pIdPlato, pPlato, pCant, pPrecio, pAcomp)
                 Catch ex As Exception
-                    ' Respaldo si la columna es id_plato en lugar de nombre_plato
                     Try
-                        Dim sqlFallback As String = "INSERT INTO detalle_pedidos (id_pedido, cantidad, precio_unitario, subtotal, acompanamientos) " &
-                                                    "VALUES (@idPed, @cant, @precio, @subtotal, @acomp);"
+                        Dim idPlatoCatalogo As Integer = PlatoDAO.ObtenerIdPorNombre(strPlatoLimpio)
+                        Dim sqlFallback As String = "INSERT INTO detalle_pedidos (id_pedido, id_plato, cantidad, precio_unitario, acompanamientos) " &
+                                                    "VALUES (@idPed, @idPlato, @cant, @precio, @acomp);"
                         Dim pIdPed As New NpgsqlParameter("@idPed", idPedido)
+                        Dim pIdPlato As New NpgsqlParameter("@idPlato", idPlatoCatalogo)
                         Dim pCant As New NpgsqlParameter("@cant", cantidad)
                         Dim pPrecio As New NpgsqlParameter("@precio", precioUnitario)
-                        Dim pSub As New NpgsqlParameter("@subtotal", subtotal)
                         Dim pAcomp As New NpgsqlParameter("@acomp", notas.Trim())
-                        ConexionBD.EjecutarComando(sqlFallback, pIdPed, pCant, pPrecio, pSub, pAcomp)
+                        ConexionBD.EjecutarComando(sqlFallback, pIdPed, pIdPlato, pCant, pPrecio, pAcomp)
                     Catch ex2 As Exception
+                        ConexionBD.RegistrarFalloServidor($"Error al registrar detalle en servidor: {ex2.Message}")
                     End Try
                 End Try
             End If

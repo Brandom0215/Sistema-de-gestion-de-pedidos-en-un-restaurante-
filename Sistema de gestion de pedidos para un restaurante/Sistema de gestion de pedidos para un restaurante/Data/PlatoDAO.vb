@@ -59,5 +59,19 @@ Namespace Data
             Return _servicioPlatos.Eliminar(id)
         End Function
 
+        ''' <summary>
+        ''' Obtiene el ID del plato según su nombre en el catálogo. Retorna 1 si no se encuentra especificado.
+        ''' </summary>
+        Public Function ObtenerIdPorNombre(nombre As String) As Integer
+            If String.IsNullOrWhiteSpace(nombre) Then Return 1
+            Dim lista = _servicioPlatos.ObtenerTodos()
+            For Each p In lista
+                If String.Equals(p.Nombre, nombre.Trim(), StringComparison.OrdinalIgnoreCase) Then
+                    Return p.ID
+                End If
+            Next
+            Return 1
+        End Function
+
     End Module
 End Namespace
