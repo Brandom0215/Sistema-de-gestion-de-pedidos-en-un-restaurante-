@@ -59,19 +59,41 @@ Namespace Data
         ''' </summary>
         Public Property TimeoutSegundos As Integer = ObtenValorEnteroConfig("DB_TIMEOUT", 3)
 
-        Private ReadOnly _configDict As New Dictionary(Of String, String)(StringComparer.OrdinalIgnoreCase)
+        Private _configDict As Dictionary(Of String, String) = Nothing
         Private _configCargada As Boolean = False
 
         Private Sub CargarDiccionarioConfig()
             If _configCargada Then Return
             _configCargada = True
 
-            Dim rutas As String() = {
-                IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ".env"),
-                IO.Path.Combine(IO.Directory.GetCurrentDirectory(), ".env")
-            }
+            If _configDict Is Nothing Then
+                _configDict = New Dictionary(Of String, String)(StringComparer.OrdinalIgnoreCase)
+            End If
 
-            For Each ruta In rutas
+            ' Buscar archivo .env en directorio base, directorio actual y directorios padres (para depuracion en Visual Studio)
+            Dim posiblesRutas As New List(Of String)()
+            Dim dirBase As String = AppDomain.CurrentDomain.BaseDirectory
+            Dim dirActual As String = IO.Directory.GetCurrentDirectory()
+
+            If Not String.IsNullOrWhiteSpace(dirBase) Then
+                posiblesRutas.Add(IO.Path.Combine(dirBase, ".env"))
+                ' Buscar hasta 5 niveles arriba (para salir de bin/Debug/net10.0-windows)
+                Dim dirPadre As IO.DirectoryInfo = IO.Directory.GetParent(dirBase)
+                For i As Integer = 1 To 5
+                    If dirPadre IsNot Nothing Then
+                        posiblesRutas.Add(IO.Path.Combine(dirPadre.FullName, ".env"))
+                        dirPadre = dirPadre.Parent
+                    Else
+                        Exit For
+                    End If
+                Next
+            End If
+
+            If Not String.IsNullOrWhiteSpace(dirActual) Then
+                posiblesRutas.Add(IO.Path.Combine(dirActual, ".env"))
+            End If
+
+            For Each ruta In posiblesRutas
                 If IO.File.Exists(ruta) Then
                     Try
                         Dim lineas = IO.File.ReadAllLines(ruta)
@@ -85,6 +107,8 @@ Namespace Data
                                 If Not _configDict.ContainsKey(k) Then _configDict(k) = v
                             End If
                         Next
+                        ' Si encontro y cargo el archivo .env, no necesita seguir buscando
+                        If _configDict.Count > 0 Then Exit For
                     Catch
                     End Try
                 End If
@@ -98,7 +122,7 @@ Namespace Data
 
             ' 2. Archivo .env local
             CargarDiccionarioConfig()
-            If _configDict.ContainsKey(nombreClave) AndAlso Not String.IsNullOrWhiteSpace(_configDict(nombreClave)) Then
+            If _configDict IsNot Nothing AndAlso _configDict.ContainsKey(nombreClave) AndAlso Not String.IsNullOrWhiteSpace(_configDict(nombreClave)) Then
                 Return _configDict(nombreClave)
             End If
 
