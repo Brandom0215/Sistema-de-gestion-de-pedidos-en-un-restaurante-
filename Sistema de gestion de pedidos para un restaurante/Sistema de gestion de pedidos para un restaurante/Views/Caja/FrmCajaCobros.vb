@@ -8,9 +8,9 @@ Imports Sistema_de_gestion_de_pedidos_para_un_restaurante.Theme
 
 Namespace Views.Caja
     ''' <summary>
-    ''' Formulario de Caja & Procesamiento de Pagos (RF-006, RF-011, CU-006).
-    ''' Permite al Cajero inspeccionar pedidos en estado PENDIENTE, calcular vuelto/cambio en efectivo
-    ''' o procesar pagos electrónicos, confirmando la venta y liberando la orden a cocina.
+    ''' Formulario de Caja & Procesamiento de Pagos Responsivo Táctil (RF-006, RF-011, CU-006).
+    ''' Permite al Cajero inspeccionar pedidos en estado PENDIENTE con controles de toque amplios,
+    ''' calcular vuelto/cambio en efectivo o procesar pagos electrónicos, confirmando la venta y liberando la orden a cocina.
     ''' </summary>
     Public Class FrmCajaCobros
 
@@ -24,6 +24,7 @@ Namespace Views.Caja
 
         Public Sub New()
             InitializeComponent()
+            ThemeConfig.HabilitarDobleBuffer(Me)
         End Sub
 
         Private Sub FrmCajaCobros_Load(sender As Object, e As EventArgs) Handles MyBase.Load
@@ -35,6 +36,19 @@ Namespace Views.Caja
             ' Suscribir a notificaciones de persistencia en tiempo real de PedidoDAO
             PedidoDAO.SuscribirPedidoRegistrado(AddressOf OnPedidoActualizadoDesdeDAO)
             PedidoDAO.SuscribirPedidoModificado(AddressOf OnPedidoActualizadoDesdeDAO)
+        End Sub
+
+        Private Sub dgvPedidosPendientes_CellFormatting(sender As Object, e As DataGridViewCellFormattingEventArgs) Handles dgvPedidosPendientes.CellFormatting
+            If e.RowIndex >= 0 AndAlso e.ColumnIndex >= 0 Then
+                Dim colName As String = dgvPedidosPendientes.Columns(e.ColumnIndex).Name
+                If colName = "FechaHora" AndAlso e.Value IsNot Nothing Then
+                    Dim dtVal As DateTime
+                    If DateTime.TryParse(e.Value.ToString(), dtVal) Then
+                        e.Value = dtVal.ToString("HH:mm:ss")
+                        e.FormattingApplied = True
+                    End If
+                End If
+            End If
         End Sub
 
         Private Sub FrmCajaCobros_FormClosed(sender As Object, e As FormClosedEventArgs) Handles MyBase.FormClosed
@@ -92,12 +106,12 @@ Namespace Views.Caja
             If _btnBadgeConexion Is Nothing Then Return
 
             If ConexionBD.ModoConexion = ModoConexionEnum.ServidorPrincipal Then
-                _btnBadgeConexion.Text = $"🟢 Servidor Conectado ({ConexionBD.Host})"
+                _btnBadgeConexion.Text = $"Servidor Conectado ({ConexionBD.Host})"
                 _btnBadgeConexion.BackColor = Color.FromArgb(232, 245, 233)
                 _btnBadgeConexion.ForeColor = Color.FromArgb(27, 94, 32)
                 _btnBadgeConexion.FlatAppearance.BorderColor = Color.FromArgb(76, 175, 80)
             Else
-                _btnBadgeConexion.Text = "🟡 Modo Local (Sin Conexión)"
+                _btnBadgeConexion.Text = "Modo Local (Sin Conexión)"
                 _btnBadgeConexion.BackColor = Color.FromArgb(255, 248, 225)
                 _btnBadgeConexion.ForeColor = Color.FromArgb(179, 90, 0)
                 _btnBadgeConexion.FlatAppearance.BorderColor = Color.FromArgb(255, 179, 0)
@@ -166,7 +180,7 @@ Namespace Views.Caja
         End Sub
 
         ''' <summary>
-        ''' Aplica la paleta visual oficial y estilos de controles.
+        ''' Aplica la paleta visual oficial y estilos de controles optimizados para toque táctil.
         ''' </summary>
         Protected Overrides Sub AplicarTemaVisual()
             MyBase.AplicarTemaVisual()
@@ -190,15 +204,19 @@ Namespace Views.Caja
             lblTotalEtiqueta.ForeColor = ThemeConfig.ColorSecondary
             lblTotalValor.ForeColor = ThemeConfig.ColorPrimary
 
-            ' Estilizado de la grilla
-            dgvPedidosPendientes.BackgroundColor = Color.White
-            dgvPedidosPendientes.DefaultCellStyle.SelectionBackColor = Color.FromArgb(240, 230, 220)
-            dgvPedidosPendientes.DefaultCellStyle.SelectionForeColor = ThemeConfig.ColorNeutralDark
-            dgvPedidosPendientes.ColumnHeadersDefaultCellStyle.BackColor = ThemeConfig.ColorSecondary
-            dgvPedidosPendientes.ColumnHeadersDefaultCellStyle.ForeColor = Color.White
-            dgvPedidosPendientes.ColumnHeadersDefaultCellStyle.Font = ThemeConfig.ObtenerFuenteSubtitulo(9.0F, FontStyle.Bold)
-            dgvPedidosPendientes.EnableHeadersVisualStyles = False
-            dgvPedidosPendientes.RowTemplate.Height = 28
+            ' Habilitar doble buffer en paneles contenedor
+            ThemeConfig.HabilitarDobleBuffer(pnlCardCobro)
+            ThemeConfig.HabilitarDobleBuffer(pnlContenedor)
+
+            ' Configurar la grilla del cajero optimizada para interacción táctil (filas de 46px)
+            ThemeConfig.ConfigurarGrillaTouch(dgvPedidosPendientes)
+            dgvPedidosPendientes.RowHeadersVisible = False
+            dgvPedidosPendientes.SelectionMode = DataGridViewSelectionMode.FullRowSelect
+            dgvPedidosPendientes.RowTemplate.Height = 46
+            dgvPedidosPendientes.ColumnHeadersHeight = 44
+            dgvPedidosPendientes.DefaultCellStyle.Font = ThemeConfig.ObtenerFuenteCuerpo(11.0F, FontStyle.Regular)
+            dgvPedidosPendientes.ColumnHeadersDefaultCellStyle.Font = ThemeConfig.ObtenerFuenteSubtitulo(11.0F, FontStyle.Bold)
+            dgvPedidosPendientes.AlternatingRowsDefaultCellStyle.BackColor = Color.FromArgb(250, 248, 245)
         End Sub
 
         ''' <summary>
@@ -223,41 +241,67 @@ Namespace Views.Caja
                 lblTotalPendientes.Text = $"Pedidos pendientes de cobro: {vista.Count}"
 
                 If dgvPedidosPendientes.Columns.Count > 0 Then
-                    If dgvPedidosPendientes.Columns.Contains("ID") Then
-                        dgvPedidosPendientes.Columns("ID").HeaderText = "ID"
-                        dgvPedidosPendientes.Columns("ID").Width = 50
-                    End If
-                    If dgvPedidosPendientes.Columns.Contains("FechaHora") Then
-                        dgvPedidosPendientes.Columns("FechaHora").HeaderText = "Fecha / Hora"
-                        dgvPedidosPendientes.Columns("FechaHora").Width = 140
-                    End If
-                    If dgvPedidosPendientes.Columns.Contains("Cliente") Then
-                        dgvPedidosPendientes.Columns("Cliente").HeaderText = "Cliente"
-                        dgvPedidosPendientes.Columns("Cliente").Width = 160
-                    End If
-                    If dgvPedidosPendientes.Columns.Contains("Mesa") Then
-                        dgvPedidosPendientes.Columns("Mesa").HeaderText = "Mesa"
-                        dgvPedidosPendientes.Columns("Mesa").Width = 80
-                    End If
-                    If dgvPedidosPendientes.Columns.Contains("PlatoPrincipal") Then
-                        dgvPedidosPendientes.Columns("PlatoPrincipal").HeaderText = "Pedido / Consumo"
-                        dgvPedidosPendientes.Columns("PlatoPrincipal").Width = 210
-                    End If
-                    If dgvPedidosPendientes.Columns.Contains("Total") Then
-                        dgvPedidosPendientes.Columns("Total").HeaderText = "Total"
-                        dgvPedidosPendientes.Columns("Total").DefaultCellStyle.Format = "C2"
-                        dgvPedidosPendientes.Columns("Total").Width = 85
-                    End If
+                    dgvPedidosPendientes.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill
 
-                    ' Ocultar columnas secundarias para mantener la grilla despejada
-                    Dim columnasOcultas = {"Acompanamientos", "TipoServicio", "PrecioUnitario", "Subtotal", "Impuesto",
-                                           "Estado", "MetodoPago", "MontoRecibido", "Cambio", "Facturado", "NumeroFactura",
-                                           "RUC_Cedula", "RazonSocial", "DireccionFiscal", "TelefonoCliente", "CorreoCliente", "FechaCobro"}
-                    For Each col In columnasOcultas
-                        If dgvPedidosPendientes.Columns.Contains(col) Then
-                            dgvPedidosPendientes.Columns(col).Visible = False
+                    Dim columnasVisibles = New HashSet(Of String) From {"ID", "Cliente", "Mesa", "PlatoPrincipal", "FechaHora", "Total"}
+                    For Each col As DataGridViewColumn In dgvPedidosPendientes.Columns
+                        If Not columnasVisibles.Contains(col.Name) Then
+                            col.Visible = False
                         End If
                     Next
+
+                    If dgvPedidosPendientes.Columns.Contains("ID") Then
+                        With dgvPedidosPendientes.Columns("ID")
+                            .HeaderText = "ID"
+                            .FillWeight = 8
+                            .MinimumWidth = 45
+                            .DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter
+                            .DisplayIndex = 0
+                        End With
+                    End If
+                    If dgvPedidosPendientes.Columns.Contains("Cliente") Then
+                        With dgvPedidosPendientes.Columns("Cliente")
+                            .HeaderText = "Cliente"
+                            .FillWeight = 25
+                            .MinimumWidth = 110
+                            .DisplayIndex = 1
+                        End With
+                    End If
+                    If dgvPedidosPendientes.Columns.Contains("Mesa") Then
+                        With dgvPedidosPendientes.Columns("Mesa")
+                            .HeaderText = "Mesa / Servicio"
+                            .FillWeight = 18
+                            .MinimumWidth = 95
+                            .DisplayIndex = 2
+                        End With
+                    End If
+                    If dgvPedidosPendientes.Columns.Contains("PlatoPrincipal") Then
+                        With dgvPedidosPendientes.Columns("PlatoPrincipal")
+                            .HeaderText = "Pedido / Consumo"
+                            .FillWeight = 27
+                            .MinimumWidth = 120
+                            .DisplayIndex = 3
+                        End With
+                    End If
+                    If dgvPedidosPendientes.Columns.Contains("FechaHora") Then
+                        With dgvPedidosPendientes.Columns("FechaHora")
+                            .HeaderText = "Hora"
+                            .FillWeight = 12
+                            .MinimumWidth = 70
+                            .DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter
+                            .DisplayIndex = 4
+                        End With
+                    End If
+                    If dgvPedidosPendientes.Columns.Contains("Total") Then
+                        With dgvPedidosPendientes.Columns("Total")
+                            .HeaderText = "Total"
+                            .DefaultCellStyle.Format = "C2"
+                            .DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight
+                            .FillWeight = 10
+                            .MinimumWidth = 80
+                            .DisplayIndex = 5
+                        End With
+                    End If
                 End If
 
                 If vista.Count = 0 Then

@@ -120,9 +120,8 @@ Namespace Views
                         btnNavMetricas.Visible = False
                         btnNavCatalogo.Visible = False
                     Case Models.RolUsuarioEnum.Cajero
-                        ' CAJERO TIENE ACCESO A TOMA DE PEDIDOS, CAJA/COBROS E HISTORIAL DE FACTURAS
-                        btnNavCliente.Visible = True
-                        btnNavCliente.Text = "  Toma de Pedidos"
+                        ' CAJERO TIENE ACCESO EXCLUSIVO A CAJA/COBROS E HISTORIAL DE FACTURAS (SIN TOMA DE PEDIDOS)
+                        btnNavCliente.Visible = False
                         btnNavCocina.Visible = False
                         btnNavCobroAdmin.Visible = True
                         btnNavCobroAdmin.Text = "  Caja y Cobros"

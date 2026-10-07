@@ -183,15 +183,18 @@ Namespace Views.Facturacion
 
             pnlComprobanteVisual.BackColor = ThemeConfig.ColorBackgroundCard
 
-            ' Estilizado de la grilla
-            dgvPedidosFacturar.BackgroundColor = Color.White
-            dgvPedidosFacturar.DefaultCellStyle.SelectionBackColor = Color.FromArgb(240, 230, 220)
-            dgvPedidosFacturar.DefaultCellStyle.SelectionForeColor = ThemeConfig.ColorNeutralDark
-            dgvPedidosFacturar.ColumnHeadersDefaultCellStyle.BackColor = ThemeConfig.ColorSecondary
-            dgvPedidosFacturar.ColumnHeadersDefaultCellStyle.ForeColor = Color.White
-            dgvPedidosFacturar.ColumnHeadersDefaultCellStyle.Font = ThemeConfig.ObtenerFuenteSubtitulo(9.0F, FontStyle.Bold)
-            dgvPedidosFacturar.EnableHeadersVisualStyles = False
-            dgvPedidosFacturar.RowTemplate.Height = 26
+            ' Estilizado de la grilla táctil (filas de 46px)
+            ThemeConfig.ConfigurarGrillaTouch(dgvPedidosFacturar)
+            dgvPedidosFacturar.RowHeadersVisible = False
+            dgvPedidosFacturar.SelectionMode = DataGridViewSelectionMode.FullRowSelect
+            dgvPedidosFacturar.RowTemplate.Height = 46
+            dgvPedidosFacturar.ColumnHeadersHeight = 44
+            dgvPedidosFacturar.DefaultCellStyle.Font = ThemeConfig.ObtenerFuenteCuerpo(11.0F, FontStyle.Regular)
+            dgvPedidosFacturar.ColumnHeadersDefaultCellStyle.Font = ThemeConfig.ObtenerFuenteSubtitulo(11.0F, FontStyle.Bold)
+            dgvPedidosFacturar.AlternatingRowsDefaultCellStyle.BackColor = Color.FromArgb(250, 248, 245)
+
+            ThemeConfig.HabilitarDobleBuffer(pnlContenedor)
+            ThemeConfig.HabilitarDobleBuffer(pnlComprobanteVisual)
         End Sub
 
         ''' <summary>
@@ -225,49 +228,83 @@ Namespace Views.Facturacion
                 dgvPedidosFacturar.DataSource = vista
 
                 If dgvPedidosFacturar.Columns.Count > 0 Then
-                    If dgvPedidosFacturar.Columns.Contains("ID") Then
-                        dgvPedidosFacturar.Columns("ID").HeaderText = "ID"
-                        dgvPedidosFacturar.Columns("ID").Width = 50
-                    End If
-                    If dgvPedidosFacturar.Columns.Contains("NumeroFactura") Then
-                        dgvPedidosFacturar.Columns("NumeroFactura").HeaderText = "No. Factura"
-                        dgvPedidosFacturar.Columns("NumeroFactura").Width = 115
-                    End If
-                    If dgvPedidosFacturar.Columns.Contains("FechaCobro") Then
-                        dgvPedidosFacturar.Columns("FechaCobro").HeaderText = "Fecha de cobro"
-                        dgvPedidosFacturar.Columns("FechaCobro").Width = 140
-                    End If
-                    If dgvPedidosFacturar.Columns.Contains("Cliente") Then
-                        dgvPedidosFacturar.Columns("Cliente").HeaderText = "Cliente"
-                        dgvPedidosFacturar.Columns("Cliente").Width = 160
-                    End If
-                    If dgvPedidosFacturar.Columns.Contains("Mesa") Then
-                        dgvPedidosFacturar.Columns("Mesa").HeaderText = "Mesa"
-                        dgvPedidosFacturar.Columns("Mesa").Width = 80
-                    End If
-                    If dgvPedidosFacturar.Columns.Contains("PlatoPrincipal") Then
-                        dgvPedidosFacturar.Columns("PlatoPrincipal").HeaderText = "Pedido / Consumo"
-                        dgvPedidosFacturar.Columns("PlatoPrincipal").Width = 200
-                    End If
-                    If dgvPedidosFacturar.Columns.Contains("MetodoPago") Then
-                        dgvPedidosFacturar.Columns("MetodoPago").HeaderText = "Forma de pago"
-                        dgvPedidosFacturar.Columns("MetodoPago").Width = 110
-                    End If
-                    If dgvPedidosFacturar.Columns.Contains("Total") Then
-                        dgvPedidosFacturar.Columns("Total").HeaderText = "Total"
-                        dgvPedidosFacturar.Columns("Total").DefaultCellStyle.Format = "C2"
-                        dgvPedidosFacturar.Columns("Total").Width = 85
-                    End If
+                    dgvPedidosFacturar.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill
 
-                    ' Ocultar columnas accesorias
-                    Dim columnasOcultas = {"Acompanamientos", "TipoServicio", "FechaHora", "PrecioUnitario", "Subtotal",
-                                           "Impuesto", "Estado", "MontoRecibido", "Cambio", "Facturado",
-                                           "RUC_Cedula", "RazonSocial", "DireccionFiscal", "TelefonoCliente", "CorreoCliente"}
-                    For Each col In columnasOcultas
-                        If dgvPedidosFacturar.Columns.Contains(col) Then
-                            dgvPedidosFacturar.Columns(col).Visible = False
+                    Dim columnasVisibles = New HashSet(Of String) From {"ID", "NumeroFactura", "FechaCobro", "Cliente", "Mesa", "PlatoPrincipal", "MetodoPago", "Total"}
+                    For Each col As DataGridViewColumn In dgvPedidosFacturar.Columns
+                        If Not columnasVisibles.Contains(col.Name) Then
+                            col.Visible = False
                         End If
                     Next
+
+                    If dgvPedidosFacturar.Columns.Contains("ID") Then
+                        With dgvPedidosFacturar.Columns("ID")
+                            .HeaderText = "ID"
+                            .FillWeight = 8
+                            .MinimumWidth = 45
+                            .DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter
+                            .DisplayIndex = 0
+                        End With
+                    End If
+                    If dgvPedidosFacturar.Columns.Contains("NumeroFactura") Then
+                        With dgvPedidosFacturar.Columns("NumeroFactura")
+                            .HeaderText = "No. Factura"
+                            .FillWeight = 16
+                            .MinimumWidth = 95
+                            .DisplayIndex = 1
+                        End With
+                    End If
+                    If dgvPedidosFacturar.Columns.Contains("Cliente") Then
+                        With dgvPedidosFacturar.Columns("Cliente")
+                            .HeaderText = "Cliente"
+                            .FillWeight = 24
+                            .MinimumWidth = 110
+                            .DisplayIndex = 2
+                        End With
+                    End If
+                    If dgvPedidosFacturar.Columns.Contains("Mesa") Then
+                        With dgvPedidosFacturar.Columns("Mesa")
+                            .HeaderText = "Mesa"
+                            .FillWeight = 14
+                            .MinimumWidth = 80
+                            .DisplayIndex = 3
+                        End With
+                    End If
+                    If dgvPedidosFacturar.Columns.Contains("PlatoPrincipal") Then
+                        With dgvPedidosFacturar.Columns("PlatoPrincipal")
+                            .HeaderText = "Pedido / Consumo"
+                            .FillWeight = 24
+                            .MinimumWidth = 110
+                            .DisplayIndex = 4
+                        End With
+                    End If
+                    If dgvPedidosFacturar.Columns.Contains("FechaCobro") Then
+                        With dgvPedidosFacturar.Columns("FechaCobro")
+                            .HeaderText = "Hora"
+                            .FillWeight = 11
+                            .MinimumWidth = 70
+                            .DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter
+                            .DisplayIndex = 5
+                        End With
+                    End If
+                    If dgvPedidosFacturar.Columns.Contains("MetodoPago") Then
+                        With dgvPedidosFacturar.Columns("MetodoPago")
+                            .HeaderText = "Pago"
+                            .FillWeight = 13
+                            .MinimumWidth = 85
+                            .DisplayIndex = 6
+                        End With
+                    End If
+                    If dgvPedidosFacturar.Columns.Contains("Total") Then
+                        With dgvPedidosFacturar.Columns("Total")
+                            .HeaderText = "Total"
+                            .DefaultCellStyle.Format = "C2"
+                            .DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight
+                            .FillWeight = 12
+                            .MinimumWidth = 80
+                            .DisplayIndex = 7
+                        End With
+                    End If
 
                     ' Preselección automática del pedido (flujo directo de cobro en caja)
                     _bloquearSelectionChanged = False
