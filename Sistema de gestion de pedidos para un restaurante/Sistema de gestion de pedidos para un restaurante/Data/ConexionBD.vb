@@ -105,7 +105,7 @@ Namespace Data
         Public Property TimeoutSegundos As Integer
             Get
                 If _timeoutCustom.HasValue Then Return _timeoutCustom.Value
-                Return ObtenValorEnteroConfig("DB_TIMEOUT", 3)
+                Return ObtenValorEnteroConfig("DB_TIMEOUT", 10)
             End Get
             Set(value As Integer)
                 _timeoutCustom = value
@@ -362,11 +362,28 @@ Namespace Data
             End Try
         End Sub
 
+        Private _ultimoIntentoReconexion As DateTime = DateTime.MinValue
+
         ''' <summary>
         ''' Determina si actualmente se debe intentar operar contra PostgreSQL.
+        ''' Si está en modo local, reintenta automáticamente la conexión al servidor cada 10 segundos.
         ''' </summary>
         Public Function DebeUsarPostgreSQL() As Boolean
-            Return (ModoConexion = ModoConexionEnum.ServidorPrincipal)
+            If ModoConexion = ModoConexionEnum.ServidorPrincipal Then
+                Return True
+            End If
+
+            If (DateTime.Now - _ultimoIntentoReconexion).TotalSeconds >= 10 Then
+                _ultimoIntentoReconexion = DateTime.Now
+                Dim diag As String = ""
+                If ProbarConexion(diag) Then
+                    _modoConexion = ModoConexionEnum.ServidorPrincipal
+                    DispararModoConexionCambiado(ModoConexionEnum.ServidorPrincipal)
+                    Return True
+                End If
+            End If
+
+            Return False
         End Function
 
         ''' <summary>
