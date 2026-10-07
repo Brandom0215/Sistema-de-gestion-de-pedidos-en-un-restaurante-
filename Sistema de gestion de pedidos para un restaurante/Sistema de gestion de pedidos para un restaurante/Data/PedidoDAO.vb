@@ -502,7 +502,8 @@ Namespace Data
                                               listaExtras As List(Of Tuple(Of String, Integer, Decimal)),
                                               Optional estadoPago As String = "PENDIENTE",
                                               Optional metodoPago As String = "",
-                                              Optional estadoCocina As String = "RECIBIDO") As Integer
+                                              Optional estadoCocina As String = "RECIBIDO",
+                                              Optional correoCliente As String = "") As Integer
             Try
                 _ultimoId += 1
                 Dim idNuevo As Integer = _ultimoId
@@ -510,12 +511,13 @@ Namespace Data
                 Dim strCliente As String = If(String.IsNullOrWhiteSpace(cliente), "Cliente General", cliente.Trim())
                 Dim strMesa As String = If(String.IsNullOrWhiteSpace(mesa), "Mesa 01", mesa.Trim())
                 Dim strServicio As String = If(String.IsNullOrWhiteSpace(servicio), "En Mesa", servicio.Trim())
+                Dim strCorreo As String = If(String.IsNullOrWhiteSpace(correoCliente), "cliente@restaurante.com", correoCliente.Trim())
 
                 ' Si PostgreSQL está activo, persistir en la base de datos y obtener el ID generado
                 If ConexionBD.DebeUsarPostgreSQL() Then
                     Try
-                        Dim sqlPG As String = "INSERT INTO pedidos (nombre_cliente, mesa_o_servicio, tipo_servicio, estado, total, monto_recibido, cambio, metodo_pago) " &
-                                              "VALUES (@cliente, @mesa, @servicio, @estado, @total, @monto, @cambio, @metodo) RETURNING id_pedido;"
+                        Dim sqlPG As String = "INSERT INTO pedidos (nombre_cliente, mesa_o_servicio, tipo_servicio, estado, total, monto_recibido, cambio, metodo_pago, correo_cliente) " &
+                                              "VALUES (@cliente, @mesa, @servicio, @estado, @total, @monto, @cambio, @metodo, @correo) RETURNING id_pedido;"
                         Dim pCliente As New NpgsqlParameter("@cliente", strCliente)
                         Dim pMesa As New NpgsqlParameter("@mesa", strMesa)
                         Dim pServicio As New NpgsqlParameter("@servicio", strServicio)
@@ -524,11 +526,12 @@ Namespace Data
                         Dim pMonto As New NpgsqlParameter("@monto", If(estadoPago.Equals("PAGADO", StringComparison.OrdinalIgnoreCase), total, 0D))
                         Dim pCambio As New NpgsqlParameter("@cambio", 0D)
                         Dim pMetodo As New NpgsqlParameter("@metodo", If(String.IsNullOrWhiteSpace(metodoPago), "Efectivo", metodoPago))
+                        Dim pCorreo As New NpgsqlParameter("@correo", strCorreo)
 
                         Using conn = ConexionBD.CrearConexion()
                             conn.Open()
                             Using cmd As New NpgsqlCommand(sqlPG, conn)
-                                cmd.Parameters.AddRange({pCliente, pMesa, pServicio, pEstado, pTotal, pMonto, pCambio, pMetodo})
+                                cmd.Parameters.AddRange({pCliente, pMesa, pServicio, pEstado, pTotal, pMonto, pCambio, pMetodo, pCorreo})
                                 Dim res = cmd.ExecuteScalar()
                                 If res IsNot Nothing AndAlso Not DBNull.Value.Equals(res) Then
                                     idNuevo = Convert.ToInt32(res)
@@ -587,7 +590,7 @@ Namespace Data
                 dr("Total") = total
                 dr("Estado") = estadoPago
                 dr("EstadoCocina") = estadoCocina
-                dr("MetodoPago") = metodoPago
+                dr("MetodoPago") = If(String.IsNullOrWhiteSpace(metodoPago), "Pago en Caja (Efectivo / Tarjeta)", metodoPago)
                 dr("MontoRecibido") = If(estadoPago = "PAGADO", total, 0D)
                 dr("Cambio") = 0D
                 dr("Facturado") = False
@@ -596,7 +599,7 @@ Namespace Data
                 dr("RazonSocial") = ""
                 dr("DireccionFiscal") = ""
                 dr("TelefonoCliente") = ""
-                dr("CorreoCliente") = ""
+                dr("CorreoCliente") = strCorreo
 
                 _tablaPedidos.Rows.Add(dr)
 
@@ -791,6 +794,7 @@ Namespace Data
             Next
 
             DispararPedidoModificado(id)
+            DispararPedidoRegistrado(id)
             Return (exitoBD OrElse encontradoMemoria)
         End Function
 
@@ -877,12 +881,19 @@ Namespace Data
 
             For Each row As DataRow In _tablaPedidos.Rows
                 Dim id As Integer = Convert.ToInt32(row("ID"))
+                Dim strEstadoPago As String = If(row("Estado") IsNot DBNull.Value, row("Estado").ToString().ToUpper(), "PENDIENTE")
+                Dim strMetodo As String = If(row("MetodoPago") IsNot DBNull.Value, row("MetodoPago").ToString(), "Pendiente")
+
+                ' Pausa de Seguridad: Si el cliente eligió Pago en Caja y aún está PENDIENTE, no se envía a cocina hasta confirmar el cobro
+                If strEstadoPago = "PENDIENTE" AndAlso strMetodo.StartsWith("Pago en Caja", StringComparison.OrdinalIgnoreCase) Then
+                    Continue For
+                End If
+
                 Dim strCodigo As String = $"#08-{1040 + id}"
                 Dim strMesa As String = If(row("Mesa") IsNot DBNull.Value, row("Mesa").ToString(), "Mesa 01")
                 Dim strCliente As String = If(row("Cliente") IsNot DBNull.Value, row("Cliente").ToString(), "Cliente General")
                 Dim strServicio As String = If(row("TipoServicio") IsNot DBNull.Value, row("TipoServicio").ToString(), "Comer en el Sitio")
-                Dim strMetodo As String = If(row("MetodoPago") IsNot DBNull.Value, row("MetodoPago").ToString(), "Pendiente")
-                Dim blnPagado As Boolean = (row("Estado").ToString().ToUpper() = "PAGADO")
+                Dim blnPagado As Boolean = (strEstadoPago = "PAGADO")
                 Dim blnFacturado As Boolean = (row("Facturado") IsNot DBNull.Value AndAlso CBool(row("Facturado")))
                 Dim strNumFactura As String = If(row("NumeroFactura") IsNot DBNull.Value, row("NumeroFactura").ToString(), "")
 

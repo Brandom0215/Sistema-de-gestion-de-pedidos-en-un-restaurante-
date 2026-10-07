@@ -270,17 +270,26 @@ Namespace Views.Pedidos
             Me.numExtraEnsalada.TabIndex = 7
             Me.numExtraEnsalada.Value = New Decimal(New Integer() {1, 0, 0, 0})
 
-            ' grpDatosCliente (SEPARACIÓN DE SECCIÓN DE 25PX)
+            Me.lblCorreoCliente = New System.Windows.Forms.Label()
+            Me.txtCorreoCliente = New System.Windows.Forms.TextBox()
+            Me.lblMetodoPago = New System.Windows.Forms.Label()
+            Me.cboMetodoPago = New System.Windows.Forms.ComboBox()
+
+            ' grpDatosCliente (SEPARACIÓN DE SECCIÓN Y CONTROLES ADICIONALES PARA FACTURACIÓN Y PAGO)
+            Me.grpDatosCliente.Controls.Add(Me.cboMetodoPago)
+            Me.grpDatosCliente.Controls.Add(Me.lblMetodoPago)
             Me.grpDatosCliente.Controls.Add(Me.cboTipoServicio)
             Me.grpDatosCliente.Controls.Add(Me.lblTipoServicio)
             Me.grpDatosCliente.Controls.Add(Me.txtMesa)
             Me.grpDatosCliente.Controls.Add(Me.lblMesa)
+            Me.grpDatosCliente.Controls.Add(Me.txtCorreoCliente)
+            Me.grpDatosCliente.Controls.Add(Me.lblCorreoCliente)
             Me.grpDatosCliente.Controls.Add(Me.txtNombreCliente)
             Me.grpDatosCliente.Controls.Add(Me.lblNombreCliente)
             Me.grpDatosCliente.Font = New System.Drawing.Font("Segoe UI", 11.0F, System.Drawing.FontStyle.Bold)
             Me.grpDatosCliente.Location = New System.Drawing.Point(5, 565)
             Me.grpDatosCliente.Name = "grpDatosCliente"
-            Me.grpDatosCliente.Size = New System.Drawing.Size(455, 190)
+            Me.grpDatosCliente.Size = New System.Drawing.Size(455, 290)
             Me.grpDatosCliente.TabIndex = 2
             Me.grpDatosCliente.TabStop = False
             Me.grpDatosCliente.Text = "Datos del Cliente & Entrega"
@@ -288,7 +297,7 @@ Namespace Views.Pedidos
             ' lblNombreCliente
             Me.lblNombreCliente.AutoSize = True
             Me.lblNombreCliente.Font = New System.Drawing.Font("Segoe UI", 11.0F, System.Drawing.FontStyle.Bold)
-            Me.lblNombreCliente.Location = New System.Drawing.Point(12, 24)
+            Me.lblNombreCliente.Location = New System.Drawing.Point(12, 22)
             Me.lblNombreCliente.Name = "lblNombreCliente"
             Me.lblNombreCliente.Size = New System.Drawing.Size(155, 20)
             Me.lblNombreCliente.TabIndex = 0
@@ -296,51 +305,85 @@ Namespace Views.Pedidos
 
             ' txtNombreCliente
             Me.txtNombreCliente.Font = New System.Drawing.Font("Segoe UI", 14.0F)
-            Me.txtNombreCliente.Location = New System.Drawing.Point(12, 48)
+            Me.txtNombreCliente.Location = New System.Drawing.Point(12, 46)
             Me.txtNombreCliente.Name = "txtNombreCliente"
             Me.txtNombreCliente.Size = New System.Drawing.Size(430, 32)
             Me.txtNombreCliente.TabIndex = 1
 
-            ' lblMesa (MARGEN AMPLIO DE SEPARACIÓN VERTICAL DE 38px)
+            ' lblCorreoCliente (CORREO OBLIGATORIO PARA FACTURACIÓN ELECTRONICA)
+            Me.lblCorreoCliente.AutoSize = True
+            Me.lblCorreoCliente.Font = New System.Drawing.Font("Segoe UI", 11.0F, System.Drawing.FontStyle.Bold)
+            Me.lblCorreoCliente.Location = New System.Drawing.Point(12, 86)
+            Me.lblCorreoCliente.Name = "lblCorreoCliente"
+            Me.lblCorreoCliente.Size = New System.Drawing.Size(248, 20)
+            Me.lblCorreoCliente.TabIndex = 2
+            Me.lblCorreoCliente.Text = "Correo Electrónico (Facturación):"
+
+            ' txtCorreoCliente
+            Me.txtCorreoCliente.Font = New System.Drawing.Font("Segoe UI", 14.0F)
+            Me.txtCorreoCliente.Location = New System.Drawing.Point(12, 110)
+            Me.txtCorreoCliente.Name = "txtCorreoCliente"
+            Me.txtCorreoCliente.Size = New System.Drawing.Size(430, 32)
+            Me.txtCorreoCliente.TabIndex = 3
+
+            ' lblMesa (SEPARACIÓN DE FILA MARGEN ADAPTABLE)
             Me.lblMesa.AutoSize = True
             Me.lblMesa.Font = New System.Drawing.Font("Segoe UI", 11.0F, System.Drawing.FontStyle.Bold)
-            Me.lblMesa.Location = New System.Drawing.Point(12, 102)
+            Me.lblMesa.Location = New System.Drawing.Point(12, 150)
             Me.lblMesa.Name = "lblMesa"
-            Me.lblMesa.Size = New System.Drawing.Size(157, 20)
-            Me.lblMesa.TabIndex = 2
-            Me.lblMesa.Text = "N° Mesa / Dirección:"
+            Me.lblMesa.Size = New System.Drawing.Size(182, 20)
+            Me.lblMesa.TabIndex = 4
+            Me.lblMesa.Text = "N° Mesa / Identificador:"
 
             ' txtMesa
             Me.txtMesa.Font = New System.Drawing.Font("Segoe UI", 14.0F)
-            Me.txtMesa.Location = New System.Drawing.Point(12, 126)
+            Me.txtMesa.Location = New System.Drawing.Point(12, 174)
             Me.txtMesa.Name = "txtMesa"
             Me.txtMesa.Size = New System.Drawing.Size(200, 32)
-            Me.txtMesa.TabIndex = 3
+            Me.txtMesa.TabIndex = 5
 
             ' lblTipoServicio
             Me.lblTipoServicio.AutoSize = True
             Me.lblTipoServicio.Font = New System.Drawing.Font("Segoe UI", 11.0F, System.Drawing.FontStyle.Bold)
-            Me.lblTipoServicio.Location = New System.Drawing.Point(225, 102)
+            Me.lblTipoServicio.Location = New System.Drawing.Point(225, 150)
             Me.lblTipoServicio.Name = "lblTipoServicio"
             Me.lblTipoServicio.Size = New System.Drawing.Size(125, 20)
-            Me.lblTipoServicio.TabIndex = 4
+            Me.lblTipoServicio.TabIndex = 6
             Me.lblTipoServicio.Text = "Tipo de Servicio:"
 
             ' cboTipoServicio
             Me.cboTipoServicio.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList
             Me.cboTipoServicio.Font = New System.Drawing.Font("Segoe UI", 13.5F, System.Drawing.FontStyle.Bold)
             Me.cboTipoServicio.FormattingEnabled = True
-            Me.cboTipoServicio.Location = New System.Drawing.Point(225, 126)
+            Me.cboTipoServicio.Location = New System.Drawing.Point(225, 174)
             Me.cboTipoServicio.Name = "cboTipoServicio"
             Me.cboTipoServicio.Size = New System.Drawing.Size(217, 33)
-            Me.cboTipoServicio.TabIndex = 5
+            Me.cboTipoServicio.TabIndex = 7
+
+            ' lblMetodoPago (MÉTODOS DE PAGO: CAJA, QR / YAPPY, TRANSFERENCIA)
+            Me.lblMetodoPago.AutoSize = True
+            Me.lblMetodoPago.Font = New System.Drawing.Font("Segoe UI", 11.0F, System.Drawing.FontStyle.Bold)
+            Me.lblMetodoPago.Location = New System.Drawing.Point(12, 214)
+            Me.lblMetodoPago.Name = "lblMetodoPago"
+            Me.lblMetodoPago.Size = New System.Drawing.Size(128, 20)
+            Me.lblMetodoPago.TabIndex = 8
+            Me.lblMetodoPago.Text = "Método de Pago:"
+
+            ' cboMetodoPago
+            Me.cboMetodoPago.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList
+            Me.cboMetodoPago.Font = New System.Drawing.Font("Segoe UI", 13.5F, System.Drawing.FontStyle.Bold)
+            Me.cboMetodoPago.FormattingEnabled = True
+            Me.cboMetodoPago.Location = New System.Drawing.Point(12, 238)
+            Me.cboMetodoPago.Name = "cboMetodoPago"
+            Me.cboMetodoPago.Size = New System.Drawing.Size(430, 33)
+            Me.cboMetodoPago.TabIndex = 9
 
             ' pnlResumenYConfirmacion (SEPARACIÓN DE SECCIÓN DE 25PX)
             Me.pnlResumenYConfirmacion.BackColor = System.Drawing.Color.White
             Me.pnlResumenYConfirmacion.Controls.Add(Me.btnConfirmarPedido)
             Me.pnlResumenYConfirmacion.Controls.Add(Me.lblMontoTotal)
             Me.pnlResumenYConfirmacion.Controls.Add(Me.lblEtiquetaTotal)
-            Me.pnlResumenYConfirmacion.Location = New System.Drawing.Point(5, 780)
+            Me.pnlResumenYConfirmacion.Location = New System.Drawing.Point(5, 875)
             Me.pnlResumenYConfirmacion.Name = "pnlResumenYConfirmacion"
             Me.pnlResumenYConfirmacion.Size = New System.Drawing.Size(455, 120)
             Me.pnlResumenYConfirmacion.TabIndex = 3
@@ -499,10 +542,14 @@ Namespace Views.Pedidos
         Friend WithEvents grpDatosCliente As GroupBox
         Friend WithEvents lblNombreCliente As Label
         Friend WithEvents txtNombreCliente As TextBox
+        Friend WithEvents lblCorreoCliente As Label
+        Friend WithEvents txtCorreoCliente As TextBox
         Friend WithEvents lblMesa As Label
         Friend WithEvents txtMesa As TextBox
         Friend WithEvents lblTipoServicio As Label
         Friend WithEvents cboTipoServicio As ComboBox
+        Friend WithEvents lblMetodoPago As Label
+        Friend WithEvents cboMetodoPago As ComboBox
         Friend WithEvents pnlResumenYConfirmacion As Panel
         Friend WithEvents lblEtiquetaTotal As Label
         Friend WithEvents lblMontoTotal As Label
