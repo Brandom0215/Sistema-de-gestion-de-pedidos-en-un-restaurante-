@@ -42,13 +42,14 @@ CREATE TABLE platos (
     fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 5. TABLA DE PEDIDOS (CABECERA - CAJA, COCINA Y FACTURACIÓN)
+-- 5. TABLA DE PEDIDOS (CABECERA - CAJA, COCINA Y FACTURACION)
 CREATE TABLE pedidos (
     id_pedido SERIAL PRIMARY KEY,
     nombre_cliente VARCHAR(100) NOT NULL,
     mesa_o_servicio VARCHAR(30) NOT NULL,
     tipo_servicio VARCHAR(30) NOT NULL CHECK (tipo_servicio IN ('En Mesa', 'Para Llevar', 'Delivery')),
     estado VARCHAR(30) DEFAULT 'Pendiente' CHECK (estado IN ('Pendiente', 'En Preparacion', 'Listo', 'Pagado', 'Cancelado')),
+    estado_cocina VARCHAR(30) DEFAULT 'RECIBIDO' CHECK (estado_cocina IN ('RECIBIDO', 'EN_PREPARACION', 'LISTO', 'ENTREGADO')),
     total NUMERIC(10, 2) DEFAULT 0.00,
     monto_recibido NUMERIC(10, 2) DEFAULT 0.00,
     cambio NUMERIC(10, 2) DEFAULT 0.00,
@@ -74,6 +75,15 @@ CREATE TABLE detalle_pedidos (
     acompanamientos TEXT,
     subtotal NUMERIC(10, 2) GENERATED ALWAYS AS (cantidad * precio_unitario) STORED
 );
+
+-- INDICES DE RENDIMIENTO Y OPTIMIZACION DE BUSQUEDA
+CREATE INDEX idx_pedidos_estado ON pedidos(estado);
+CREATE INDEX idx_pedidos_estado_cocina ON pedidos(estado_cocina);
+CREATE INDEX idx_pedidos_fecha_hora ON pedidos(fecha_hora);
+CREATE INDEX idx_pedidos_tipo_servicio ON pedidos(tipo_servicio);
+CREATE INDEX idx_pedidos_cliente ON pedidos(nombre_cliente);
+CREATE INDEX idx_detalle_pedidos_id_pedido ON detalle_pedidos(id_pedido);
+CREATE INDEX idx_detalle_pedidos_id_plato ON detalle_pedidos(id_plato);
 
 -- =============================================================================
 -- INSERCIÓN DE DATOS INICIALES (GASTRONOMÍA PANAMEÑA AUTÉNTICA)

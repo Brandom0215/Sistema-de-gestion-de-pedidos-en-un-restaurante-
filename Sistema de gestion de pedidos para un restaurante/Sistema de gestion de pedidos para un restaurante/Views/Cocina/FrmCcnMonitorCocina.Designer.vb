@@ -332,8 +332,8 @@ Namespace Views.Cocina
             Me.pnlCcnBarraFiltros.Dock = System.Windows.Forms.DockStyle.Top
             Me.pnlCcnBarraFiltros.Location = New System.Drawing.Point(0, 96)
             Me.pnlCcnBarraFiltros.Name = "pnlCcnBarraFiltros"
-            Me.pnlCcnBarraFiltros.Padding = New System.Windows.Forms.Padding(18, 4, 18, 8)
-            Me.pnlCcnBarraFiltros.Size = New System.Drawing.Size(1100, 46)
+            Me.pnlCcnBarraFiltros.Padding = New System.Windows.Forms.Padding(18, 6, 18, 6)
+            Me.pnlCcnBarraFiltros.Size = New System.Drawing.Size(1100, 56)
             Me.pnlCcnBarraFiltros.TabIndex = 1
             '
             'pnlCcnAccionesDerecha
@@ -343,9 +343,9 @@ Namespace Views.Cocina
             Me.pnlCcnAccionesDerecha.Controls.Add(Me.cboCcnCriterioOrden)
             Me.pnlCcnAccionesDerecha.Controls.Add(Me.lblCcnOrdenEtiqueta)
             Me.pnlCcnAccionesDerecha.Dock = System.Windows.Forms.DockStyle.Right
-            Me.pnlCcnAccionesDerecha.Location = New System.Drawing.Point(634, 4)
+            Me.pnlCcnAccionesDerecha.Location = New System.Drawing.Point(620, 6)
             Me.pnlCcnAccionesDerecha.Name = "pnlCcnAccionesDerecha"
-            Me.pnlCcnAccionesDerecha.Size = New System.Drawing.Size(448, 34)
+            Me.pnlCcnAccionesDerecha.Size = New System.Drawing.Size(462, 44)
             Me.pnlCcnAccionesDerecha.TabIndex = 1
             '
             'btnCcnRefrescarManual
@@ -354,11 +354,11 @@ Namespace Views.Cocina
             Me.btnCcnRefrescarManual.Cursor = System.Windows.Forms.Cursors.Hand
             Me.btnCcnRefrescarManual.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(226, 221, 213)
             Me.btnCcnRefrescarManual.FlatStyle = System.Windows.Forms.FlatStyle.Flat
-            Me.btnCcnRefrescarManual.Font = New System.Drawing.Font("Segoe UI", 9.5!, System.Drawing.FontStyle.Bold)
+            Me.btnCcnRefrescarManual.Font = New System.Drawing.Font("Segoe UI", 12.0!, System.Drawing.FontStyle.Bold)
             Me.btnCcnRefrescarManual.ForeColor = System.Drawing.Color.FromArgb(41, 43, 38)
-            Me.btnCcnRefrescarManual.Location = New System.Drawing.Point(398, 2)
+            Me.btnCcnRefrescarManual.Location = New System.Drawing.Point(408, 1)
             Me.btnCcnRefrescarManual.Name = "btnCcnRefrescarManual"
-            Me.btnCcnRefrescarManual.Size = New System.Drawing.Size(40, 30)
+            Me.btnCcnRefrescarManual.Size = New System.Drawing.Size(46, 42)
             Me.btnCcnRefrescarManual.TabIndex = 3
             Me.btnCcnRefrescarManual.Text = "🔄"
             Me.btnCcnRefrescarManual.UseVisualStyleBackColor = False
@@ -370,11 +370,11 @@ Namespace Views.Cocina
             Me.btnCcnAlertaSonora.Cursor = System.Windows.Forms.Cursors.Hand
             Me.btnCcnAlertaSonora.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(226, 221, 213)
             Me.btnCcnAlertaSonora.FlatStyle = System.Windows.Forms.FlatStyle.Flat
-            Me.btnCcnAlertaSonora.Font = New System.Drawing.Font("Segoe UI", 9.5!, System.Drawing.FontStyle.Bold)
+            Me.btnCcnAlertaSonora.Font = New System.Drawing.Font("Segoe UI", 12.0!, System.Drawing.FontStyle.Bold)
             Me.btnCcnAlertaSonora.ForeColor = System.Drawing.Color.FromArgb(41, 43, 38)
-            Me.btnCcnAlertaSonora.Location = New System.Drawing.Point(352, 2)
+            Me.btnCcnAlertaSonora.Location = New System.Drawing.Point(356, 1)
             Me.btnCcnAlertaSonora.Name = "btnCcnAlertaSonora"
-            Me.btnCcnAlertaSonora.Size = New System.Drawing.Size(40, 30)
+            Me.btnCcnAlertaSonora.Size = New System.Drawing.Size(46, 42)
             Me.btnCcnAlertaSonora.TabIndex = 2
             Me.btnCcnAlertaSonora.Text = "🔔"
             Me.btnCcnAlertaSonora.UseVisualStyleBackColor = False
@@ -383,20 +383,20 @@ Namespace Views.Cocina
             'cboCcnCriterioOrden
             '
             Me.cboCcnCriterioOrden.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList
-            Me.cboCcnCriterioOrden.Font = New System.Drawing.Font("Segoe UI", 9.5!, System.Drawing.FontStyle.Regular)
+            Me.cboCcnCriterioOrden.Font = New System.Drawing.Font("Segoe UI", 10.5!, System.Drawing.FontStyle.Regular)
             Me.cboCcnCriterioOrden.FormattingEnabled = True
-            Me.cboCcnCriterioOrden.Location = New System.Drawing.Point(88, 5)
+            Me.cboCcnCriterioOrden.Location = New System.Drawing.Point(82, 7)
             Me.cboCcnCriterioOrden.Name = "cboCcnCriterioOrden"
-            Me.cboCcnCriterioOrden.Size = New System.Drawing.Size(256, 25)
+            Me.cboCcnCriterioOrden.Size = New System.Drawing.Size(266, 28)
             Me.cboCcnCriterioOrden.TabIndex = 1
             '
             'lblCcnOrdenEtiqueta
             '
-            Me.lblCcnOrdenEtiqueta.Font = New System.Drawing.Font("Segoe UI", 9.0!, System.Drawing.FontStyle.Regular)
+            Me.lblCcnOrdenEtiqueta.Font = New System.Drawing.Font("Segoe UI", 9.5!, System.Drawing.FontStyle.Bold)
             Me.lblCcnOrdenEtiqueta.ForeColor = System.Drawing.Color.FromArgb(120, 119, 115)
-            Me.lblCcnOrdenEtiqueta.Location = New System.Drawing.Point(12, 6)
+            Me.lblCcnOrdenEtiqueta.Location = New System.Drawing.Point(4, 8)
             Me.lblCcnOrdenEtiqueta.Name = "lblCcnOrdenEtiqueta"
-            Me.lblCcnOrdenEtiqueta.Size = New System.Drawing.Size(70, 22)
+            Me.lblCcnOrdenEtiqueta.Size = New System.Drawing.Size(76, 26)
             Me.lblCcnOrdenEtiqueta.TabIndex = 0
             Me.lblCcnOrdenEtiqueta.Text = "⇅ Orden:"
             Me.lblCcnOrdenEtiqueta.TextAlign = System.Drawing.ContentAlignment.MiddleRight
@@ -408,9 +408,9 @@ Namespace Views.Cocina
             Me.pnlCcnChipsFiltro.Controls.Add(Me.btnCcnFiltroMesa)
             Me.pnlCcnChipsFiltro.Controls.Add(Me.btnCcnFiltroTodos)
             Me.pnlCcnChipsFiltro.Dock = System.Windows.Forms.DockStyle.Left
-            Me.pnlCcnChipsFiltro.Location = New System.Drawing.Point(18, 4)
+            Me.pnlCcnChipsFiltro.Location = New System.Drawing.Point(18, 6)
             Me.pnlCcnChipsFiltro.Name = "pnlCcnChipsFiltro"
-            Me.pnlCcnChipsFiltro.Size = New System.Drawing.Size(530, 34)
+            Me.pnlCcnChipsFiltro.Size = New System.Drawing.Size(590, 44)
             Me.pnlCcnChipsFiltro.TabIndex = 0
             '
             'btnCcnFiltroEntregas
@@ -419,11 +419,11 @@ Namespace Views.Cocina
             Me.btnCcnFiltroEntregas.Cursor = System.Windows.Forms.Cursors.Hand
             Me.btnCcnFiltroEntregas.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(226, 221, 213)
             Me.btnCcnFiltroEntregas.FlatStyle = System.Windows.Forms.FlatStyle.Flat
-            Me.btnCcnFiltroEntregas.Font = New System.Drawing.Font("Segoe UI", 9.5!, System.Drawing.FontStyle.Regular)
+            Me.btnCcnFiltroEntregas.Font = New System.Drawing.Font("Segoe UI", 10.5!, System.Drawing.FontStyle.Regular)
             Me.btnCcnFiltroEntregas.ForeColor = System.Drawing.Color.FromArgb(41, 43, 38)
-            Me.btnCcnFiltroEntregas.Location = New System.Drawing.Point(324, 2)
+            Me.btnCcnFiltroEntregas.Location = New System.Drawing.Point(366, 1)
             Me.btnCcnFiltroEntregas.Name = "btnCcnFiltroEntregas"
-            Me.btnCcnFiltroEntregas.Size = New System.Drawing.Size(150, 30)
+            Me.btnCcnFiltroEntregas.Size = New System.Drawing.Size(168, 42)
             Me.btnCcnFiltroEntregas.TabIndex = 2
             Me.btnCcnFiltroEntregas.Text = "🛍 Entregas (2)"
             Me.btnCcnFiltroEntregas.UseVisualStyleBackColor = False
@@ -435,11 +435,11 @@ Namespace Views.Cocina
             Me.btnCcnFiltroMesa.Cursor = System.Windows.Forms.Cursors.Hand
             Me.btnCcnFiltroMesa.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(226, 221, 213)
             Me.btnCcnFiltroMesa.FlatStyle = System.Windows.Forms.FlatStyle.Flat
-            Me.btnCcnFiltroMesa.Font = New System.Drawing.Font("Segoe UI", 9.5!, System.Drawing.FontStyle.Regular)
+            Me.btnCcnFiltroMesa.Font = New System.Drawing.Font("Segoe UI", 10.5!, System.Drawing.FontStyle.Regular)
             Me.btnCcnFiltroMesa.ForeColor = System.Drawing.Color.FromArgb(41, 43, 38)
-            Me.btnCcnFiltroMesa.Location = New System.Drawing.Point(166, 2)
+            Me.btnCcnFiltroMesa.Location = New System.Drawing.Point(186, 1)
             Me.btnCcnFiltroMesa.Name = "btnCcnFiltroMesa"
-            Me.btnCcnFiltroMesa.Size = New System.Drawing.Size(150, 30)
+            Me.btnCcnFiltroMesa.Size = New System.Drawing.Size(172, 42)
             Me.btnCcnFiltroMesa.TabIndex = 1
             Me.btnCcnFiltroMesa.Text = "🍽 Mesa / Salón (5)"
             Me.btnCcnFiltroMesa.UseVisualStyleBackColor = False
@@ -451,11 +451,11 @@ Namespace Views.Cocina
             Me.btnCcnFiltroTodos.Cursor = System.Windows.Forms.Cursors.Hand
             Me.btnCcnFiltroTodos.FlatAppearance.BorderSize = 0
             Me.btnCcnFiltroTodos.FlatStyle = System.Windows.Forms.FlatStyle.Flat
-            Me.btnCcnFiltroTodos.Font = New System.Drawing.Font("Segoe UI", 9.5!, System.Drawing.FontStyle.Bold)
+            Me.btnCcnFiltroTodos.Font = New System.Drawing.Font("Segoe UI", 10.5!, System.Drawing.FontStyle.Bold)
             Me.btnCcnFiltroTodos.ForeColor = System.Drawing.Color.White
-            Me.btnCcnFiltroTodos.Location = New System.Drawing.Point(0, 2)
+            Me.btnCcnFiltroTodos.Location = New System.Drawing.Point(0, 1)
             Me.btnCcnFiltroTodos.Name = "btnCcnFiltroTodos"
-            Me.btnCcnFiltroTodos.Size = New System.Drawing.Size(158, 30)
+            Me.btnCcnFiltroTodos.Size = New System.Drawing.Size(178, 42)
             Me.btnCcnFiltroTodos.TabIndex = 0
             Me.btnCcnFiltroTodos.Text = "Todos los pedidos (8)"
             Me.btnCcnFiltroTodos.UseVisualStyleBackColor = False

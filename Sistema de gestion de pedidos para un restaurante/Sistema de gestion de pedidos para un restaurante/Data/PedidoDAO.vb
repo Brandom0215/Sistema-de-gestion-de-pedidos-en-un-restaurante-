@@ -290,7 +290,7 @@ Namespace Data
                         "  ROUND(p.total - ROUND(p.total / 1.07, 2), 2) AS ""Impuesto"", " &
                         "  p.total AS ""Total"", " &
                         "  UPPER(p.estado) AS ""Estado"", " &
-                        "  'RECIBIDO' AS ""EstadoCocina"", " &
+                        "  COALESCE(p.estado_cocina, 'RECIBIDO') AS ""EstadoCocina"", " &
                         "  COALESCE(p.metodo_pago, 'Efectivo') AS ""MetodoPago"", " &
                         "  COALESCE(p.monto_recibido, 0.00) AS ""MontoRecibido"", " &
                         "  COALESCE(p.cambio, 0.00) AS ""Cambio"", " &
@@ -346,7 +346,7 @@ Namespace Data
                         "  ROUND(p.total - ROUND(p.total / 1.07, 2), 2) AS ""Impuesto"", " &
                         "  p.total AS ""Total"", " &
                         "  UPPER(p.estado) AS ""Estado"", " &
-                        "  'RECIBIDO' AS ""EstadoCocina"", " &
+                        "  COALESCE(p.estado_cocina, 'RECIBIDO') AS ""EstadoCocina"", " &
                         "  COALESCE(p.metodo_pago, 'Efectivo') AS ""MetodoPago"", " &
                         "  COALESCE(p.monto_recibido, 0.00) AS ""MontoRecibido"", " &
                         "  COALESCE(p.cambio, 0.00) AS ""Cambio"", " &
@@ -399,7 +399,7 @@ Namespace Data
                         "  ROUND(p.total - ROUND(p.total / 1.07, 2), 2) AS ""Impuesto"", " &
                         "  p.total AS ""Total"", " &
                         "  'PAGADO' AS ""Estado"", " &
-                        "  'RECIBIDO' AS ""EstadoCocina"", " &
+                        "  COALESCE(p.estado_cocina, 'RECIBIDO') AS ""EstadoCocina"", " &
                         "  COALESCE(p.metodo_pago, 'Efectivo') AS ""MetodoPago"", " &
                         "  COALESCE(p.monto_recibido, p.total) AS ""MontoRecibido"", " &
                         "  COALESCE(p.cambio, 0.00) AS ""Cambio"", " &
@@ -457,7 +457,7 @@ Namespace Data
                         "  ROUND(p.total - ROUND(p.total / 1.07, 2), 2) AS ""Impuesto"", " &
                         "  p.total AS ""Total"", " &
                         "  UPPER(p.estado) AS ""Estado"", " &
-                        "  'RECIBIDO' AS ""EstadoCocina"", " &
+                        "  COALESCE(p.estado_cocina, 'RECIBIDO') AS ""EstadoCocina"", " &
                         "  COALESCE(p.metodo_pago, 'Efectivo') AS ""MetodoPago"", " &
                         "  COALESCE(p.monto_recibido, p.total) AS ""MontoRecibido"", " &
                         "  COALESCE(p.cambio, 0.00) AS ""Cambio"", " &
@@ -636,12 +636,13 @@ Namespace Data
 
                 If ConexionBD.DebeUsarPostgreSQL() Then
                     Try
-                        Dim sqlPG As String = "INSERT INTO pedidos (nombre_cliente, mesa_o_servicio, tipo_servicio, estado, total, monto_recibido, cambio, metodo_pago) " &
-                                              "VALUES (@cliente, @mesa, @servicio, @estado, @total, @monto, @cambio, @metodo) RETURNING id_pedido;"
+                        Dim sqlPG As String = "INSERT INTO pedidos (nombre_cliente, mesa_o_servicio, tipo_servicio, estado, estado_cocina, total, monto_recibido, cambio, metodo_pago) " &
+                                              "VALUES (@cliente, @mesa, @servicio, @estado, @estadoCocina, @total, @monto, @cambio, @metodo) RETURNING id_pedido;"
                         Dim pCliente As New NpgsqlParameter("@cliente", strCliente)
                         Dim pMesa As New NpgsqlParameter("@mesa", strMesa)
                         Dim pServicio As New NpgsqlParameter("@servicio", strServicio)
                         Dim pEstado As New NpgsqlParameter("@estado", If(estadoPago.Equals("PAGADO", StringComparison.OrdinalIgnoreCase), "Pagado", "Pendiente"))
+                        Dim pEstadoCocina As New NpgsqlParameter("@estadoCocina", If(String.IsNullOrWhiteSpace(estadoCocina), "RECIBIDO", estadoCocina.Trim().ToUpper()))
                         Dim pTotal As New NpgsqlParameter("@total", precioFinal)
                         Dim pMonto As New NpgsqlParameter("@monto", If(estadoPago.Equals("PAGADO", StringComparison.OrdinalIgnoreCase), precioFinal, 0D))
                         Dim pCambio As New NpgsqlParameter("@cambio", 0D)
@@ -650,7 +651,7 @@ Namespace Data
                         Using conn = ConexionBD.CrearConexion()
                             conn.Open()
                             Using cmd As New NpgsqlCommand(sqlPG, conn)
-                                cmd.Parameters.AddRange({pCliente, pMesa, pServicio, pEstado, pTotal, pMonto, pCambio, pMetodo})
+                                cmd.Parameters.AddRange({pCliente, pMesa, pServicio, pEstado, pEstadoCocina, pTotal, pMonto, pCambio, pMetodo})
                                 Dim res = cmd.ExecuteScalar()
                                 If res IsNot Nothing AndAlso Not DBNull.Value.Equals(res) Then
                                     idNuevo = Convert.ToInt32(res)
@@ -855,22 +856,44 @@ Namespace Data
         ''' <summary>
         ''' Actualiza el estado de la comanda en cocina (RECIBIDO, EN_PREPARACION, LISTO, ENTREGADO).
         ''' Regla de integridad: No se permite marcar como ENTREGADO si el pedido no está PAGADO.
+        ''' Persiste de forma inmediata en PostgreSQL y en memoria local.
         ''' </summary>
         Public Function ActualizarEstadoCocina(id As Integer, nuevoEstadoCocina As String) As Boolean
+            Dim estadoCocinaNormalizado As String = nuevoEstadoCocina.Trim().ToUpper()
+
+            ' 1. Verificar estado actual de pago antes de permitir ENTREGADO
+            Dim pedidoRow As DataRow = ObtenerPedidoPorId(id)
+            If pedidoRow IsNot Nothing Then
+                Dim estadoPago = pedidoRow("Estado").ToString().ToUpper()
+                If estadoCocinaNormalizado = "ENTREGADO" AndAlso estadoPago <> "PAGADO" Then
+                    ' Bloqueo estricto: Todo producto debe ser pagado antes de ser entregado o despachado
+                    Return False
+                End If
+            End If
+
+            ' 2. Persistir en la base de datos PostgreSQL si está conectada
+            If ConexionBD.DebeUsarPostgreSQL() Then
+                Try
+                    Dim sql As String = "UPDATE pedidos SET estado_cocina = @estadoCocina WHERE id_pedido = @id;"
+                    Dim pEstado As New NpgsqlParameter("@estadoCocina", estadoCocinaNormalizado)
+                    Dim pId As New NpgsqlParameter("@id", id)
+                    ConexionBD.EjecutarComando(sql, pEstado, pId)
+                Catch ex As Exception
+                    ConexionBD.RegistrarFalloServidor(ex.Message)
+                End Try
+            End If
+
+            ' 3. Sincronizar en memoria y notificar a los observadores reactivos
             For Each row As DataRow In _tablaPedidos.Rows
                 If Convert.ToInt32(row("ID")) = id Then
-                    Dim estadoCocinaNormalizado As String = nuevoEstadoCocina.Trim().ToUpper()
-                    If estadoCocinaNormalizado = "ENTREGADO" AndAlso row("Estado").ToString().ToUpper() <> "PAGADO" Then
-                        ' Bloqueo a nivel de capa de datos: No se puede despachar sin pago previo
-                        Return False
-                    End If
-
                     row("EstadoCocina") = estadoCocinaNormalizado
                     DispararPedidoModificado(id)
                     Return True
                 End If
             Next
-            Return False
+
+            DispararPedidoModificado(id)
+            Return True
         End Function
 
         ''' <summary>
@@ -878,6 +901,11 @@ Namespace Data
         ''' Incluye el desglose individual de platos desde _tablaDetallePedidos.
         ''' </summary>
         Public Function ObtenerComandasCocina() As List(Of Models.CcnPedidoModel)
+            If ConexionBD.DebeUsarPostgreSQL() Then
+                ' Asegurar sincronización activa de pedidos desde la base de datos
+                ObtenerTodos()
+            End If
+
             Dim lista As New List(Of Models.CcnPedidoModel)()
 
             For Each row As DataRow In _tablaPedidos.Rows
