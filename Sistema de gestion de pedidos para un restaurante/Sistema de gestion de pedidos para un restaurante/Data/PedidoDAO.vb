@@ -247,6 +247,13 @@ Namespace Data
         End Sub
 #End Region
 
+        Private Function NormalizarTipoServicio(servicio As String) As String
+            If String.IsNullOrWhiteSpace(servicio) Then Return "En Mesa"
+            If servicio.IndexOf("Llevar", StringComparison.OrdinalIgnoreCase) >= 0 Then Return "Para Llevar"
+            If servicio.IndexOf("Delivery", StringComparison.OrdinalIgnoreCase) >= 0 OrElse servicio.IndexOf("domicilio", StringComparison.OrdinalIgnoreCase) >= 0 Then Return "Delivery"
+            Return "En Mesa"
+        End Function
+
         ''' <summary>
         ''' Extrae el precio numérico del texto del plato.
         ''' </summary>
@@ -614,9 +621,10 @@ Namespace Data
                     Try
                         Dim sqlPG As String = "INSERT INTO pedidos (nombre_cliente, mesa_o_servicio, tipo_servicio, estado, estado_cocina, total, monto_recibido, cambio, metodo_pago, correo_cliente) " &
                                               "VALUES (@cliente, @mesa, @servicio, @estado, @estadoCocina, @total, @monto, @cambio, @metodo, @correo) RETURNING id_pedido;"
+                        Dim strServicioNorm As String = NormalizarTipoServicio(strServicio)
                         Dim pCliente As New NpgsqlParameter("@cliente", strCliente)
                         Dim pMesa As New NpgsqlParameter("@mesa", strMesa)
-                        Dim pServicio As New NpgsqlParameter("@servicio", strServicio)
+                        Dim pServicio As New NpgsqlParameter("@servicio", strServicioNorm)
                         Dim pEstado As New NpgsqlParameter("@estado", If(estadoPago.Equals("PAGADO", StringComparison.OrdinalIgnoreCase), "Pagado", "Pendiente"))
                         Dim pEstadoCocina As New NpgsqlParameter("@estadoCocina", If(String.IsNullOrWhiteSpace(estadoCocina), "RECIBIDO", estadoCocina.Trim().ToUpper()))
                         Dim pTotal As New NpgsqlParameter("@total", total)
@@ -633,11 +641,29 @@ Namespace Data
                                 If res IsNot Nothing AndAlso Not DBNull.Value.Equals(res) Then
                                     idNuevo = Convert.ToInt32(res)
                                     If idNuevo > _ultimoId Then _ultimoId = idNuevo
+
+                                    MessageBox.Show(
+                                        $"Confirmación de Base de Datos PostgreSQL:{Environment.NewLine}{Environment.NewLine}" &
+                                        $"¡El pedido #{idNuevo} de '{strCliente}' se ha insertado correctamente en el servidor PostgreSQL (10.196.68.15)!{Environment.NewLine}{Environment.NewLine}" &
+                                        $"Tablas afectadas: 'pedidos' y 'detalle_pedidos'{Environment.NewLine}" &
+                                        $"Total: ${total:N2} | Estado: {estadoPago}",
+                                        "Inserción en Servidor Exitosa",
+                                        MessageBoxButtons.OK,
+                                        MessageBoxIcon.Information
+                                    )
                                 End If
                             End Using
                         End Using
                     Catch ex As Exception
                         ConexionBD.RegistrarFalloServidor(ex.Message)
+                        MessageBox.Show(
+                            $"Error al Insertar en Servidor PostgreSQL (10.196.68.15):{Environment.NewLine}{Environment.NewLine}" &
+                            $"{ex.Message}{Environment.NewLine}{Environment.NewLine}" &
+                            $"El pedido se procesará temporalmente en la memoria local.",
+                            "Alerta de Inserción en Servidor",
+                            MessageBoxButtons.OK,
+                            MessageBoxIcon.Warning
+                        )
                     End Try
                 End If
 
@@ -734,9 +760,10 @@ Namespace Data
                     Try
                         Dim sqlPG As String = "INSERT INTO pedidos (nombre_cliente, mesa_o_servicio, tipo_servicio, estado, estado_cocina, total, monto_recibido, cambio, metodo_pago) " &
                                               "VALUES (@cliente, @mesa, @servicio, @estado, @estadoCocina, @total, @monto, @cambio, @metodo) RETURNING id_pedido;"
+                        Dim strServicioNorm As String = NormalizarTipoServicio(strServicio)
                         Dim pCliente As New NpgsqlParameter("@cliente", strCliente)
                         Dim pMesa As New NpgsqlParameter("@mesa", strMesa)
-                        Dim pServicio As New NpgsqlParameter("@servicio", strServicio)
+                        Dim pServicio As New NpgsqlParameter("@servicio", strServicioNorm)
                         Dim pEstado As New NpgsqlParameter("@estado", If(estadoPago.Equals("PAGADO", StringComparison.OrdinalIgnoreCase), "Pagado", "Pendiente"))
                         Dim pEstadoCocina As New NpgsqlParameter("@estadoCocina", If(String.IsNullOrWhiteSpace(estadoCocina), "RECIBIDO", estadoCocina.Trim().ToUpper()))
                         Dim pTotal As New NpgsqlParameter("@total", precioFinal)
