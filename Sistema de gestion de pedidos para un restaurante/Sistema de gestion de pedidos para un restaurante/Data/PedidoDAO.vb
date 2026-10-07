@@ -171,13 +171,43 @@ Namespace Data
                                        Optional esCeliaco As Boolean = False,
                                        Optional mensajeAlerta As String = "")
             _ultimoIdDetalle += 1
+            Dim subtotal As Decimal = Math.Round(cantidad * precioUnitario, 2)
+
+            If ConexionBD.DebeUsarPostgreSQL() Then
+                Try
+                    ' Intento de persistencia en detalle_pedidos de PostgreSQL
+                    Dim sqlDetalle As String = "INSERT INTO detalle_pedidos (id_pedido, nombre_plato, cantidad, precio_unitario, subtotal, acompanamientos) " &
+                                               "VALUES (@idPed, @plato, @cant, @precio, @subtotal, @acomp);"
+                    Dim pIdPed As New NpgsqlParameter("@idPed", idPedido)
+                    Dim pPlato As New NpgsqlParameter("@plato", plato.Trim())
+                    Dim pCant As New NpgsqlParameter("@cant", cantidad)
+                    Dim pPrecio As New NpgsqlParameter("@precio", precioUnitario)
+                    Dim pSub As New NpgsqlParameter("@subtotal", subtotal)
+                    Dim pAcomp As New NpgsqlParameter("@acomp", notas.Trim())
+                    ConexionBD.EjecutarComando(sqlDetalle, pIdPed, pPlato, pCant, pPrecio, pSub, pAcomp)
+                Catch ex As Exception
+                    ' Respaldo si la columna es id_plato en lugar de nombre_plato
+                    Try
+                        Dim sqlFallback As String = "INSERT INTO detalle_pedidos (id_pedido, cantidad, precio_unitario, subtotal, acompanamientos) " &
+                                                    "VALUES (@idPed, @cant, @precio, @subtotal, @acomp);"
+                        Dim pIdPed As New NpgsqlParameter("@idPed", idPedido)
+                        Dim pCant As New NpgsqlParameter("@cant", cantidad)
+                        Dim pPrecio As New NpgsqlParameter("@precio", precioUnitario)
+                        Dim pSub As New NpgsqlParameter("@subtotal", subtotal)
+                        Dim pAcomp As New NpgsqlParameter("@acomp", notas.Trim())
+                        ConexionBD.EjecutarComando(sqlFallback, pIdPed, pCant, pPrecio, pSub, pAcomp)
+                    Catch ex2 As Exception
+                    End Try
+                End Try
+            End If
+
             Dim drDet As DataRow = _tablaDetallePedidos.NewRow()
             drDet("ID") = _ultimoIdDetalle
             drDet("IdPedido") = idPedido
             drDet("Plato") = plato.Trim()
             drDet("Cantidad") = cantidad
             drDet("PrecioUnitario") = precioUnitario
-            drDet("Subtotal") = Math.Round(cantidad * precioUnitario, 2)
+            drDet("Subtotal") = subtotal
             drDet("Acompanamientos") = notas.Trim()
             drDet("EsAlertaCeliaco") = esCeliaco
             drDet("MensajeAlerta") = mensajeAlerta.Trim()
@@ -615,13 +645,13 @@ Namespace Data
 
         ''' <summary>
         ''' Sobrecarga de compatibilidad para registrar un pedido.
-        ''' Retorna el ID numérico asignado al pedido.
+        ''' Retorna True si la operación fue exitosa.
         ''' </summary>
         Public Function Guardar(cliente As String, mesa As String, plato As String, acomp As String, servicio As String,
                                 Optional total As Decimal = 0D,
                                 Optional estadoPago As String = "PENDIENTE",
                                 Optional metodoPago As String = "",
-                                Optional estadoCocina As String = "RECIBIDO") As Integer
+                                Optional estadoCocina As String = "RECIBIDO") As Boolean
             Try
                 _ultimoId += 1
                 Dim idNuevo As Integer = _ultimoId
@@ -698,9 +728,9 @@ Namespace Data
                 AgregarItemDetalle(idNuevo, strPlato, 1, precioFinal, strAcomp, blnCeliaco, If(blnCeliaco, "CELÍACO: Estrictamente Sin Gluten", ""))
 
                 DispararPedidoRegistrado(idNuevo)
-                Return idNuevo
+                Return True
             Catch ex As Exception
-                Return -1
+                Return False
             End Try
         End Function
 
@@ -730,9 +760,22 @@ Namespace Data
         End Function
 
         ''' <summary>
-        ''' Elimina un pedido por ID de la tabla en memoria.
+        ''' Elimina un pedido por ID de la tabla en memoria y en la base de datos PostgreSQL.
         ''' </summary>
         Public Function Eliminar(id As Integer) As Boolean
+            If ConexionBD.DebeUsarPostgreSQL() Then
+                Try
+                    ' Eliminar detalles y cabecera en PostgreSQL
+                    Dim pIdDet As New NpgsqlParameter("@id", id)
+                    ConexionBD.EjecutarComando("DELETE FROM detalle_pedidos WHERE id_pedido = @id;", pIdDet)
+
+                    Dim pIdPed As New NpgsqlParameter("@id", id)
+                    ConexionBD.EjecutarComando("DELETE FROM pedidos WHERE id_pedido = @id;", pIdPed)
+                Catch ex As Exception
+                    ConexionBD.RegistrarFalloServidor(ex.Message)
+                End Try
+            End If
+
             For i As Integer = _tablaPedidos.Rows.Count - 1 To 0 Step -1
                 If Convert.ToInt32(_tablaPedidos.Rows(i)("ID")) = id Then
                     _tablaPedidos.Rows.RemoveAt(i)

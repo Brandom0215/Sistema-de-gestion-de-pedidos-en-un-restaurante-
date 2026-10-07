@@ -47,6 +47,28 @@ Namespace Views.Caja
                         e.Value = dtVal.ToString("HH:mm:ss")
                         e.FormattingApplied = True
                     End If
+                ElseIf colName = "EstadoCocina" AndAlso e.Value IsNot Nothing Then
+                    Dim st = e.Value.ToString().Trim().ToUpper()
+                    Select Case st
+                        Case "RECIBIDO"
+                            e.Value = "En Espera"
+                            e.CellStyle.ForeColor = Color.FromArgb(180, 100, 0)
+                            e.CellStyle.BackColor = Color.FromArgb(255, 248, 225)
+                        Case "EN_PREPARACION", "ENPREPARACION"
+                            e.Value = "Cocinando"
+                            e.CellStyle.ForeColor = Color.FromArgb(190, 80, 0)
+                            e.CellStyle.BackColor = Color.FromArgb(254, 237, 220)
+                        Case "LISTO"
+                            e.Value = "Listo"
+                            e.CellStyle.ForeColor = Color.FromArgb(34, 139, 34)
+                            e.CellStyle.BackColor = Color.FromArgb(232, 245, 233)
+                        Case "ENTREGADO", "DESPACHADO"
+                            e.Value = "Entregado"
+                            e.CellStyle.ForeColor = Color.FromArgb(47, 79, 79)
+                            e.CellStyle.BackColor = Color.FromArgb(240, 244, 248)
+                    End Select
+                    e.CellStyle.Font = ThemeConfig.ObtenerFuenteCuerpo(9.5F, FontStyle.Bold)
+                    e.FormattingApplied = True
                 End If
             End If
         End Sub
@@ -243,7 +265,7 @@ Namespace Views.Caja
                 If dgvPedidosPendientes.Columns.Count > 0 Then
                     dgvPedidosPendientes.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill
 
-                    Dim columnasVisibles = New HashSet(Of String) From {"ID", "Cliente", "Mesa", "PlatoPrincipal", "FechaHora", "Total"}
+                    Dim columnasVisibles = New HashSet(Of String) From {"ID", "Cliente", "Mesa", "PlatoPrincipal", "EstadoCocina", "FechaHora", "Total"}
                     For Each col As DataGridViewColumn In dgvPedidosPendientes.Columns
                         If Not columnasVisibles.Contains(col.Name) Then
                             col.Visible = False
@@ -262,34 +284,43 @@ Namespace Views.Caja
                     If dgvPedidosPendientes.Columns.Contains("Cliente") Then
                         With dgvPedidosPendientes.Columns("Cliente")
                             .HeaderText = "Cliente"
-                            .FillWeight = 25
-                            .MinimumWidth = 110
+                            .FillWeight = 22
+                            .MinimumWidth = 100
                             .DisplayIndex = 1
                         End With
                     End If
                     If dgvPedidosPendientes.Columns.Contains("Mesa") Then
                         With dgvPedidosPendientes.Columns("Mesa")
                             .HeaderText = "Mesa / Servicio"
-                            .FillWeight = 18
-                            .MinimumWidth = 95
+                            .FillWeight = 16
+                            .MinimumWidth = 90
                             .DisplayIndex = 2
                         End With
                     End If
                     If dgvPedidosPendientes.Columns.Contains("PlatoPrincipal") Then
                         With dgvPedidosPendientes.Columns("PlatoPrincipal")
                             .HeaderText = "Pedido / Consumo"
-                            .FillWeight = 27
-                            .MinimumWidth = 120
+                            .FillWeight = 24
+                            .MinimumWidth = 110
                             .DisplayIndex = 3
+                        End With
+                    End If
+                    If dgvPedidosPendientes.Columns.Contains("EstadoCocina") Then
+                        With dgvPedidosPendientes.Columns("EstadoCocina")
+                            .HeaderText = "Cocina"
+                            .FillWeight = 14
+                            .MinimumWidth = 85
+                            .DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter
+                            .DisplayIndex = 4
                         End With
                     End If
                     If dgvPedidosPendientes.Columns.Contains("FechaHora") Then
                         With dgvPedidosPendientes.Columns("FechaHora")
                             .HeaderText = "Hora"
-                            .FillWeight = 12
-                            .MinimumWidth = 70
+                            .FillWeight = 10
+                            .MinimumWidth = 65
                             .DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter
-                            .DisplayIndex = 4
+                            .DisplayIndex = 5
                         End With
                     End If
                     If dgvPedidosPendientes.Columns.Contains("Total") Then
@@ -298,8 +329,8 @@ Namespace Views.Caja
                             .DefaultCellStyle.Format = "C2"
                             .DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight
                             .FillWeight = 10
-                            .MinimumWidth = 80
-                            .DisplayIndex = 5
+                            .MinimumWidth = 75
+                            .DisplayIndex = 6
                         End With
                     End If
                 End If
@@ -332,9 +363,18 @@ Namespace Views.Caja
                 _subtotalGravable = Math.Round(_totalAPagar / 1.07D, 2)
                 _impuestoCalculado = Math.Round(_totalAPagar - _subtotalGravable, 2)
 
+                Dim estadoCocinaStr As String = If(row.Cells("EstadoCocina").Value IsNot Nothing, row.Cells("EstadoCocina").Value.ToString(), "RECIBIDO")
+                Dim estadoCocinaTexto As String = "En Espera"
+                Select Case estadoCocinaStr.Trim().ToUpper()
+                    Case "EN_PREPARACION", "ENPREPARACION" : estadoCocinaTexto = "En Preparación en Cocina"
+                    Case "LISTO" : estadoCocinaTexto = "Listo para Servir / Despachar"
+                    Case "ENTREGADO", "DESPACHADO" : estadoCocinaTexto = "Ya Entregado al Cliente"
+                    Case Else : estadoCocinaTexto = "En Cola de Cocina"
+                End Select
+
                 lblDetallePedidoId.Text = $"Pedido #{_idPedidoSeleccionado}"
                 lblDetalleCliente.Text = $"Cliente: {cliente}"
-                lblDetalleMesa.Text = $"Servicio: {servicio} • Mesa: {mesa}"
+                lblDetalleMesa.Text = $"Servicio: {servicio} • Mesa: {mesa} • Estado: {estadoCocinaTexto}"
                 lblDetallePlato.Text = $"Consumo: {plato}"
                 lblDetalleAcomp.Text = $"Extras: {If(String.IsNullOrWhiteSpace(acomp), "--", acomp)}"
 

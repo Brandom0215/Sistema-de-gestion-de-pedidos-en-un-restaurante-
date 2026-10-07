@@ -94,8 +94,22 @@ Namespace Views.Reportes
                 Dim contadorTransacciones As Integer = 0
 
                 If dtOriginal IsNot Nothing Then
+                    Dim fechaIni As DateTime = dtpFechaInicio.Value.Date
+                    Dim fechaFin As DateTime = dtpFechaFin.Value.Date.AddDays(1).AddTicks(-1)
+
                     For i As Integer = 0 To dtOriginal.Rows.Count - 1
                         Dim row As DataRow = dtOriginal.Rows(i)
+
+                        ' Validar filtro por rango de fechas
+                        Dim fechaHoraFila As DateTime = DateTime.Now
+                        If row("FechaHora") IsNot DBNull.Value Then
+                            DateTime.TryParse(row("FechaHora").ToString(), fechaHoraFila)
+                        End If
+
+                        If fechaHoraFila < fechaIni OrElse fechaHoraFila > fechaFin Then
+                            Continue For
+                        End If
+
                         Dim nroOrden As String = "ORD-" & Convert.ToInt32(row("ID")).ToString("D4")
                         Dim cliente As String = If(row("Cliente") IsNot DBNull.Value, row("Cliente").ToString(), "Consumidor")
                         Dim estado As String = If(row("Estado") IsNot DBNull.Value, row("Estado").ToString().ToUpper(), "PENDIENTE")
@@ -103,15 +117,13 @@ Namespace Views.Reportes
                         Dim metodo As String = "Efectivo"
                         If row("MetodoPago") IsNot DBNull.Value AndAlso Not String.IsNullOrWhiteSpace(row("MetodoPago").ToString()) Then
                             metodo = row("MetodoPago").ToString()
-                        ElseIf i Mod 2 = 1 Then
-                            metodo = "Tarjeta / QR"
                         End If
 
                         Dim monto As Decimal = 0D
                         If Not IsDBNull(row("Total")) AndAlso Decimal.TryParse(row("Total").ToString(), monto) AndAlso monto > 0D Then
                             ' Monto real del pedido
                         Else
-                            monto = 15.0D + (i * 2.5D)
+                            monto = 15.0D
                         End If
 
                         If metodo.IndexOf("Tarjeta", StringComparison.OrdinalIgnoreCase) >= 0 OrElse
@@ -130,7 +142,7 @@ Namespace Views.Reportes
                         dr("MetodoPago") = metodo
                         dr("Estado") = estado
                         dr("MontoTotal") = monto
-                        dr("Hora") = If(row("FechaHora") IsNot DBNull.Value, row("FechaHora").ToString(), DateTime.Now.ToString("HH:mm:ss"))
+                        dr("Hora") = fechaHoraFila.ToString("yyyy-MM-dd HH:mm:ss")
                         dtReporte.Rows.Add(dr)
                     Next
                 End If

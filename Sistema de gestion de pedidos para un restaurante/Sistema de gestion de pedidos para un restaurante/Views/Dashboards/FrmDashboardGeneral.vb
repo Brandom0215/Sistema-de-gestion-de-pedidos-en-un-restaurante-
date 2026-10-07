@@ -18,6 +18,24 @@ Namespace Views.Dashboards
         Private Sub FrmDashboardGeneral_Load(sender As Object, e As EventArgs) Handles MyBase.Load
             AplicarTemaVisual()
             CargarResumenMetricas()
+
+            ' Suscribir a notificaciones reactivas de PedidoDAO en tiempo real
+            Data.PedidoDAO.SuscribirPedidoRegistrado(AddressOf OnPedidoActualizadoDesdeDAO)
+            Data.PedidoDAO.SuscribirPedidoModificado(AddressOf OnPedidoActualizadoDesdeDAO)
+        End Sub
+
+        Private Sub FrmDashboardGeneral_FormClosed(sender As Object, e As FormClosedEventArgs) Handles MyBase.FormClosed
+            Data.PedidoDAO.DesuscribirPedidoRegistrado(AddressOf OnPedidoActualizadoDesdeDAO)
+            Data.PedidoDAO.DesuscribirPedidoModificado(AddressOf OnPedidoActualizadoDesdeDAO)
+        End Sub
+
+        Private Sub OnPedidoActualizadoDesdeDAO(idPedido As Integer)
+            If Me.IsDisposed OrElse Not Me.IsHandleCreated Then Return
+            If Me.InvokeRequired Then
+                Me.BeginInvoke(New Action(Of Integer)(AddressOf OnPedidoActualizadoDesdeDAO), idPedido)
+                Return
+            End If
+            CargarResumenMetricas()
         End Sub
 
         ''' <summary>
