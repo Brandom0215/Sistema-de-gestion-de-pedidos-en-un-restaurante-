@@ -277,10 +277,14 @@ Namespace Data
                 End Using
                 mensajeDiagnostico = $"Conexión exitosa con el servidor en {Host}:{Puerto} ({BaseDatos})."
                 UltimoMensajeEstado = $"Conectado al servidor principal ({Host})"
+                Console.WriteLine($"[CONEXIÓN POSTGRESQL EXITOSA] Servidor: {Host}:{Puerto} | BaseDatos: {BaseDatos} | Usuario: {Usuario}")
+                System.Diagnostics.Debug.WriteLine($"[CONEXIÓN POSTGRESQL EXITOSA] Servidor: {Host}:{Puerto} | BaseDatos: {BaseDatos}")
                 Return True
             Catch ex As Exception
                 mensajeDiagnostico = $"No se pudo contactar el servidor ({Host}:{Puerto}): {ex.Message}"
                 UltimoMensajeEstado = "Servidor no disponible. Operando en modo local."
+                Console.WriteLine($"[CONEXIÓN POSTGRESQL FALLIDA] Host: {Host}:{Puerto} | Error: {ex.Message}")
+                System.Diagnostics.Debug.WriteLine($"[CONEXIÓN POSTGRESQL FALLIDA] Host: {Host}:{Puerto} | Error: {ex.Message}")
                 Return False
             End Try
         End Function
