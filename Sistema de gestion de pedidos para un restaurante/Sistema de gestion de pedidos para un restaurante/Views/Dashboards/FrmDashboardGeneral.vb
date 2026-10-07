@@ -15,6 +15,8 @@ Namespace Views.Dashboards
             InitializeComponent()
         End Sub
 
+        Private WithEvents _tmrAutoRefresh As Timer
+
         Private Sub FrmDashboardGeneral_Load(sender As Object, e As EventArgs) Handles MyBase.Load
             AplicarTemaVisual()
             CargarResumenMetricas()
@@ -22,11 +24,24 @@ Namespace Views.Dashboards
             ' Suscribir a notificaciones reactivas de PedidoDAO en tiempo real
             Data.PedidoDAO.SuscribirPedidoRegistrado(AddressOf OnPedidoActualizadoDesdeDAO)
             Data.PedidoDAO.SuscribirPedidoModificado(AddressOf OnPedidoActualizadoDesdeDAO)
+
+            _tmrAutoRefresh = New Timer() With {.Interval = 3000, .Enabled = True}
         End Sub
 
         Private Sub FrmDashboardGeneral_FormClosed(sender As Object, e As FormClosedEventArgs) Handles MyBase.FormClosed
+            If _tmrAutoRefresh IsNot Nothing Then
+                _tmrAutoRefresh.Stop()
+                _tmrAutoRefresh.Dispose()
+            End If
             Data.PedidoDAO.DesuscribirPedidoRegistrado(AddressOf OnPedidoActualizadoDesdeDAO)
             Data.PedidoDAO.DesuscribirPedidoModificado(AddressOf OnPedidoActualizadoDesdeDAO)
+        End Sub
+
+        Private Sub _tmrAutoRefresh_Tick(sender As Object, e As EventArgs) Handles _tmrAutoRefresh.Tick
+            Try
+                CargarResumenMetricas()
+            Catch
+            End Try
         End Sub
 
         Private Sub OnPedidoActualizadoDesdeDAO(idPedido As Integer)

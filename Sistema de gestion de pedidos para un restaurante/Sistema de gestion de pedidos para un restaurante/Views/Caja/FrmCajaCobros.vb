@@ -27,6 +27,8 @@ Namespace Views.Caja
             ThemeConfig.HabilitarDobleBuffer(Me)
         End Sub
 
+        Private WithEvents _tmrAutoRefresh As Timer
+
         Private Sub FrmCajaCobros_Load(sender As Object, e As EventArgs) Handles MyBase.Load
             AplicarTemaVisual()
             InicializarControlesConexionBD()
@@ -36,6 +38,15 @@ Namespace Views.Caja
             ' Suscribir a notificaciones de persistencia en tiempo real de PedidoDAO
             PedidoDAO.SuscribirPedidoRegistrado(AddressOf OnPedidoActualizadoDesdeDAO)
             PedidoDAO.SuscribirPedidoModificado(AddressOf OnPedidoActualizadoDesdeDAO)
+
+            _tmrAutoRefresh = New Timer() With {.Interval = 3000, .Enabled = True}
+        End Sub
+
+        Private Sub _tmrAutoRefresh_Tick(sender As Object, e As EventArgs) Handles _tmrAutoRefresh.Tick
+            Try
+                CargarPedidosPendientes()
+            Catch
+            End Try
         End Sub
 
         Private Sub dgvPedidosPendientes_CellFormatting(sender As Object, e As DataGridViewCellFormattingEventArgs) Handles dgvPedidosPendientes.CellFormatting
@@ -74,6 +85,10 @@ Namespace Views.Caja
         End Sub
 
         Private Sub FrmCajaCobros_FormClosed(sender As Object, e As FormClosedEventArgs) Handles MyBase.FormClosed
+            If _tmrAutoRefresh IsNot Nothing Then
+                _tmrAutoRefresh.Stop()
+                _tmrAutoRefresh.Dispose()
+            End If
             PedidoDAO.DesuscribirPedidoRegistrado(AddressOf OnPedidoActualizadoDesdeDAO)
             PedidoDAO.DesuscribirPedidoModificado(AddressOf OnPedidoActualizadoDesdeDAO)
             ConexionBD.DesuscribirModoConexionCambiado(AddressOf OnModoConexionCambiado)

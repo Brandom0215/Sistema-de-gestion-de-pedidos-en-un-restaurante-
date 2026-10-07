@@ -354,6 +354,12 @@ Namespace Views.Cocina
         ''' Actualiza el cronómetro visual de tiempo de espera y recalcula las métricas del turno periódicamente.
         ''' </summary>
         Private Sub tmrCcnActualizadorRealTime_Tick(ByVal sender As Object, ByVal e As EventArgs) Handles tmrCcnActualizadorRealTime.Tick
+            Try
+                SincronizarComandasDesdeDAO()
+                RefrescarMonitorComandas()
+            Catch
+            End Try
+
             For Each ctl As Control In flpCcnContenedorComandas.Controls
                 If TypeOf ctl Is UcCcnTarjetaComanda Then
                     DirectCast(ctl, UcCcnTarjetaComanda).ActualizarCronometro()
