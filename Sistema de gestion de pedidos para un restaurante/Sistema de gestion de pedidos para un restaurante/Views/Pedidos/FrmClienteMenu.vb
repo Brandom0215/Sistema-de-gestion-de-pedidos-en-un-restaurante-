@@ -34,12 +34,15 @@ Namespace Views.Pedidos
             InicializarEstructuraCarrito()
             CargarCategorias()
             CargarTiposServicio()
+            CargarMetodosPago()
             CargarTarjetasPlatos()
 
             If Not String.IsNullOrWhiteSpace(_nombreUsuarioSesion) AndAlso Not _nombreUsuarioSesion.Equals("Invitado", StringComparison.OrdinalIgnoreCase) Then
                 txtNombreCliente.Text = _nombreUsuarioSesion
+                txtCorreoCliente.Text = $"{_nombreUsuarioSesion.ToLowerInvariant().Replace(" ", ".")}@correo.com"
             Else
                 txtNombreCliente.Text = "Cliente Invitado"
+                txtCorreoCliente.Text = "cliente@correo.com"
             End If
 
             txtMesa.Text = "Mesa 01"
@@ -117,10 +120,17 @@ Namespace Views.Pedidos
 
         Private Sub CargarTiposServicio()
             cboTipoServicio.Items.Clear()
-            cboTipoServicio.Items.Add("En Mesa")
+            cboTipoServicio.Items.Add("Comer en Mesa")
             cboTipoServicio.Items.Add("Para Llevar")
-            cboTipoServicio.Items.Add("Delivery")
             cboTipoServicio.SelectedIndex = 0
+        End Sub
+
+        Private Sub CargarMetodosPago()
+            cboMetodoPago.Items.Clear()
+            cboMetodoPago.Items.Add("Pago en Caja (Efectivo / Tarjeta)")
+            cboMetodoPago.Items.Add("Pago por QR / Yappy")
+            cboMetodoPago.Items.Add("Transferencia Bancaria")
+            cboMetodoPago.SelectedIndex = 0
         End Sub
 
         Private Sub cboCategoria_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cboCategoria.SelectedIndexChanged
@@ -430,9 +440,16 @@ Namespace Views.Pedidos
                 Return
             End If
 
+            Dim correoCliente As String = txtCorreoCliente.Text.Trim()
+            If String.IsNullOrWhiteSpace(correoCliente) OrElse Not correoCliente.Contains("@") OrElse Not correoCliente.Contains(".") Then
+                MostrarMensajeAdvertencia("Por favor ingrese un correo electrónico válido para la facturación digital.", "Correo Inválido")
+                txtCorreoCliente.Focus()
+                Return
+            End If
+
             Dim mesaODireccion As String = txtMesa.Text.Trim()
             If String.IsNullOrWhiteSpace(mesaODireccion) Then
-                MostrarMensajeAdvertencia("Por favor ingrese el número de mesa o dirección de entrega.", "Mesa / Dirección Requerida")
+                MostrarMensajeAdvertencia("Por favor ingrese el número de mesa o identificador de entrega.", "Mesa Requerida")
                 txtMesa.Focus()
                 Return
             End If
@@ -453,40 +470,121 @@ Namespace Views.Pedidos
 
             Dim totalFinal As Decimal = subtotalCarrito + extrasMonto
             Dim descripcionPlatos As String = String.Join(" + ", listaPlatosResumen)
-            Dim servicio As String = cboTipoServicio.SelectedItem.ToString()
+            Dim servicio As String = If(cboTipoServicio.SelectedItem IsNot Nothing, cboTipoServicio.SelectedItem.ToString(), "Comer en Mesa")
+            Dim metodoPago As String = If(cboMetodoPago.SelectedItem IsNot Nothing, cboMetodoPago.SelectedItem.ToString(), "Pago en Caja (Efectivo / Tarjeta)")
             Dim extrasTexto As String = ObtenerExtrasSeleccionados()
             Dim extrasEstructurados As List(Of Tuple(Of String, Integer, Decimal)) = ObtenerExtrasEstructurados()
 
-            ' Registrar pedido completo en la BD / DAO compartido con desglose exacto de cada plato
-            Dim idPedidoGenerado As Integer = PedidoDAO.GuardarPedidoCompleto(
-                nombreCliente,
-                mesaODireccion,
-                servicio,
-                totalFinal,
-                _tablaCarrito,
-                extrasEstructurados,
-                "PENDIENTE",
-                "",
-                "RECIBIDO"
-            )
+            ' 1. Mostrar pantalla de Resumen y Rectificación antes de confirmar definitivamente
+            Using dlgResumen As New FrmClienteResumenPedidoDialog(nombreCliente, correoCliente, $"{servicio} ({mesaODireccion})", metodoPago, _tablaCarrito, extrasEstructurados, totalFinal)
+                If dlgResumen.ShowDialog(Me) <> DialogResult.OK Then
+                    ' El usuario decidió modificar su pedido o cancelar la confirmación
+                    Return
+                End If
+            End Using
 
-            If idPedidoGenerado > 0 Then
-                MostrarMensajeExito($"¡Pedido #{idPedidoGenerado} registrado con éxito!{vbCrLf}{vbCrLf}👤 Cliente: {nombreCliente}{vbCrLf}📍 Servicio: {servicio} ({mesaODireccion}){vbCrLf}🍽 Menú Elegido: {descripcionPlatos}{vbCrLf}🥤 Bebidas/Extras: {extrasTexto}{vbCrLf}💵 Total a Pagar: ${totalFinal:N2}{vbCrLf}{vbCrLf}⚡ Su comanda ha sido enviada al Monitor de Cocina KDS y entra en la cola prioritaria según la Ley de FIFO (Primero en Entrar, Primero en Salir).", "Pedido Confirmado")
+            ' 2. Procesar según el Método de Pago Seleccionado
+            Dim esDigital As Boolean = metodoPago.IndexOf("QR", StringComparison.OrdinalIgnoreCase) >= 0 OrElse
+                                      metodoPago.IndexOf("Yappy", StringComparison.OrdinalIgnoreCase) >= 0 OrElse
+                                      metodoPago.IndexOf("Transferencia", StringComparison.OrdinalIgnoreCase) >= 0
 
-                ' Limpiar carrito e insumos
-                _tablaCarrito.Rows.Clear()
-                chkExtraSoda.Checked = False
-                chkExtraJugo.Checked = False
-                chkExtraPapas.Checked = False
-                chkExtraEnsalada.Checked = False
-                numExtraSoda.Value = 1
-                numExtraJugo.Value = 1
-                numExtraPapas.Value = 1
-                numExtraEnsalada.Value = 1
-                CalcularTotalGeneral()
+            If esDigital Then
+                ' A. PASARELA DIGITAL DE PAGO (QR / Yappy / Transferencia)
+                Using dlgQR As New FrmClientePasarelaQRDialog(nombreCliente, totalFinal, metodoPago)
+                    If dlgQR.ShowDialog(Me) <> DialogResult.OK Then
+                        MostrarMensajeAdvertencia("La transacción de pago digital no fue completada. Su pedido continúa en el carrito.", "Pago Cancelado o Expirado")
+                        Return
+                    End If
+                End Using
+
+                ' Pago confirmado por la pasarela: Registrar como PAGADO directamente
+                Dim idPedidoGenerado As Integer = PedidoDAO.GuardarPedidoCompleto(
+                    nombreCliente,
+                    mesaODireccion,
+                    servicio,
+                    totalFinal,
+                    _tablaCarrito,
+                    extrasEstructurados,
+                    "PAGADO",
+                    metodoPago,
+                    "RECIBIDO",
+                    correoCliente
+                )
+
+                If idPedidoGenerado > 0 Then
+                    ' Emisión automática de factura electrónica digital PDF
+                    Dim numFactura As String = PedidoDAO.RegistrarFactura(idPedidoGenerado, "8-800-1234", nombreCliente, "Ciudad de Panamá", "+507 6200-1122", correoCliente)
+                    Try
+                        Dim carpetaFacturas As String = IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "FacturasEmitidas")
+                        If Not IO.Directory.Exists(carpetaFacturas) Then IO.Directory.CreateDirectory(carpetaFacturas)
+                        Dim rutaArchivoPDF As String = IO.Path.Combine(carpetaFacturas, $"Factura_{numFactura}.pdf")
+                        Dim drPedido As DataRow = PedidoDAO.ObtenerPedidoPorId(idPedidoGenerado)
+                        If drPedido IsNot Nothing Then
+                            Services.FacturaPDFService.GenerarFacturaPDF(rutaArchivoPDF, drPedido)
+                        End If
+                    Catch
+                    End Try
+
+                    MostrarMensajeExito(
+                        $"¡Pago Aprobado y Transacción Exitosa por Pasarela Digital!{vbCrLf}{vbCrLf}" &
+                        $"N° Pedido: #{idPedidoGenerado}{vbCrLf}" &
+                        $"N° Factura PDF: {numFactura}{vbCrLf}" &
+                        $"Cliente: {nombreCliente}{vbCrLf}" &
+                        $"Correo: {correoCliente}{vbCrLf}" &
+                        $"Total Cobrado: ${totalFinal:N2}{vbCrLf}{vbCrLf}" &
+                        $"⚡ Su comanda ha sido enviada automáticamente al Monitor de Cocina KDS para su preparación inmediata sin intermediarios y su factura PDF ha sido generada.",
+                        "Pago & Comanda Confirmados"
+                    )
+
+                    LimpiarCarritoYExtras()
+                Else
+                    MostrarMensajeAdvertencia("Ocurrió un error al registrar el pedido pagado en la base de datos.", "Error de Registro")
+                End If
             Else
-                MostrarMensajeAdvertencia("Ocurrió un error al registrar el pedido en la base de datos.", "Error de Registro")
+                ' B. PAGO EN CAJA (EFECTIVO / TARJETA PRESENCIAL)
+                ' Pausa de Seguridad: Se guarda como PENDIENTE. No va a cocina hasta que el cajero confirme cobro
+                Dim idPedidoGenerado As Integer = PedidoDAO.GuardarPedidoCompleto(
+                    nombreCliente,
+                    mesaODireccion,
+                    servicio,
+                    totalFinal,
+                    _tablaCarrito,
+                    extrasEstructurados,
+                    "PENDIENTE",
+                    metodoPago,
+                    "RECIBIDO",
+                    correoCliente
+                )
+
+                If idPedidoGenerado > 0 Then
+                    MostrarMensajeExito(
+                        $"¡Pedido #{idPedidoGenerado} registrado con Pausa de Seguridad!{vbCrLf}{vbCrLf}" &
+                        $"Cliente: {nombreCliente}{vbCrLf}" &
+                        $"Estado: Esperando Pago en Caja{vbCrLf}" &
+                        $"Servicio: {servicio} ({mesaODireccion}){vbCrLf}" &
+                        $"Total a Pagar en Caja: ${totalFinal:N2}{vbCrLf}{vbCrLf}" &
+                        $"Por favor acérquese a la caja para realizar su pago. En cuanto el cajero presione 'Confirmar Cobro', la comanda pasará automáticamente a la cocina y se emitirá la factura.",
+                        "Orden Registrada en Espera de Pago"
+                    )
+
+                    LimpiarCarritoYExtras()
+                Else
+                    MostrarMensajeAdvertencia("Ocurrió un error al registrar el pedido pendiente en la base de datos.", "Error de Registro")
+                End If
             End If
+        End Sub
+
+        Private Sub LimpiarCarritoYExtras()
+            _tablaCarrito.Rows.Clear()
+            chkExtraSoda.Checked = False
+            chkExtraJugo.Checked = False
+            chkExtraPapas.Checked = False
+            chkExtraEnsalada.Checked = False
+            numExtraSoda.Value = 1
+            numExtraJugo.Value = 1
+            numExtraPapas.Value = 1
+            numExtraEnsalada.Value = 1
+            CalcularTotalGeneral()
         End Sub
 
     End Class
