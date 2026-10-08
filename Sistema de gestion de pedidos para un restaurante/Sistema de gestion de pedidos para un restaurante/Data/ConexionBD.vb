@@ -299,7 +299,11 @@ Namespace Data
                 .Password = Clave,
                 .Timeout = TimeoutSegundos,
                 .CommandTimeout = 5,
-                .Pooling = True
+                .Pooling = True,
+                .MinPoolSize = 1,
+                .MaxPoolSize = 10,
+                .ConnectionIdleLifetime = 15,
+                .TcpKeepAlive = True
             }
             Return builder.ConnectionString
         End Function

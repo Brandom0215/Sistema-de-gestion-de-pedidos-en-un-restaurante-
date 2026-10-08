@@ -54,6 +54,7 @@ Namespace Data
             Next
         End Sub
 
+
         Private Function NormalizarTipoServicio(servicio As String) As String
             If String.IsNullOrWhiteSpace(servicio) Then Return "En Mesa"
             If servicio.IndexOf("Llevar", StringComparison.OrdinalIgnoreCase) >= 0 Then Return "Para Llevar"
@@ -81,7 +82,9 @@ Namespace Data
         End Function
 
         ''' <summary>
+        ''' <summary>
         ''' Obtiene la tabla completa de pedidos directamente desde PostgreSQL.
+        ''' </summary>
         ''' </summary>
         Public Function ObtenerTodos() As DataTable
             Dim sql As String =
@@ -493,7 +496,9 @@ Namespace Data
         End Function
 
         ''' <summary>
+        ''' <summary>
         ''' Confirma el pago de un pedido en Caja actualizando directamente PostgreSQL.
+        ''' </summary>
         ''' </summary>
         Public Function ConfirmarCobro(id As Integer, metodoPago As String, montoRecibido As Decimal, cambio As Decimal) As Boolean
             Try

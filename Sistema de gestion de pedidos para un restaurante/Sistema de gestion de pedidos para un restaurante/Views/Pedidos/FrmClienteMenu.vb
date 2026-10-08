@@ -18,6 +18,8 @@ Namespace Views.Pedidos
 
         Private ReadOnly _nombreUsuarioSesion As String
         Private _tablaCarrito As DataTable
+        Private _dtPlatosCache As DataTable = Nothing
+        Private WithEvents _tmrDebounceBusqueda As Timer
 
         Public Sub New()
             Me.New("Invitado")
@@ -27,6 +29,21 @@ Namespace Views.Pedidos
             InitializeComponent()
             _nombreUsuarioSesion = If(String.IsNullOrWhiteSpace(nombreUsuario), "Invitado", nombreUsuario)
             ThemeConfig.HabilitarDobleBuffer(Me)
+            ThemeConfig.HabilitarDobleBuffer(flpCatalogoTarjetas)
+
+            ' Timer de retardo táctil para no congelar la CPU mientras el usuario teclea en computadoras modestas
+            _tmrDebounceBusqueda = New Timer() With {
+                .Interval = 250
+            }
+            AddHandler _tmrDebounceBusqueda.Tick, AddressOf TmrDebounceBusqueda_Tick
+        End Sub
+
+        Private Sub FrmClienteMenu_FormClosed(sender As Object, e As FormClosedEventArgs) Handles MyBase.FormClosed
+            If _tmrDebounceBusqueda IsNot Nothing Then
+                _tmrDebounceBusqueda.Stop()
+                _tmrDebounceBusqueda.Dispose()
+            End If
+            ThemeConfig.LimpiarYDestruirControles(flpCatalogoTarjetas)
         End Sub
 
         Private Sub FrmClienteMenu_Load(sender As Object, e As EventArgs) Handles MyBase.Load
@@ -138,23 +155,40 @@ Namespace Views.Pedidos
         End Sub
 
         Private Sub txtBuscarPlato_TextChanged(sender As Object, e As EventArgs) Handles txtBuscarPlato.TextChanged
+            ' Reiniciar temporizador debounce: espera a que el usuario termine de tipear
+            If _tmrDebounceBusqueda IsNot Nothing Then
+                _tmrDebounceBusqueda.Stop()
+                _tmrDebounceBusqueda.Start()
+            End If
+        End Sub
+
+        Private Sub TmrDebounceBusqueda_Tick(sender As Object, e As EventArgs)
+            If _tmrDebounceBusqueda IsNot Nothing Then
+                _tmrDebounceBusqueda.Stop()
+            End If
             CargarTarjetasPlatos()
         End Sub
 
         ''' <summary>
-        ''' Renderiza dinámicamente las tarjetas gastronómicas optimizadas para pantallas táctiles.
+        ''' Renderiza dinámicamente las tarjetas gastronómicas optimizadas para pantallas táctiles y bajo consumo de memoria.
         ''' </summary>
         Private Sub CargarTarjetasPlatos()
             flpCatalogoTarjetas.SuspendLayout()
-            flpCatalogoTarjetas.Controls.Clear()
 
-            Dim dtPlatos As DataTable = PlatoDAO.ObtenerTodos()
+            ' Destruir explícitamente los controles anteriores para liberar GDI y RAM de inmediato
+            ThemeConfig.LimpiarYDestruirControles(flpCatalogoTarjetas)
+
+            If _dtPlatosCache Is Nothing Then
+                _dtPlatosCache = PlatoDAO.ObtenerTodos()
+            End If
+
+            Dim dtPlatos As DataTable = _dtPlatosCache
             If dtPlatos Is Nothing OrElse dtPlatos.Rows.Count = 0 Then
                 flpCatalogoTarjetas.ResumeLayout(True)
                 Return
             End If
 
-            Dim categoriaFiltro As String = cboCategoria.SelectedItem.ToString()
+            Dim categoriaFiltro As String = If(cboCategoria.SelectedItem IsNot Nothing, cboCategoria.SelectedItem.ToString(), "Todas las Categorías")
             Dim busqueda As String = txtBuscarPlato.Text.Trim().ToLowerInvariant()
 
             ' Calcular el ancho óptimo para 3 o 4 columnas táctiles según la resolución

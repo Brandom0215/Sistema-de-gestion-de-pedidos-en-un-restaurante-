@@ -417,5 +417,30 @@ Namespace Theme
             Return pnlStepper
         End Function
 
+        ''' <summary>
+        ''' Libera de forma recursiva y explícita todos los manejadores GDI, controles y recursos
+        ''' de un contenedor antes de vaciarlo, evitando saturación de memoria RAM y congelamientos en PCs de bajos recursos.
+        ''' </summary>
+        Public Sub LimpiarYDestruirControles(contenedor As Control)
+            If contenedor Is Nothing Then Return
+            Try
+                contenedor.SuspendLayout()
+                While contenedor.Controls.Count > 0
+                    Dim ctl = contenedor.Controls(0)
+                    contenedor.Controls.RemoveAt(0)
+                    Try
+                        ' Si el control tiene hijos recursivos
+                        If ctl.HasChildren Then
+                            LimpiarYDestruirControles(ctl)
+                        End If
+                        ctl.Dispose()
+                    Catch
+                    End Try
+                End While
+            Finally
+                contenedor.ResumeLayout(False)
+            End Try
+        End Sub
+
     End Module
 End Namespace
