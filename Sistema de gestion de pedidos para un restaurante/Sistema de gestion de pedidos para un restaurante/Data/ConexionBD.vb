@@ -40,7 +40,7 @@ Namespace Data
         Public Property Host As String
             Get
                 If Not String.IsNullOrWhiteSpace(_hostCustom) Then Return _hostCustom
-                Return ObtenValorConfig("DB_HOST", "10.196.68.15")
+                Return ObtenValorConfig("DB_HOST", "")
             End Get
             Set(value As String)
                 _hostCustom = value
@@ -79,7 +79,7 @@ Namespace Data
         Public Property Usuario As String
             Get
                 If Not String.IsNullOrWhiteSpace(_usuarioCustom) Then Return _usuarioCustom
-                Return ObtenValorConfig("DB_USER", "usuario_restaurante")
+                Return ObtenValorConfig("DB_USER","")
             End Get
             Set(value As String)
                 _usuarioCustom = value
@@ -91,8 +91,8 @@ Namespace Data
         ''' </summary>
         Public Property Clave As String
             Get
-                If Not String.IsNullOrWhiteSpace(_claveCustom) Then Return _claveCustom
-                Return ObtenValorConfig("DB_PASS", "utpcocle15")
+                If Not String.IsNullOrWhiteSace(_claveCustom) Then Return _claveCustom
+                Return ObtenValorConfig("DB_PASS","")
             End Get
             Set(value As String)
                 _claveCustom = value
@@ -105,7 +105,7 @@ Namespace Data
         Public Property TimeoutSegundos As Integer
             Get
                 If _timeoutCustom.HasValue Then Return _timeoutCustom.Value
-                Return ObtenValorEnteroConfig("DB_TIMEOUT", 10)
+                Return ObtenValorEnteroConfig("DB_TIMEOUT",10)
             End Get
             Set(value As Integer)
                 _timeoutCustom = value
