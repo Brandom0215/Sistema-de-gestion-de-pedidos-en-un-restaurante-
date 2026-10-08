@@ -148,14 +148,18 @@ Namespace Views.Catalogo
             Dim disponible As Boolean = chkDisponible.Checked
             Dim descripcion As String = txtDescripcion.Text.Trim()
 
-            Dim exito As Boolean = Data.PlatoDAO.Guardar(nombre, categoria, precioValido, tiempo, disponible, descripcion)
-            If exito Then
-                MostrarMensajeExito($"¡Plato '{nombre}' guardado exitosamente en el catálogo!", "Catálogo Actualizado")
-                LimpiarFormulario()
-                RefrescarGrilla()
-            Else
-                MostrarMensajeError("No se pudo guardar el plato en el catálogo.", "Error")
-            End If
+            Try
+                Dim exito As Boolean = Data.PlatoDAO.Guardar(nombre, categoria, precioValido, tiempo, disponible, descripcion)
+                If exito Then
+                    MostrarMensajeExito($"¡Plato '{nombre}' guardado exitosamente en el catálogo!", "Catálogo Actualizado")
+                    LimpiarFormulario()
+                    RefrescarGrilla()
+                Else
+                    MostrarMensajeError("No se pudo guardar en el servidor: No se insertaron registros.", "Error en Servidor")
+                End If
+            Catch ex As Exception
+                MostrarMensajeError($"No se pudo guardar en el servidor: {ex.Message}", "Error en Servidor")
+            End Try
         End Sub
 
         Private Sub btnActualizarPlato_Click(sender As Object, e As EventArgs) Handles btnActualizarPlato.Click
@@ -181,12 +185,18 @@ Namespace Views.Catalogo
             Dim disponible As Boolean = chkDisponible.Checked
             Dim descripcion As String = txtDescripcion.Text.Trim()
 
-            Dim exito As Boolean = Data.PlatoDAO.Actualizar(_idPlatoSeleccionado, nombre, categoria, precioValido, tiempo, disponible, descripcion)
-            If exito Then
-                MostrarMensajeExito("Plato actualizado exitosamente.", "Catálogo Actualizado")
-                LimpiarFormulario()
-                RefrescarGrilla()
-            End If
+            Try
+                Dim exito As Boolean = Data.PlatoDAO.Actualizar(_idPlatoSeleccionado, nombre, categoria, precioValido, tiempo, disponible, descripcion)
+                If exito Then
+                    MostrarMensajeExito("Plato actualizado exitosamente.", "Catálogo Actualizado")
+                    LimpiarFormulario()
+                    RefrescarGrilla()
+                Else
+                    MostrarMensajeError("No se pudo actualizar en el servidor: Registro no encontrado.", "Error en Servidor")
+                End If
+            Catch ex As Exception
+                MostrarMensajeError($"No se pudo actualizar en el servidor: {ex.Message}", "Error en Servidor")
+            End Try
         End Sub
 
         Private Sub btnEliminarPlato_Click(sender As Object, e As EventArgs) Handles btnEliminarPlato.Click
@@ -196,9 +206,13 @@ Namespace Views.Catalogo
             End If
 
             If ConfirmarAccion("¿Está seguro de eliminar el plato seleccionado del catálogo?", "Confirmar Eliminación") Then
-                Data.PlatoDAO.Eliminar(_idPlatoSeleccionado)
-                LimpiarFormulario()
-                RefrescarGrilla()
+                Try
+                    Data.PlatoDAO.Eliminar(_idPlatoSeleccionado)
+                    LimpiarFormulario()
+                    RefrescarGrilla()
+                Catch ex As Exception
+                    MostrarMensajeError($"No se pudo eliminar en el servidor: {ex.Message}", "Error en Servidor")
+                End Try
             End If
         End Sub
 

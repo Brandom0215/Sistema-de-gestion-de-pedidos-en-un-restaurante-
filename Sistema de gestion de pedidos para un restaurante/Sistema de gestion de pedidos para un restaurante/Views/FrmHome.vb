@@ -34,15 +34,54 @@ Namespace Views
             _nombreUsuario = nombreUsuario
         End Sub
 
+        Private WithEvents _tmrEstadoConexion As Timer
+        Private _probandoConexionHome As Boolean = False
+
         Private Sub FrmHome_Load(sender As Object, e As EventArgs) Handles MyBase.Load
-            ' 1. Configurar estilos visuales y paleta de colores
             AplicarTemaVisual()
-
-            ' 2. Actualizar reloj inicial
             ActualizarRelojSistema()
-
-            ' 3. Configurar sesión y cargar vista inicial (inicia en Módulo Cliente)
             EstablecerSesion(_rolUsuario, _nombreUsuario)
+
+            _tmrEstadoConexion = New Timer() With {.Interval = 5000, .Enabled = True}
+            VerificarConexionBD()
+        End Sub
+
+        Private Sub FrmHome_FormClosed(sender As Object, e As FormClosedEventArgs) Handles MyBase.FormClosed
+            If _tmrEstadoConexion IsNot Nothing Then
+                _tmrEstadoConexion.Stop()
+                _tmrEstadoConexion.Dispose()
+            End If
+        End Sub
+
+        Private Async Sub _tmrEstadoConexion_Tick(sender As Object, e As EventArgs) Handles _tmrEstadoConexion.Tick
+            If Me.DesignMode OrElse System.ComponentModel.LicenseManager.UsageMode = System.ComponentModel.LicenseUsageMode.Designtime Then Return
+            If _probandoConexionHome Then Return
+            _probandoConexionHome = True
+
+            Try
+                Dim diag As String = ""
+                Dim ok As Boolean = Await System.Threading.Tasks.Task.Run(Function() Data.ConexionBD.ProbarConexion(diag))
+                If Not Me.IsDisposed AndAlso Me.IsHandleCreated Then
+                    If ok Then
+                        lblEstadoBaseDatos.Text = $"🟢 Conectado: {Data.ConexionBD.Host}"
+                        lblEstadoBaseDatos.ForeColor = Color.FromArgb(89, 107, 75)
+                    Else
+                        lblEstadoBaseDatos.Text = "🔴 Sin conexión con el servidor"
+                        lblEstadoBaseDatos.ForeColor = Color.FromArgb(198, 40, 40)
+                    End If
+                End If
+            Catch ex As Exception
+                If Not Me.IsDisposed AndAlso Me.IsHandleCreated Then
+                    lblEstadoBaseDatos.Text = "🔴 Sin conexión con el servidor"
+                    lblEstadoBaseDatos.ForeColor = Color.FromArgb(198, 40, 40)
+                End If
+            Finally
+                _probandoConexionHome = False
+            End Try
+        End Sub
+
+        Private Sub VerificarConexionBD()
+            _tmrEstadoConexion_Tick(Nothing, EventArgs.Empty)
         End Sub
 
         ''' <summary>
