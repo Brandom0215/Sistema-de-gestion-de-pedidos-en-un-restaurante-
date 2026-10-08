@@ -129,3 +129,10 @@ INSERT INTO detalle_pedidos (id_pedido, id_plato, cantidad, precio_unitario, aco
 (2, 6, 1, 7.50, 'Chicha de Limón con Raspadura'),
 (3, 7, 1, 8.50, 'Plátano tentación'),
 (4, 1, 2, 3.50, 'Empacado térmico');
+
+-- 5. PERMISOS Y PRIVILEGIOS DE ACCESO PARA USUARIO_RESTAURANTE
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO usuario_restaurante;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO usuario_restaurante;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO usuario_restaurante;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO usuario_restaurante;
+

@@ -23,3 +23,10 @@ UPDATE usuarios SET password_hash = '$2a$11$xEbBe/VLhwp0lxBsHt8oNO.fqQocPfAYL34X
 UPDATE usuarios SET password_hash = '$2a$11$kxFXz7knnzvLj8IKxRd3wujIJgfnYzyepRr48agnbjr.FVMx0V6QW' WHERE nombre_usuario = 'cajero';
 UPDATE usuarios SET password_hash = '$2a$11$LHt4rSFwBCFqPUtLxWBq0OwWTevpuZRaIz5kQbfQSo0CRqaeeg9nS' WHERE nombre_usuario = 'cocina';
 UPDATE usuarios SET password_hash = '$2a$11$Wu1y54G1CYwdmwpITH.3xOsQ71BRbiF0Zewkb5.8Hu8P/BrJK.BVm' WHERE nombre_usuario = 'cliente';
+
+-- 4. PERMISOS Y PRIVILEGIOS DE ACCESO PARA USUARIO_RESTAURANTE
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO usuario_restaurante;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO usuario_restaurante;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO usuario_restaurante;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO usuario_restaurante;
+

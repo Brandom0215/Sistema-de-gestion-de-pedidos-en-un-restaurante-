@@ -375,17 +375,23 @@ Namespace Data
         ''' </summary>
         Public Function EjecutarConsultaDataTable(sql As String, ParamArray parametros() As NpgsqlParameter) As DataTable
             Dim dt As New DataTable()
-            Using conn As NpgsqlConnection = CrearConexion()
-                conn.Open()
-                Using cmd As New NpgsqlCommand(sql, conn)
-                    If parametros IsNot Nothing Then
-                        cmd.Parameters.AddRange(parametros)
-                    End If
-                    Using da As New NpgsqlDataAdapter(cmd)
-                        da.Fill(dt)
+            Try
+                Using conn As NpgsqlConnection = CrearConexion()
+                    conn.Open()
+                    Using cmd As New NpgsqlCommand(sql, conn)
+                        If parametros IsNot Nothing Then
+                            cmd.Parameters.AddRange(parametros)
+                        End If
+                        Using da As New NpgsqlDataAdapter(cmd)
+                            da.Fill(dt)
+                        End Using
                     End Using
                 End Using
-            End Using
+            Catch ex As Exception
+                UltimoMensajeEstado = $"Error SQL: {ex.Message}"
+                Console.WriteLine($"[ERROR POSTGRESQL] {ex.Message}")
+                Throw
+            End Try
             Return dt
         End Function
 
@@ -393,15 +399,21 @@ Namespace Data
         ''' Ejecuta un comando SQL de acción (INSERT, UPDATE, DELETE) en PostgreSQL.
         ''' </summary>
         Public Function EjecutarComando(sql As String, ParamArray parametros() As NpgsqlParameter) As Integer
-            Using conn As NpgsqlConnection = CrearConexion()
-                conn.Open()
-                Using cmd As New NpgsqlCommand(sql, conn)
-                    If parametros IsNot Nothing Then
-                        cmd.Parameters.AddRange(parametros)
-                    End If
-                    Return cmd.ExecuteNonQuery()
+            Try
+                Using conn As NpgsqlConnection = CrearConexion()
+                    conn.Open()
+                    Using cmd As New NpgsqlCommand(sql, conn)
+                        If parametros IsNot Nothing Then
+                            cmd.Parameters.AddRange(parametros)
+                        End If
+                        Return cmd.ExecuteNonQuery()
+                    End Using
                 End Using
-            End Using
+            Catch ex As Exception
+                UltimoMensajeEstado = $"Error SQL: {ex.Message}"
+                Console.WriteLine($"[ERROR POSTGRESQL] {ex.Message}")
+                Throw
+            End Try
         End Function
 
     End Module
