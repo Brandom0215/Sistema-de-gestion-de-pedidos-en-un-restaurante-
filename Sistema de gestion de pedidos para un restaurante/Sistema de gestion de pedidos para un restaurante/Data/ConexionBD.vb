@@ -92,7 +92,7 @@ Namespace Data
         Public Property Clave As String
             Get
                 If Not String.IsNullOrWhiteSpace(_claveCustom) Then Return _claveCustom
-                Return ObtenValorConfig("DB_PASS", "utpcocle15")
+                Return ObtenValorConfig("DB_PASS", "")
             End Get
             Set(value As String)
                 _claveCustom = value
@@ -251,12 +251,12 @@ Namespace Data
         ''' <summary>
         ''' Registra automáticamente que el servidor no respondió y activa el modo local de contingencia.
         ''' </summary>
+        ''' <summary>
+        ''' Registra el error de servidor sin modificar el modo de conexión.
+        ''' </summary>
         Public Sub RegistrarFalloServidor(Optional detalleError As String = "")
-            If _modoConexion <> ModoConexionEnum.ModoLocal Then
-                _modoConexion = ModoConexionEnum.ModoLocal
-                UltimoMensajeEstado = "Servidor no disponible. Operando en modo local."
-                DispararModoConexionCambiado(ModoConexionEnum.ModoLocal)
-            End If
+            UltimoMensajeEstado = "Error de conexión con el servidor PostgreSQL: " & detalleError
+            System.Diagnostics.Debug.WriteLine($"[FALLO POSTGRESQL REGISTRADO] {detalleError}")
         End Sub
 
         ''' <summary>
@@ -274,10 +274,8 @@ Namespace Data
                 DispararModoConexionCambiado(ModoConexionEnum.ServidorPrincipal)
                 Return True
             Else
-                _modoConexion = ModoConexionEnum.ModoLocal
-                UltimoMensajeEstado = "Servidor no disponible. Operando en modo local."
-                mensajeResultado = "El servidor principal aún no está disponible en esta red. El sistema continuará trabajando en modo local para no detener la operación."
-                DispararModoConexionCambiado(ModoConexionEnum.ModoLocal)
+                UltimoMensajeEstado = "Servidor no disponible."
+                mensajeResultado = "El servidor principal aún no está disponible en esta red."
                 Return False
             End If
         End Function
@@ -286,11 +284,7 @@ Namespace Data
         ''' Retorna una descripción clara y breve del estado para mostrar en la interfaz de usuario.
         ''' </summary>
         Public Function ObtenerDescripcionModo() As String
-            If ModoConexion = ModoConexionEnum.ServidorPrincipal Then
-                Return $"🟢 Servidor ({Host})"
-            Else
-                Return "🟡 Modo Local (Sin Conexión)"
-            End If
+            Return $"🟢 Servidor ({Host})"
         End Function
 
         ''' <summary>
@@ -340,30 +334,21 @@ Namespace Data
                 Return True
             Catch ex As Exception
                 mensajeDiagnostico = $"No se pudo contactar el servidor ({Host}:{Puerto}): {ex.Message}"
-                UltimoMensajeEstado = "Servidor no disponible. Operando en modo local."
+                UltimoMensajeEstado = "Servidor no disponible."
                 Console.WriteLine($"[CONEXIÓN POSTGRESQL FALLIDA] Host: {Host}:{Puerto} | Error: {ex.Message}")
                 System.Diagnostics.Debug.WriteLine($"[CONEXIÓN POSTGRESQL FALLIDA] Host: {Host}:{Puerto} | Error: {ex.Message}")
                 Return False
             End Try
         End Function
 
+        Private _estructuraAsegurada As Boolean = False
+
         ''' <summary>
-        ''' Ejecuta parches de estructura en la BD PostgreSQL para garantizar compatibilidad multidispositivo.
+        ''' Ejecuta parches de estructura en la BD PostgreSQL una sola vez al iniciar la app.
         ''' </summary>
         Public Sub AsegurarEstructuraTablas()
-            If Not DebeUsarPostgreSQL() Then Return
-            Try
-                EjecutarComando("ALTER TABLE pedidos DROP CONSTRAINT IF EXISTS pedidos_tipo_servicio_check;")
-            Catch
-            End Try
-            Try
-                EjecutarComando("ALTER TABLE pedidos DROP CONSTRAINT IF EXISTS pedidos_estado_check;")
-            Catch
-            End Try
-            Try
-                EjecutarComando("ALTER TABLE pedidos DROP CONSTRAINT IF EXISTS pedidos_estado_cocina_check;")
-            Catch
-            End Try
+            If _estructuraAsegurada Then Return
+            _estructuraAsegurada = True
             Try
                 EjecutarComando("ALTER TABLE detalle_pedidos ALTER COLUMN id_plato DROP NOT NULL;")
             Catch
@@ -372,30 +357,17 @@ Namespace Data
                 EjecutarComando("ALTER TABLE detalle_pedidos ADD COLUMN IF NOT EXISTS nombre_plato VARCHAR(150);")
             Catch
             End Try
+            Try
+                EjecutarComando("CREATE SEQUENCE IF NOT EXISTS seq_factura START WITH 1001;")
+            Catch
+            End Try
         End Sub
 
-        Private _ultimoIntentoReconexion As DateTime = DateTime.MinValue
-
         ''' <summary>
-        ''' Determina si actualmente se debe intentar operar contra PostgreSQL.
-        ''' Si está en modo local, reintenta automáticamente la conexión al servidor cada 10 segundos.
+        ''' Retorna True indicando que PostgreSQL es la única fuente de verdad.
         ''' </summary>
         Public Function DebeUsarPostgreSQL() As Boolean
-            If ModoConexion = ModoConexionEnum.ServidorPrincipal Then
-                Return True
-            End If
-
-            If (DateTime.Now - _ultimoIntentoReconexion).TotalSeconds >= 10 Then
-                _ultimoIntentoReconexion = DateTime.Now
-                Dim diag As String = ""
-                If ProbarConexion(diag) Then
-                    _modoConexion = ModoConexionEnum.ServidorPrincipal
-                    DispararModoConexionCambiado(ModoConexionEnum.ServidorPrincipal)
-                    Return True
-                End If
-            End If
-
-            Return False
+            Return True
         End Function
 
         ''' <summary>

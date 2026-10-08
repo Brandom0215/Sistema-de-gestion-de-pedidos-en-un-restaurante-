@@ -90,12 +90,11 @@ CREATE INDEX idx_detalle_pedidos_id_plato ON detalle_pedidos(id_plato);
 -- INSERCIÓN DE DATOS INICIALES (GASTRONOMÍA PANAMEÑA AUTÉNTICA)
 -- =============================================================================
 
--- 1. USUARIOS DEL SISTEMA
 INSERT INTO usuarios (nombre_usuario, password_hash, nombre_completo, rol) VALUES
-('admin', 'admin123', 'Administrador General', 'Administrador'),
-('cajero', 'cajero123', 'Cajero de Turno', 'Cajero'),
-('cocina', 'cocina123', 'Jefe de Cocina KDS', 'Cocina'),
-('cliente', 'cliente123', 'Carlos Mendoza', 'Cliente');
+('admin', '$2a$11$xEbBe/VLhwp0lxBsHt8oNO.fqQocPfAYL34Xlxv3TajBycUei0YD.', 'Administrador General', 'Administrador'),
+('cajero', '$2a$11$kxFXz7knnzvLj8IKxRd3wujIJgfnYzyepRr48agnbjr.FVMx0V6QW', 'Cajero de Turno', 'Cajero'),
+('cocina', '$2a$11$LHt4rSFwBCFqPUtLxWBq0OwWTevpuZRaIz5kQbfQSo0CRqaeeg9nS', 'Jefe de Cocina KDS', 'Cocina'),
+('cliente', '$2a$11$Wu1y54G1CYwdmwpITH.3xOsQ71BRbiF0Zewkb5.8Hu8P/BrJK.BVm', 'Carlos Mendoza', 'Cliente');
 
 -- 2. CATEGORÍAS AUTÉNTICAS
 INSERT INTO categorias (nombre_categoria, descripcion) VALUES
