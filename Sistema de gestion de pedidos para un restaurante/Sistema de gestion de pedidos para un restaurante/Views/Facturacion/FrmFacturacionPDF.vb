@@ -43,12 +43,26 @@ Namespace Views.Facturacion
 
         Private Sub FrmFacturacionPDF_Load(sender As Object, e As EventArgs) Handles MyBase.Load
             AplicarTemaVisual()
+            ConfigurarValidacionesEntrada()
             InicializarControlesConexionBD()
             CargarPedidosPagados()
 
             PedidoDAO.SuscribirPedidoModificado(AddressOf OnPedidoActualizadoDesdeDAO)
             PedidoDAO.SuscribirPedidoRegistrado(AddressOf OnPedidoActualizadoDesdeDAO)
             ConexionBD.SuscribirModoConexionCambiado(AddressOf OnModoConexionCambiadoDesdeBD)
+        End Sub
+
+        ''' <summary>
+        ''' Configura validaciones de entrada en tiempo real (KeyPress) y límites de longitud (MaxLength)
+        ''' para los campos fiscales de facturación y búsqueda.
+        ''' </summary>
+        Private Sub ConfigurarValidacionesEntrada()
+            ValidadorEntrada.ConfigurarCampoBusqueda(txtBuscar, 50)
+            ValidadorEntrada.ConfigurarCampoRucCedula(txtRucCedula, 30)
+            ValidadorEntrada.ConfigurarCampoRazonSocial(txtRazonSocial, 100)
+            ValidadorEntrada.ConfigurarCampoTelefono(txtTelefono, 30)
+            ValidadorEntrada.ConfigurarCampoCorreo(txtCorreo, 100)
+            ValidadorEntrada.ConfigurarCampoDireccion(txtDireccion, 200)
         End Sub
 
         Private Sub FrmFacturacionPDF_FormClosed(sender As Object, e As FormClosedEventArgs) Handles MyBase.FormClosed
@@ -652,14 +666,9 @@ Namespace Views.Facturacion
         ' =========================================================================
 
         Private Sub btnEnviarCorreo_Click(sender As Object, e As EventArgs) Handles btnEnviarCorreo.Click
-            If Not ValidarFormulario() Then Return
+            If Not ValidarFormulario(True) Then Return
 
             Dim correoCliente = txtCorreo.Text.Trim()
-            If String.IsNullOrWhiteSpace(correoCliente) OrElse Not correoCliente.Contains("@") OrElse Not correoCliente.Contains(".") Then
-                MessageBox.Show("Por favor, ingrese un correo electrónico válido para enviar la factura (ej: cliente@dominio.com).", "Correo Inválido", MessageBoxButtons.OK, MessageBoxIcon.Warning)
-                txtCorreo.Focus()
-                Return
-            End If
 
             Try
                 Dim rutaArchivo = AsegurarEmisionFactura()
@@ -794,22 +803,36 @@ Namespace Views.Facturacion
             End Try
         End Sub
 
-        Private Function ValidarFormulario() As Boolean
+        Private Function ValidarFormulario(Optional requiereCorreo As Boolean = False) As Boolean
             If _idPedidoSeleccionado <= 0 OrElse _pedidoSeleccionadoRow Is Nothing Then
                 MessageBox.Show("Por favor, seleccione un pedido cobrado de la lista.", "Selección Requerida", MessageBoxButtons.OK, MessageBoxIcon.Warning)
                 Return False
             End If
 
-            If String.IsNullOrWhiteSpace(txtRucCedula.Text) Then
-                MessageBox.Show("Por favor ingrese la cédula o RUC del cliente.", "Datos del Cliente", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+            If Not ValidadorEntrada.EsRucCedulaValida(txtRucCedula.Text) Then
+                MessageBox.Show("Por favor ingrese una cédula o RUC válido (mínimo 3 caracteres, ej: 8-800-1234).", "Cédula / RUC Requerido", MessageBoxButtons.OK, MessageBoxIcon.Warning)
                 txtRucCedula.Focus()
                 Return False
             End If
 
-            If String.IsNullOrWhiteSpace(txtRazonSocial.Text) Then
-                MessageBox.Show("Por favor ingrese el nombre del cliente.", "Datos del Cliente", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+            If Not ValidadorEntrada.EsRazonSocialValida(txtRazonSocial.Text) Then
+                MessageBox.Show("Por favor ingrese el nombre o razón social del cliente.", "Nombre de Cliente Requerido", MessageBoxButtons.OK, MessageBoxIcon.Warning)
                 txtRazonSocial.Focus()
                 Return False
+            End If
+
+            If Not String.IsNullOrWhiteSpace(txtTelefono.Text) AndAlso Not ValidadorEntrada.EsTelefonoValido(txtTelefono.Text, True) Then
+                MessageBox.Show("El teléfono ingresado no tiene un formato válido (debe contener entre 7 y 15 dígitos numéricos).", "Teléfono Inválido", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                txtTelefono.Focus()
+                Return False
+            End If
+
+            If requiereCorreo OrElse Not String.IsNullOrWhiteSpace(txtCorreo.Text) Then
+                If Not ValidadorEntrada.EsCorreoValido(txtCorreo.Text) Then
+                    MessageBox.Show("Por favor ingrese un correo electrónico válido (ej: cliente@dominio.com).", "Correo Inválido", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                    txtCorreo.Focus()
+                    Return False
+                End If
             End If
 
             Return True

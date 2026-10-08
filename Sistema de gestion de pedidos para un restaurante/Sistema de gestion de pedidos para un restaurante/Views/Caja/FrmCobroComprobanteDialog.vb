@@ -32,7 +32,19 @@ Namespace Views.Caja
 
         Private Sub FrmCobroComprobanteDialog_Load(sender As Object, e As EventArgs) Handles MyBase.Load
             AplicarTemaVisual()
+            ConfigurarValidacionesEntrada()
             CargarDatosPedido()
+        End Sub
+
+        ''' <summary>
+        ''' Configura validaciones en tiempo real y límites de caracteres según las columnas de la BD.
+        ''' </summary>
+        Private Sub ConfigurarValidacionesEntrada()
+            ValidadorEntrada.ConfigurarCampoRucCedula(txtRucCedula, 30)
+            ValidadorEntrada.ConfigurarCampoRazonSocial(txtRazonSocial, 100)
+            ValidadorEntrada.ConfigurarCampoTelefono(txtTelefono, 30)
+            ValidadorEntrada.ConfigurarCampoCorreo(txtCorreo, 100)
+            ValidadorEntrada.ConfigurarCampoDireccion(txtDireccion, 200)
         End Sub
 
         Private Sub AplicarTemaVisual()
@@ -138,11 +150,41 @@ Namespace Views.Caja
             Return rutaArchivo
         End Function
 
-        Private Sub btnImprimirTicket_Click(sender As Object, e As EventArgs) Handles btnImprimirTicket.Click
-            If String.IsNullOrWhiteSpace(txtRucCedula.Text) OrElse String.IsNullOrWhiteSpace(txtRazonSocial.Text) Then
-                MessageBox.Show("Por favor indique el nombre y la cédula o RUC del cliente.", "Datos del Cliente", MessageBoxButtons.OK, MessageBoxIcon.Warning)
-                Return
+        ''' <summary>
+        ''' Realiza validaciones lógicas de los datos del cliente antes de emitir o despachar el comprobante.
+        ''' </summary>
+        Private Function ValidarDatosFiscales(requiereCorreo As Boolean) As Boolean
+            If Not ValidadorEntrada.EsRucCedulaValida(txtRucCedula.Text) Then
+                MessageBox.Show("Por favor indique una cédula o RUC válido (mínimo 3 caracteres, ej: 8-800-1234).", "Cédula / RUC Requerido", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                txtRucCedula.Focus()
+                Return False
             End If
+
+            If Not ValidadorEntrada.EsRazonSocialValida(txtRazonSocial.Text) Then
+                MessageBox.Show("Por favor indique el nombre o razón social del cliente.", "Nombre de Cliente Requerido", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                txtRazonSocial.Focus()
+                Return False
+            End If
+
+            If Not String.IsNullOrWhiteSpace(txtTelefono.Text) AndAlso Not ValidadorEntrada.EsTelefonoValido(txtTelefono.Text, True) Then
+                MessageBox.Show("El teléfono ingresado no tiene un formato válido (debe contener entre 7 y 15 dígitos numéricos).", "Teléfono Inválido", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                txtTelefono.Focus()
+                Return False
+            End If
+
+            If requiereCorreo OrElse Not String.IsNullOrWhiteSpace(txtCorreo.Text) Then
+                If Not ValidadorEntrada.EsCorreoValido(txtCorreo.Text) Then
+                    MessageBox.Show("Por favor indique una dirección de correo electrónico válida (ej: cliente@dominio.com).", "Correo Inválido", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                    txtCorreo.Focus()
+                    Return False
+                End If
+            End If
+
+            Return True
+        End Function
+
+        Private Sub btnImprimirTicket_Click(sender As Object, e As EventArgs) Handles btnImprimirTicket.Click
+            If Not ValidarDatosFiscales(False) Then Return
 
             Try
                 AsegurarEmisionFactura()
@@ -250,12 +292,9 @@ Namespace Views.Caja
         End Sub
 
         Private Sub btnEnviarCorreo_Click(sender As Object, e As EventArgs) Handles btnEnviarCorreo.Click
+            If Not ValidarDatosFiscales(True) Then Return
+
             Dim correoDestino = txtCorreo.Text.Trim()
-            If String.IsNullOrWhiteSpace(correoDestino) OrElse Not correoDestino.Contains("@") Then
-                MessageBox.Show("Por favor indique una dirección de correo electrónico válida para el cliente.", "Correo Requerido", MessageBoxButtons.OK, MessageBoxIcon.Warning)
-                txtCorreo.Focus()
-                Return
-            End If
 
             Try
                 Dim rutaArchivo = AsegurarEmisionFactura()

@@ -4,6 +4,7 @@ Imports System.Drawing
 Imports System.Globalization
 Imports System.Windows.Forms
 Imports Sistema_de_gestion_de_pedidos_para_un_restaurante.Data
+Imports Sistema_de_gestion_de_pedidos_para_un_restaurante.Services
 Imports Sistema_de_gestion_de_pedidos_para_un_restaurante.Theme
 
 Namespace Views.Caja
@@ -31,6 +32,7 @@ Namespace Views.Caja
 
         Private Sub FrmCajaCobros_Load(sender As Object, e As EventArgs) Handles MyBase.Load
             AplicarTemaVisual()
+            ConfigurarValidacionesEntrada()
             InicializarControlesConexionBD()
             VerificarConexionAutomatica()
             CargarPedidosPendientes()
@@ -40,6 +42,14 @@ Namespace Views.Caja
             PedidoDAO.SuscribirPedidoModificado(AddressOf OnPedidoActualizadoDesdeDAO)
 
             _tmrAutoRefresh = New Timer() With {.Interval = 3000, .Enabled = True}
+        End Sub
+
+        ''' <summary>
+        ''' Configura validaciones en tiempo real y límites de longitud para evitar desbordamientos y caracteres inválidos.
+        ''' </summary>
+        Private Sub ConfigurarValidacionesEntrada()
+            ValidadorEntrada.ConfigurarCampoBusqueda(txtBuscar, 50)
+            ValidadorEntrada.ConfigurarCampoMoneda(txtMontoRecibido, 11, 8, 2)
         End Sub
 
         Private Sub _tmrAutoRefresh_Tick(sender As Object, e As EventArgs) Handles _tmrAutoRefresh.Tick
@@ -435,9 +445,7 @@ Namespace Views.Caja
             End If
 
             Dim montoRecibido As Decimal
-            If Decimal.TryParse(montoStr, NumberStyles.Any, CultureInfo.CurrentCulture, montoRecibido) OrElse
-               Decimal.TryParse(montoStr, NumberStyles.Any, CultureInfo.InvariantCulture, montoRecibido) Then
-
+            If ValidadorEntrada.EsMontoValido(montoStr, montoRecibido, 0.00D, 999999.99D) Then
                 Dim cambio As Decimal = montoRecibido - _totalAPagar
                 If cambio >= 0 Then
                     lblCambioValor.Text = $"${cambio:N2}"
@@ -474,9 +482,8 @@ Namespace Views.Caja
                     Return
                 End If
 
-                If Not (Decimal.TryParse(montoStr, NumberStyles.Any, CultureInfo.CurrentCulture, montoRecibido) OrElse
-                        Decimal.TryParse(montoStr, NumberStyles.Any, CultureInfo.InvariantCulture, montoRecibido)) Then
-                    MessageBox.Show("El valor ingresado no es válido. Escriba un monto correcto.", "Monto no válido", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                If Not ValidadorEntrada.EsMontoValido(montoStr, montoRecibido, 0.01D, 999999.99D) Then
+                    MessageBox.Show("El valor ingresado no es válido. Escriba un monto numérico correcto (ej: 15.50).", "Monto no válido", MessageBoxButtons.OK, MessageBoxIcon.Warning)
                     txtMontoRecibido.Focus()
                     Return
                 End If
