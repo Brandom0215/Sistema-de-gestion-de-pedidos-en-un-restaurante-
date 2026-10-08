@@ -17,10 +17,54 @@ Namespace Views.Catalogo
             InitializeComponent()
         End Sub
 
+        Private WithEvents _tmrAutoRefresh As Timer
+        Private _refrescandoCatalogo As Boolean = False
+
         Private Sub FrmCatalogo_Load(sender As Object, e As EventArgs) Handles MyBase.Load
             AplicarTemaVisual()
             CargarCategorias()
             RefrescarGrilla()
+
+            _tmrAutoRefresh = New Timer() With {.Interval = 3000, .Enabled = True}
+        End Sub
+
+        Private Sub FrmCatalogo_FormClosed(sender As Object, e As FormClosedEventArgs) Handles MyBase.FormClosed
+            If _tmrAutoRefresh IsNot Nothing Then
+                _tmrAutoRefresh.Stop()
+                _tmrAutoRefresh.Dispose()
+            End If
+        End Sub
+
+        Private Async Sub _tmrAutoRefresh_Tick(sender As Object, e As EventArgs) Handles _tmrAutoRefresh.Tick
+            If Me.DesignMode OrElse System.ComponentModel.LicenseManager.UsageMode = System.ComponentModel.LicenseUsageMode.Designtime Then Return
+            If _refrescandoCatalogo Then Return
+            _refrescandoCatalogo = True
+
+            Try
+                Dim dt = Await System.Threading.Tasks.Task.Run(Function() Data.PlatoDAO.ObtenerTodos())
+                If Not Me.IsDisposed AndAlso Me.IsHandleCreated Then
+                    Dim intScrollRow As Integer = If(dgvCatalogo.FirstDisplayedScrollingRowIndex >= 0, dgvCatalogo.FirstDisplayedScrollingRowIndex, 0)
+                    Dim intSelectedId As Integer = _idPlatoSeleccionado
+
+                    dgvCatalogo.DataSource = dt
+                    If dgvCatalogo.Columns.Contains("Precio") Then
+                        dgvCatalogo.Columns("Precio").DefaultCellStyle.Format = "C2"
+                    End If
+
+                    If intScrollRow < dgvCatalogo.Rows.Count Then
+                        dgvCatalogo.FirstDisplayedScrollingRowIndex = intScrollRow
+                    End If
+                    For Each row As DataGridViewRow In dgvCatalogo.Rows
+                        If Convert.ToInt32(row.Cells("ID").Value) = intSelectedId Then
+                            row.Selected = True
+                            Exit For
+                        End If
+                    Next
+                End If
+            Catch ex As Exception
+            Finally
+                _refrescandoCatalogo = False
+            End Try
         End Sub
 
         ' =========================================================================
