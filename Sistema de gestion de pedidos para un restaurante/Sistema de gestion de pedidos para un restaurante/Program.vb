@@ -5,7 +5,7 @@ Imports Sistema_de_gestion_de_pedidos_para_un_restaurante.Views
 Namespace Global.Sistema_de_gestion_de_pedidos_para_un_restaurante
     ''' <summary>
     ''' Punto de entrada principal público para la aplicación WinForms en .NET.
-    ''' Inicia directamente en el Módulo del Cliente (Menú Digital / Autoservicio sin login previo).
+    ''' Inicia en la pantalla de autenticación Login.
     ''' </summary>
     Public Module Program
         <STAThread>
@@ -13,19 +13,11 @@ Namespace Global.Sistema_de_gestion_de_pedidos_para_un_restaurante
             Application.EnableVisualStyles()
             Application.SetCompatibleTextRenderingDefault(False)
 
-            ' Diagnóstico inicial de conexión al servidor
             Dim diagMsg As String = ""
             Dim esExitoso As Boolean = Data.ConexionBD.ProbarConexion(diagMsg)
-            Console.WriteLine("==================================================================")
-            Console.WriteLine($"[DIAGNÓSTICO INICIAL] {diagMsg}")
-            Console.WriteLine("==================================================================")
+            Console.WriteLine($"[DIAGNÓSTICO POSTGRESQL] {diagMsg}")
 
-            ' Si la conexión falla, mostrar una alerta clara al usuario/compañero en pantalla
-            If Not esExitoso Then
-                MessageBox.Show($"Atención de Conexión al Servidor PostgreSQL:{Environment.NewLine}{Environment.NewLine}{diagMsg}{Environment.NewLine}{Environment.NewLine}El sistema continuará funcionando en Modo Local de contingencia.", "Estado de Red - Restaurante El Buen Sazón", MessageBoxButtons.OK, MessageBoxIcon.Warning)
-            End If
-
-            Application.Run(New FrmHome("📲 Cliente (Autoatención)", "Invitado"))
+            Application.Run(New Auth.FrmLogin())
         End Sub
 
     End Module
