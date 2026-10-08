@@ -194,6 +194,7 @@ Namespace Views.Facturacion
             '
             Me.txtBuscar.Font = New System.Drawing.Font("Segoe UI", 12.0F)
             Me.txtBuscar.Location = New System.Drawing.Point(114, 6)
+            Me.txtBuscar.MaxLength = 50
             Me.txtBuscar.Name = "txtBuscar"
             Me.txtBuscar.Size = New System.Drawing.Size(180, 29)
             Me.txtBuscar.TabIndex = 1
@@ -275,6 +276,7 @@ Namespace Views.Facturacion
             '
             Me.txtRucCedula.Font = New System.Drawing.Font("Segoe UI", 11.0F)
             Me.txtRucCedula.Location = New System.Drawing.Point(145, 26)
+            Me.txtRucCedula.MaxLength = 30
             Me.txtRucCedula.Name = "txtRucCedula"
             Me.txtRucCedula.Size = New System.Drawing.Size(180, 27)
             Me.txtRucCedula.TabIndex = 1
@@ -295,6 +297,7 @@ Namespace Views.Facturacion
             Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
             Me.txtRazonSocial.Font = New System.Drawing.Font("Segoe UI", 11.0F)
             Me.txtRazonSocial.Location = New System.Drawing.Point(145, 61)
+            Me.txtRazonSocial.MaxLength = 40
             Me.txtRazonSocial.Name = "txtRazonSocial"
             Me.txtRazonSocial.Size = New System.Drawing.Size(380, 27)
             Me.txtRazonSocial.TabIndex = 3
@@ -313,6 +316,7 @@ Namespace Views.Facturacion
             '
             Me.txtTelefono.Font = New System.Drawing.Font("Segoe UI", 11.0F)
             Me.txtTelefono.Location = New System.Drawing.Point(145, 96)
+            Me.txtTelefono.MaxLength = 30
             Me.txtTelefono.Name = "txtTelefono"
             Me.txtTelefono.Size = New System.Drawing.Size(180, 27)
             Me.txtTelefono.TabIndex = 5
@@ -333,6 +337,7 @@ Namespace Views.Facturacion
             Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
             Me.txtCorreo.Font = New System.Drawing.Font("Segoe UI", 11.0F)
             Me.txtCorreo.Location = New System.Drawing.Point(145, 131)
+            Me.txtCorreo.MaxLength = 100
             Me.txtCorreo.Name = "txtCorreo"
             Me.txtCorreo.Size = New System.Drawing.Size(380, 27)
             Me.txtCorreo.TabIndex = 7
@@ -352,6 +357,7 @@ Namespace Views.Facturacion
             Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
             Me.txtDireccion.Font = New System.Drawing.Font("Segoe UI", 11.0F)
             Me.txtDireccion.Location = New System.Drawing.Point(145, 166)
+            Me.txtDireccion.MaxLength = 80
             Me.txtDireccion.Name = "txtDireccion"
             Me.txtDireccion.Size = New System.Drawing.Size(380, 27)
             Me.txtDireccion.TabIndex = 9

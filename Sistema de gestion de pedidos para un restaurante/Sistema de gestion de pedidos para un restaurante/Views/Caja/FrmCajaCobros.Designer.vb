@@ -351,6 +351,7 @@ Namespace Views.Caja
             ' txtMontoRecibido
             Me.txtMontoRecibido.Font = New System.Drawing.Font("Segoe UI", 16.0F, System.Drawing.FontStyle.Bold)
             Me.txtMontoRecibido.Location = New System.Drawing.Point(180, 10)
+            Me.txtMontoRecibido.MaxLength = 11
             Me.txtMontoRecibido.Name = "txtMontoRecibido"
             Me.txtMontoRecibido.Size = New System.Drawing.Size(235, 36)
             Me.txtMontoRecibido.TabIndex = 1
@@ -430,6 +431,7 @@ Namespace Views.Caja
             ' txtBuscar
             Me.txtBuscar.Font = New System.Drawing.Font("Segoe UI", 14.0F)
             Me.txtBuscar.Location = New System.Drawing.Point(125, 12)
+            Me.txtBuscar.MaxLength = 50
             Me.txtBuscar.Name = "txtBuscar"
             Me.txtBuscar.Size = New System.Drawing.Size(220, 32)
             Me.txtBuscar.TabIndex = 1

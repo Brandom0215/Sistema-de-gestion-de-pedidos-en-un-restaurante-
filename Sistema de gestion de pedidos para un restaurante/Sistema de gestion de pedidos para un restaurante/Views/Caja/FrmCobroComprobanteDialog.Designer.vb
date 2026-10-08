@@ -495,6 +495,7 @@ Namespace Views.Caja
             Me.txtDireccion.Dock = System.Windows.Forms.DockStyle.Top
             Me.txtDireccion.Font = New System.Drawing.Font("Segoe UI", 9.0F)
             Me.txtDireccion.Location = New System.Drawing.Point(12, 260)
+            Me.txtDireccion.MaxLength = 80
             Me.txtDireccion.Name = "txtDireccion"
             Me.txtDireccion.Size = New System.Drawing.Size(392, 23)
             Me.txtDireccion.TabIndex = 9
@@ -517,6 +518,7 @@ Namespace Views.Caja
             Me.txtCorreo.Dock = System.Windows.Forms.DockStyle.Top
             Me.txtCorreo.Font = New System.Drawing.Font("Segoe UI", 9.0F)
             Me.txtCorreo.Location = New System.Drawing.Point(12, 218)
+            Me.txtCorreo.MaxLength = 100
             Me.txtCorreo.Name = "txtCorreo"
             Me.txtCorreo.Size = New System.Drawing.Size(392, 23)
             Me.txtCorreo.TabIndex = 7
@@ -539,6 +541,7 @@ Namespace Views.Caja
             Me.txtTelefono.Dock = System.Windows.Forms.DockStyle.Top
             Me.txtTelefono.Font = New System.Drawing.Font("Segoe UI", 9.0F)
             Me.txtTelefono.Location = New System.Drawing.Point(12, 176)
+            Me.txtTelefono.MaxLength = 30
             Me.txtTelefono.Name = "txtTelefono"
             Me.txtTelefono.Size = New System.Drawing.Size(392, 23)
             Me.txtTelefono.TabIndex = 5
@@ -561,6 +564,7 @@ Namespace Views.Caja
             Me.txtRazonSocial.Dock = System.Windows.Forms.DockStyle.Top
             Me.txtRazonSocial.Font = New System.Drawing.Font("Segoe UI", 9.0F)
             Me.txtRazonSocial.Location = New System.Drawing.Point(12, 94)
+            Me.txtRazonSocial.MaxLength = 40
             Me.txtRazonSocial.Name = "txtRazonSocial"
             Me.txtRazonSocial.Size = New System.Drawing.Size(392, 23)
             Me.txtRazonSocial.TabIndex = 3
@@ -583,6 +587,7 @@ Namespace Views.Caja
             Me.txtRucCedula.Dock = System.Windows.Forms.DockStyle.Top
             Me.txtRucCedula.Font = New System.Drawing.Font("Segoe UI", 9.0F)
             Me.txtRucCedula.Location = New System.Drawing.Point(12, 43)
+            Me.txtRucCedula.MaxLength = 30
             Me.txtRucCedula.Name = "txtRucCedula"
             Me.txtRucCedula.Size = New System.Drawing.Size(392, 23)
             Me.txtRucCedula.TabIndex = 1
