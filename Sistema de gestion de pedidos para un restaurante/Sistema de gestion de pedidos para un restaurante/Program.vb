@@ -17,7 +17,7 @@ Namespace Global.Sistema_de_gestion_de_pedidos_para_un_restaurante
             Dim esExitoso As Boolean = Data.ConexionBD.ProbarConexion(diagMsg)
             Console.WriteLine($"[DIAGNÓSTICO POSTGRESQL] {diagMsg}")
 
-            Application.Run(New Auth.FrmLogin())
+            Application.Run(New FrmHome("📲 Cliente (Autoatención)", "Invitado"))
         End Sub
 
     End Module
