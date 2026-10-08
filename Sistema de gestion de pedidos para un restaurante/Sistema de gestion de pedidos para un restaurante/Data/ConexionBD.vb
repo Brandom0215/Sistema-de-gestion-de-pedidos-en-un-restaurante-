@@ -92,7 +92,7 @@ Namespace Data
         Public Property Clave As String
             Get
                 If Not String.IsNullOrWhiteSpace(_claveCustom) Then Return _claveCustom
-                Return ObtenValorConfig("DB_PASS", "")
+                Return ObtenValorConfig("DB_PASS", "utpcocle15")
             End Get
             Set(value As String)
                 _claveCustom = value
@@ -130,9 +130,9 @@ Namespace Data
 
             If Not String.IsNullOrWhiteSpace(dirBase) Then
                 posiblesRutas.Add(IO.Path.Combine(dirBase, ".env"))
-                ' Buscar hasta 5 niveles arriba (para salir de bin/Debug/net10.0-windows)
+                ' Buscar hasta 7 niveles arriba (para salir de bin/Debug/net10.0-windows y llegar a la raiz)
                 Dim dirPadre As IO.DirectoryInfo = IO.Directory.GetParent(dirBase)
-                For i As Integer = 1 To 5
+                For i As Integer = 1 To 7
                     If dirPadre IsNot Nothing Then
                         posiblesRutas.Add(IO.Path.Combine(dirPadre.FullName, ".env"))
                         dirPadre = dirPadre.Parent
