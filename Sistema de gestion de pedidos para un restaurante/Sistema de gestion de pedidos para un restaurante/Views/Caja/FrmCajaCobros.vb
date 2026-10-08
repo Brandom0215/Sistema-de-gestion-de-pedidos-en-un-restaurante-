@@ -19,6 +19,7 @@ Namespace Views.Caja
         Private _totalAPagar As Decimal = 0D
         Private _subtotalGravable As Decimal = 0D
         Private _impuestoCalculado As Decimal = 0D
+        Private _cargandoGrilla As Boolean = False
 
         ' Indicador visual de estado de conexión al servidor
         Private _btnBadgeConexion As Button
@@ -53,6 +54,11 @@ Namespace Views.Caja
         End Sub
 
         Private Sub _tmrAutoRefresh_Tick(sender As Object, e As EventArgs) Handles _tmrAutoRefresh.Tick
+            ' Evitar refrescar y borrar datos si el cajero está tipeando o ya ingresó dinero recibido
+            If txtMontoRecibido.Focused OrElse Not String.IsNullOrWhiteSpace(txtMontoRecibido.Text) Then
+                Return
+            End If
+
             Try
                 CargarPedidosPendientes()
             Catch
@@ -284,91 +290,131 @@ Namespace Views.Caja
                     End If
                 End If
 
-                dgvPedidosPendientes.DataSource = vista
-                lblTotalPendientes.Text = $"Pedidos pendientes de cobro: {vista.Count}"
+                Dim idSeleccionadoPrevio As Integer = _idPedidoSeleccionado
+                _cargandoGrilla = True
+                Try
+                    dgvPedidosPendientes.DataSource = vista
+                    lblTotalPendientes.Text = $"Pedidos pendientes de cobro: {vista.Count}"
 
-                If dgvPedidosPendientes.Columns.Count > 0 Then
-                    dgvPedidosPendientes.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill
+                    If dgvPedidosPendientes.Columns.Count > 0 Then
+                        dgvPedidosPendientes.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill
 
-                    Dim columnasVisibles = New HashSet(Of String) From {"ID", "Cliente", "Mesa", "PlatoPrincipal", "EstadoCocina", "FechaHora", "Total"}
-                    For Each col As DataGridViewColumn In dgvPedidosPendientes.Columns
-                        If Not columnasVisibles.Contains(col.Name) Then
-                            col.Visible = False
+                        Dim columnasVisibles = New HashSet(Of String) From {"ID", "Cliente", "Mesa", "PlatoPrincipal", "EstadoCocina", "FechaHora", "Total"}
+                        For Each col As DataGridViewColumn In dgvPedidosPendientes.Columns
+                            If Not columnasVisibles.Contains(col.Name) Then
+                                col.Visible = False
+                            End If
+                        Next
+
+                        If dgvPedidosPendientes.Columns.Contains("ID") Then
+                            With dgvPedidosPendientes.Columns("ID")
+                                .HeaderText = "ID"
+                                .FillWeight = 8
+                                .MinimumWidth = 45
+                                .DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter
+                                .DisplayIndex = 0
+                            End With
                         End If
-                    Next
+                        If dgvPedidosPendientes.Columns.Contains("Cliente") Then
+                            With dgvPedidosPendientes.Columns("Cliente")
+                                .HeaderText = "Cliente"
+                                .FillWeight = 22
+                                .MinimumWidth = 100
+                                .DisplayIndex = 1
+                            End With
+                        End If
+                        If dgvPedidosPendientes.Columns.Contains("Mesa") Then
+                            With dgvPedidosPendientes.Columns("Mesa")
+                                .HeaderText = "Mesa / Servicio"
+                                .FillWeight = 16
+                                .MinimumWidth = 90
+                                .DisplayIndex = 2
+                            End With
+                        End If
+                        If dgvPedidosPendientes.Columns.Contains("PlatoPrincipal") Then
+                            With dgvPedidosPendientes.Columns("PlatoPrincipal")
+                                .HeaderText = "Pedido / Consumo"
+                                .FillWeight = 24
+                                .MinimumWidth = 110
+                                .DisplayIndex = 3
+                            End With
+                        End If
+                        If dgvPedidosPendientes.Columns.Contains("EstadoCocina") Then
+                            With dgvPedidosPendientes.Columns("EstadoCocina")
+                                .HeaderText = "Cocina"
+                                .FillWeight = 14
+                                .MinimumWidth = 85
+                                .DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter
+                                .DisplayIndex = 4
+                            End With
+                        End If
+                        If dgvPedidosPendientes.Columns.Contains("FechaHora") Then
+                            With dgvPedidosPendientes.Columns("FechaHora")
+                                .HeaderText = "Hora"
+                                .FillWeight = 10
+                                .MinimumWidth = 65
+                                .DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter
+                                .DisplayIndex = 5
+                            End With
+                        End If
+                        If dgvPedidosPendientes.Columns.Contains("Total") Then
+                            With dgvPedidosPendientes.Columns("Total")
+                                .HeaderText = "Total"
+                                .DefaultCellStyle.Format = "C2"
+                                .DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight
+                                .FillWeight = 10
+                                .MinimumWidth = 75
+                                .DisplayIndex = 6
+                            End With
+                        End If
+                    End If
 
-                    If dgvPedidosPendientes.Columns.Contains("ID") Then
-                        With dgvPedidosPendientes.Columns("ID")
-                            .HeaderText = "ID"
-                            .FillWeight = 8
-                            .MinimumWidth = 45
-                            .DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter
-                            .DisplayIndex = 0
-                        End With
-                    End If
-                    If dgvPedidosPendientes.Columns.Contains("Cliente") Then
-                        With dgvPedidosPendientes.Columns("Cliente")
-                            .HeaderText = "Cliente"
-                            .FillWeight = 22
-                            .MinimumWidth = 100
-                            .DisplayIndex = 1
-                        End With
-                    End If
-                    If dgvPedidosPendientes.Columns.Contains("Mesa") Then
-                        With dgvPedidosPendientes.Columns("Mesa")
-                            .HeaderText = "Mesa / Servicio"
-                            .FillWeight = 16
-                            .MinimumWidth = 90
-                            .DisplayIndex = 2
-                        End With
-                    End If
-                    If dgvPedidosPendientes.Columns.Contains("PlatoPrincipal") Then
-                        With dgvPedidosPendientes.Columns("PlatoPrincipal")
-                            .HeaderText = "Pedido / Consumo"
-                            .FillWeight = 24
-                            .MinimumWidth = 110
-                            .DisplayIndex = 3
-                        End With
-                    End If
-                    If dgvPedidosPendientes.Columns.Contains("EstadoCocina") Then
-                        With dgvPedidosPendientes.Columns("EstadoCocina")
-                            .HeaderText = "Cocina"
-                            .FillWeight = 14
-                            .MinimumWidth = 85
-                            .DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter
-                            .DisplayIndex = 4
-                        End With
-                    End If
-                    If dgvPedidosPendientes.Columns.Contains("FechaHora") Then
-                        With dgvPedidosPendientes.Columns("FechaHora")
-                            .HeaderText = "Hora"
-                            .FillWeight = 10
-                            .MinimumWidth = 65
-                            .DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter
-                            .DisplayIndex = 5
-                        End With
-                    End If
-                    If dgvPedidosPendientes.Columns.Contains("Total") Then
-                        With dgvPedidosPendientes.Columns("Total")
-                            .HeaderText = "Total"
-                            .DefaultCellStyle.Format = "C2"
-                            .DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight
-                            .FillWeight = 10
-                            .MinimumWidth = 75
-                            .DisplayIndex = 6
-                        End With
-                    End If
-                End If
+                    ' Restaurar la selección si el pedido previo continúa, o seleccionar automáticamente la siguiente comanda pendiente
+                    If dgvPedidosPendientes.Rows.Count > 0 Then
+                        Dim filaSeleccionar As DataGridViewRow = Nothing
+                        If idSeleccionadoPrevio > 0 Then
+                            For Each r As DataGridViewRow In dgvPedidosPendientes.Rows
+                                If r.Cells("ID").Value IsNot Nothing AndAlso Convert.ToInt32(r.Cells("ID").Value) = idSeleccionadoPrevio Then
+                                    filaSeleccionar = r
+                                    Exit For
+                                End If
+                            Next
+                        End If
 
-                If vista.Count = 0 Then
-                    LimpiarDetalle()
-                End If
+                        If filaSeleccionar Is Nothing Then
+                            filaSeleccionar = dgvPedidosPendientes.Rows(0)
+                        End If
+
+                        dgvPedidosPendientes.ClearSelection()
+                        filaSeleccionar.Selected = True
+                        For Each c As DataGridViewCell In filaSeleccionar.Cells
+                            If c.Visible Then
+                                dgvPedidosPendientes.CurrentCell = c
+                                Exit For
+                            End If
+                        Next
+
+                        CargarDatosPedidoSeleccionado(filaSeleccionar)
+                    Else
+                        LimpiarDetalle()
+                    End If
+                Finally
+                    _cargandoGrilla = False
+                End Try
             Catch ex As Exception
                 MessageBox.Show($"Ocurrió un error al cargar las comandas pendientes: {ex.Message}", "Error en Caja", MessageBoxButtons.OK, MessageBoxIcon.Error)
             End Try
         End Sub
 
+        Private Sub dgvPedidosPendientes_CellClick(sender As Object, e As DataGridViewCellEventArgs) Handles dgvPedidosPendientes.CellClick
+            If e.RowIndex >= 0 AndAlso e.RowIndex < dgvPedidosPendientes.Rows.Count Then
+                Dim row = dgvPedidosPendientes.Rows(e.RowIndex)
+                CargarDatosPedidoSeleccionado(row)
+            End If
+        End Sub
+
         Private Sub dgvPedidosPendientes_SelectionChanged(sender As Object, e As EventArgs) Handles dgvPedidosPendientes.SelectionChanged
+            If _cargandoGrilla Then Return
             If dgvPedidosPendientes.SelectedRows.Count > 0 Then
                 Dim row = dgvPedidosPendientes.SelectedRows(0)
                 CargarDatosPedidoSeleccionado(row)
@@ -377,7 +423,10 @@ Namespace Views.Caja
 
         Private Sub CargarDatosPedidoSeleccionado(row As DataGridViewRow)
             Try
-                _idPedidoSeleccionado = Convert.ToInt32(row.Cells("ID").Value)
+                Dim idNuevo As Integer = Convert.ToInt32(row.Cells("ID").Value)
+                Dim esMismoPedido As Boolean = (idNuevo = _idPedidoSeleccionado AndAlso _idPedidoSeleccionado > 0)
+                _idPedidoSeleccionado = idNuevo
+
                 Dim cliente As String = row.Cells("Cliente").Value.ToString()
                 Dim mesa As String = row.Cells("Mesa").Value.ToString()
                 Dim servicio As String = If(row.Cells("TipoServicio").Value IsNot Nothing, row.Cells("TipoServicio").Value.ToString(), "En Mesa")
@@ -407,7 +456,10 @@ Namespace Views.Caja
                 lblImpuestoValor.Text = $"${_impuestoCalculado:N2}"
                 lblTotalValor.Text = $"${_totalAPagar:N2}"
 
-                ActualizarModoPago()
+                ' Solo reiniciar los campos de cobro si se hizo clic en un pedido DIFERENTE
+                If Not esMismoPedido Then
+                    ActualizarModoPago()
+                End If
             Catch ex As Exception
                 LimpiarDetalle()
             End Try
@@ -531,6 +583,9 @@ Namespace Views.Caja
                             dlg.ShowDialog(Me)
                         End Using
                     End If
+
+                    ' Garantizar refresco completo y selección inmediata del siguiente cliente al regresar a Caja
+                    CargarPedidosPendientes()
                 Else
                     MostrarMensajeError("No se pudo actualizar el estado del pedido.", "Error al cobrar")
                 End If

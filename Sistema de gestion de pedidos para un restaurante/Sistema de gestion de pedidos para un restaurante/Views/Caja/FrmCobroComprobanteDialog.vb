@@ -41,10 +41,10 @@ Namespace Views.Caja
         ''' </summary>
         Private Sub ConfigurarValidacionesEntrada()
             ValidadorEntrada.ConfigurarCampoRucCedula(txtRucCedula, 30)
-            ValidadorEntrada.ConfigurarCampoRazonSocial(txtRazonSocial, 100)
+            ValidadorEntrada.ConfigurarCampoRazonSocial(txtRazonSocial, 40)
             ValidadorEntrada.ConfigurarCampoTelefono(txtTelefono, 30)
             ValidadorEntrada.ConfigurarCampoCorreo(txtCorreo, 100)
-            ValidadorEntrada.ConfigurarCampoDireccion(txtDireccion, 200)
+            ValidadorEntrada.ConfigurarCampoDireccion(txtDireccion, 80)
         End Sub
 
         Private Sub AplicarTemaVisual()
@@ -82,6 +82,16 @@ Namespace Views.Caja
             Dim tel As String = If(_pedidoRow("TelefonoCliente") IsNot DBNull.Value AndAlso Not String.IsNullOrWhiteSpace(_pedidoRow("TelefonoCliente").ToString()), _pedidoRow("TelefonoCliente").ToString(), "+507 6200-1122")
             Dim correo As String = If(_pedidoRow("CorreoCliente") IsNot DBNull.Value AndAlso Not String.IsNullOrWhiteSpace(_pedidoRow("CorreoCliente").ToString()), _pedidoRow("CorreoCliente").ToString(), "cliente@restaurante.com")
             Dim dir As String = If(_pedidoRow("DireccionFiscal") IsNot DBNull.Value AndAlso Not String.IsNullOrWhiteSpace(_pedidoRow("DireccionFiscal").ToString()), _pedidoRow("DireccionFiscal").ToString(), "Ciudad de Panamá")
+
+            ' Garantizar que el nombre cargado por defecto no contenga dígitos (ej: "Mesa 01")
+            If Not ValidadorEntrada.EsNombreClienteValido(razon) Then
+                Dim razonSinDigitos = New String(razon.Where(Function(c) Not Char.IsDigit(c)).ToArray()).Trim()
+                If ValidadorEntrada.EsNombreClienteValido(razonSinDigitos) Then
+                    razon = razonSinDigitos
+                Else
+                    razon = "Consumidor Final"
+                End If
+            End If
 
             txtRucCedula.Text = ruc
             txtRazonSocial.Text = razon
@@ -161,7 +171,7 @@ Namespace Views.Caja
             End If
 
             If Not ValidadorEntrada.EsRazonSocialValida(txtRazonSocial.Text) Then
-                MessageBox.Show("Por favor indique el nombre o razón social del cliente.", "Nombre de Cliente Requerido", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                MessageBox.Show("Por favor indique un nombre de cliente válido (entre 2 y 40 caracteres, solo letras).", "Nombre de Cliente Requerido", MessageBoxButtons.OK, MessageBoxIcon.Warning)
                 txtRazonSocial.Focus()
                 Return False
             End If
@@ -174,10 +184,16 @@ Namespace Views.Caja
 
             If requiereCorreo OrElse Not String.IsNullOrWhiteSpace(txtCorreo.Text) Then
                 If Not ValidadorEntrada.EsCorreoValido(txtCorreo.Text) Then
-                    MessageBox.Show("Por favor indique una dirección de correo electrónico válida (ej: cliente@dominio.com).", "Correo Inválido", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                    MessageBox.Show("El correo electrónico ingresado no es válido. Por favor verifique el formato ingresado (ej: cliente@gmail.com).", "Correo Inválido", MessageBoxButtons.OK, MessageBoxIcon.Warning)
                     txtCorreo.Focus()
                     Return False
                 End If
+            End If
+
+            If Not ValidadorEntrada.EsDireccionValida(txtDireccion.Text, True) Then
+                MessageBox.Show("La dirección ingresada supera el límite permitido (máximo 80 caracteres).", "Dirección Inválida", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                txtDireccion.Focus()
+                Return False
             End If
 
             Return True
