@@ -53,15 +53,55 @@ Namespace Views.Caja
             ValidadorEntrada.ConfigurarCampoMoneda(txtMontoRecibido, 11, 8, 2)
         End Sub
 
-        Private Sub _tmrAutoRefresh_Tick(sender As Object, e As EventArgs) Handles _tmrAutoRefresh.Tick
+        Private _refrescandoCaja As Boolean = False
+
+        Private Async Sub _tmrAutoRefresh_Tick(sender As Object, e As EventArgs) Handles _tmrAutoRefresh.Tick
+            If Me.DesignMode OrElse System.ComponentModel.LicenseManager.UsageMode = System.ComponentModel.LicenseUsageMode.Designtime Then Return
+
             ' Evitar refrescar y borrar datos si el cajero está tipeando o ya ingresó dinero recibido
             If txtMontoRecibido.Focused OrElse Not String.IsNullOrWhiteSpace(txtMontoRecibido.Text) Then
                 Return
             End If
 
+            If _refrescandoCaja Then Return
+            _refrescandoCaja = True
+
             Try
-                CargarPedidosPendientes()
-            Catch
+                Dim dtPendientes = Await System.Threading.Tasks.Task.Run(Function() PedidoDAO.ObtenerPedidosPendientes())
+                If Not Me.IsDisposed AndAlso Me.IsHandleCreated Then
+                    ' Preservar selección y scroll
+                    Dim intSelectedId As Integer = _idPedidoSeleccionado
+                    Dim intScrollRow As Integer = If(dgvPedidosPendientes.FirstDisplayedScrollingRowIndex >= 0, dgvPedidosPendientes.FirstDisplayedScrollingRowIndex, 0)
+
+                    Dim vista As New DataView(dtPendientes)
+                    If Not String.IsNullOrWhiteSpace(txtBuscar.Text) Then
+                        Dim criterio As String = txtBuscar.Text.Trim().Replace("'", "''")
+                        Dim idNum As Integer
+                        If Integer.TryParse(criterio, idNum) Then
+                            vista.RowFilter = $"ID = {idNum} OR Cliente LIKE '%{criterio}%'"
+                        Else
+                            vista.RowFilter = $"Cliente LIKE '%{criterio}%' OR Mesa LIKE '%{criterio}%'"
+                        End If
+                    End If
+
+                    dgvPedidosPendientes.DataSource = vista
+                    lblTotalPendientes.Text = $"Pedidos pendientes de cobro: {vista.Count}"
+
+                    ' Restaurar scroll y selección
+                    If intScrollRow < dgvPedidosPendientes.Rows.Count Then
+                        dgvPedidosPendientes.FirstDisplayedScrollingRowIndex = intScrollRow
+                    End If
+                    For Each row As DataGridViewRow In dgvPedidosPendientes.Rows
+                        If Convert.ToInt32(row.Cells("ID").Value) = intSelectedId Then
+                            row.Selected = True
+                            Exit For
+                        End If
+                    Next
+                End If
+            Catch ex As Exception
+                ' Indicador no intrusivo
+            Finally
+                _refrescandoCaja = False
             End Try
         End Sub
 

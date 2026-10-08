@@ -41,6 +41,9 @@ Namespace Views.Facturacion
             End If
         End Sub
 
+        Private WithEvents _tmrAutoRefresh As Timer
+        Private _refrescandoFacturas As Boolean = False
+
         Private Sub FrmFacturacionPDF_Load(sender As Object, e As EventArgs) Handles MyBase.Load
             AplicarTemaVisual()
             ConfigurarValidacionesEntrada()
@@ -50,6 +53,8 @@ Namespace Views.Facturacion
             PedidoDAO.SuscribirPedidoModificado(AddressOf OnPedidoActualizadoDesdeDAO)
             PedidoDAO.SuscribirPedidoRegistrado(AddressOf OnPedidoActualizadoDesdeDAO)
             ConexionBD.SuscribirModoConexionCambiado(AddressOf OnModoConexionCambiadoDesdeBD)
+
+            _tmrAutoRefresh = New Timer() With {.Interval = 3000, .Enabled = True}
         End Sub
 
         ''' <summary>
@@ -66,9 +71,42 @@ Namespace Views.Facturacion
         End Sub
 
         Private Sub FrmFacturacionPDF_FormClosed(sender As Object, e As FormClosedEventArgs) Handles MyBase.FormClosed
+            If _tmrAutoRefresh IsNot Nothing Then
+                _tmrAutoRefresh.Stop()
+                _tmrAutoRefresh.Dispose()
+            End If
             PedidoDAO.DesuscribirPedidoModificado(AddressOf OnPedidoActualizadoDesdeDAO)
             PedidoDAO.DesuscribirPedidoRegistrado(AddressOf OnPedidoActualizadoDesdeDAO)
             ConexionBD.DesuscribirModoConexionCambiado(AddressOf OnModoConexionCambiadoDesdeBD)
+        End Sub
+
+        Private Async Sub _tmrAutoRefresh_Tick(sender As Object, e As EventArgs) Handles _tmrAutoRefresh.Tick
+            If Me.DesignMode OrElse System.ComponentModel.LicenseManager.UsageMode = System.ComponentModel.LicenseUsageMode.Designtime Then Return
+            If _refrescandoFacturas Then Return
+            _refrescandoFacturas = True
+
+            Try
+                Dim dtPagados = Await System.Threading.Tasks.Task.Run(Function() PedidoDAO.ObtenerPedidosPagados())
+                If Not Me.IsDisposed AndAlso Me.IsHandleCreated Then
+                    Dim intScrollRow As Integer = If(dgvPedidosFacturar.FirstDisplayedScrollingRowIndex >= 0, dgvPedidosFacturar.FirstDisplayedScrollingRowIndex, 0)
+                    Dim intSelectedId As Integer = _idPedidoSeleccionado
+
+                    dgvPedidosFacturar.DataSource = dtPagados
+
+                    If intScrollRow < dgvPedidosFacturar.Rows.Count Then
+                        dgvPedidosFacturar.FirstDisplayedScrollingRowIndex = intScrollRow
+                    End If
+                    For Each row As DataGridViewRow In dgvPedidosFacturar.Rows
+                        If Convert.ToInt32(row.Cells("ID").Value) = intSelectedId Then
+                            row.Selected = True
+                            Exit For
+                        End If
+                    Next
+                End If
+            Catch ex As Exception
+            Finally
+                _refrescandoFacturas = False
+            End Try
         End Sub
 
         Private Sub InicializarControlesConexionBD()

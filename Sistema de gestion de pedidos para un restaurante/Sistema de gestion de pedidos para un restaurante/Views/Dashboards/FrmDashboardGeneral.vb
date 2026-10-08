@@ -37,10 +37,18 @@ Namespace Views.Dashboards
             Data.PedidoDAO.DesuscribirPedidoModificado(AddressOf OnPedidoActualizadoDesdeDAO)
         End Sub
 
-        Private Sub _tmrAutoRefresh_Tick(sender As Object, e As EventArgs) Handles _tmrAutoRefresh.Tick
+        Private _refrescandoDashboard As Boolean = False
+
+        Private Async Sub _tmrAutoRefresh_Tick(sender As Object, e As EventArgs) Handles _tmrAutoRefresh.Tick
+            If Me.DesignMode OrElse System.ComponentModel.LicenseManager.UsageMode = System.ComponentModel.LicenseUsageMode.Designtime Then Return
+            If _refrescandoDashboard Then Return
+            _refrescandoDashboard = True
+
             Try
-                CargarResumenMetricas()
+                Await System.Threading.Tasks.Task.Run(Sub() CargarResumenMetricas())
             Catch
+            Finally
+                _refrescandoDashboard = False
             End Try
         End Sub
 

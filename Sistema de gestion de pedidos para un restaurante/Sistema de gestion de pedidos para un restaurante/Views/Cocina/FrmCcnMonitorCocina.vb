@@ -351,14 +351,27 @@ Namespace Views.Cocina
             btnCcnAlertaSonora.Text = If(_blnCcnSonidoHabilitado, "🔔", "🔕")
         End Sub
 
+        Private _refrescandoCocina As Boolean = False
+
         ''' <summary>
-        ''' Actualiza el cronómetro visual de tiempo de espera y recalcula las métricas del turno periódicamente.
+        ''' Actualiza el cronómetro visual de tiempo de espera y recarga periódicamente las comandas desde PostgreSQL.
         ''' </summary>
-        Private Sub tmrCcnActualizadorRealTime_Tick(ByVal sender As Object, ByVal e As EventArgs) Handles tmrCcnActualizadorRealTime.Tick
+        Private Async Sub tmrCcnActualizadorRealTime_Tick(ByVal sender As Object, ByVal e As EventArgs) Handles tmrCcnActualizadorRealTime.Tick
+            If Me.DesignMode OrElse System.ComponentModel.LicenseManager.UsageMode = System.ComponentModel.LicenseUsageMode.Designtime Then Return
+            If _refrescandoCocina Then Return
+            _refrescandoCocina = True
+
             Try
-                SincronizarComandasDesdeDAO()
-                RefrescarMonitorComandas()
-            Catch
+                Dim lstComandas = Await System.Threading.Tasks.Task.Run(Function() PedidoDAO.ObtenerComandasCocina())
+                If Not Me.IsDisposed AndAlso Me.IsHandleCreated Then
+                    _lstCcnComandas.Clear()
+                    If lstComandas IsNot Nothing Then _lstCcnComandas.AddRange(lstComandas)
+                    RefrescarMonitorComandas()
+                End If
+            Catch ex As Exception
+                ' Error no intrusivo
+            Finally
+                _refrescandoCocina = False
             End Try
 
             For Each ctl As Control In flpCcnContenedorComandas.Controls

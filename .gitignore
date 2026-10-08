@@ -58,9 +58,9 @@ desktop.ini
 # Configuraciones locales
 
 appsettings.Development.json
-appsettings.Local.json
 .env
 .env.*
+!.env.example
 
 # Certificados y claves
 

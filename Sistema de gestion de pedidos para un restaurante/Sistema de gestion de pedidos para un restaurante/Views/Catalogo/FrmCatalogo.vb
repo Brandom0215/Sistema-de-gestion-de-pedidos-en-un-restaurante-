@@ -17,10 +17,54 @@ Namespace Views.Catalogo
             InitializeComponent()
         End Sub
 
+        Private WithEvents _tmrAutoRefresh As Timer
+        Private _refrescandoCatalogo As Boolean = False
+
         Private Sub FrmCatalogo_Load(sender As Object, e As EventArgs) Handles MyBase.Load
             AplicarTemaVisual()
             CargarCategorias()
             RefrescarGrilla()
+
+            _tmrAutoRefresh = New Timer() With {.Interval = 3000, .Enabled = True}
+        End Sub
+
+        Private Sub FrmCatalogo_FormClosed(sender As Object, e As FormClosedEventArgs) Handles MyBase.FormClosed
+            If _tmrAutoRefresh IsNot Nothing Then
+                _tmrAutoRefresh.Stop()
+                _tmrAutoRefresh.Dispose()
+            End If
+        End Sub
+
+        Private Async Sub _tmrAutoRefresh_Tick(sender As Object, e As EventArgs) Handles _tmrAutoRefresh.Tick
+            If Me.DesignMode OrElse System.ComponentModel.LicenseManager.UsageMode = System.ComponentModel.LicenseUsageMode.Designtime Then Return
+            If _refrescandoCatalogo Then Return
+            _refrescandoCatalogo = True
+
+            Try
+                Dim dt = Await System.Threading.Tasks.Task.Run(Function() Data.PlatoDAO.ObtenerTodos())
+                If Not Me.IsDisposed AndAlso Me.IsHandleCreated Then
+                    Dim intScrollRow As Integer = If(dgvCatalogo.FirstDisplayedScrollingRowIndex >= 0, dgvCatalogo.FirstDisplayedScrollingRowIndex, 0)
+                    Dim intSelectedId As Integer = _idPlatoSeleccionado
+
+                    dgvCatalogo.DataSource = dt
+                    If dgvCatalogo.Columns.Contains("Precio") Then
+                        dgvCatalogo.Columns("Precio").DefaultCellStyle.Format = "C2"
+                    End If
+
+                    If intScrollRow < dgvCatalogo.Rows.Count Then
+                        dgvCatalogo.FirstDisplayedScrollingRowIndex = intScrollRow
+                    End If
+                    For Each row As DataGridViewRow In dgvCatalogo.Rows
+                        If Convert.ToInt32(row.Cells("ID").Value) = intSelectedId Then
+                            row.Selected = True
+                            Exit For
+                        End If
+                    Next
+                End If
+            Catch ex As Exception
+            Finally
+                _refrescandoCatalogo = False
+            End Try
         End Sub
 
         ' =========================================================================
@@ -104,14 +148,18 @@ Namespace Views.Catalogo
             Dim disponible As Boolean = chkDisponible.Checked
             Dim descripcion As String = txtDescripcion.Text.Trim()
 
-            Dim exito As Boolean = Data.PlatoDAO.Guardar(nombre, categoria, precioValido, tiempo, disponible, descripcion)
-            If exito Then
-                MostrarMensajeExito($"¡Plato '{nombre}' guardado exitosamente en el catálogo!", "Catálogo Actualizado")
-                LimpiarFormulario()
-                RefrescarGrilla()
-            Else
-                MostrarMensajeError("No se pudo guardar el plato en el catálogo.", "Error")
-            End If
+            Try
+                Dim exito As Boolean = Data.PlatoDAO.Guardar(nombre, categoria, precioValido, tiempo, disponible, descripcion)
+                If exito Then
+                    MostrarMensajeExito($"¡Plato '{nombre}' guardado exitosamente en el catálogo!", "Catálogo Actualizado")
+                    LimpiarFormulario()
+                    RefrescarGrilla()
+                Else
+                    MostrarMensajeError("No se pudo guardar en el servidor: No se insertaron registros.", "Error en Servidor")
+                End If
+            Catch ex As Exception
+                MostrarMensajeError($"No se pudo guardar en el servidor: {ex.Message}", "Error en Servidor")
+            End Try
         End Sub
 
         Private Sub btnActualizarPlato_Click(sender As Object, e As EventArgs) Handles btnActualizarPlato.Click
@@ -137,12 +185,18 @@ Namespace Views.Catalogo
             Dim disponible As Boolean = chkDisponible.Checked
             Dim descripcion As String = txtDescripcion.Text.Trim()
 
-            Dim exito As Boolean = Data.PlatoDAO.Actualizar(_idPlatoSeleccionado, nombre, categoria, precioValido, tiempo, disponible, descripcion)
-            If exito Then
-                MostrarMensajeExito("Plato actualizado exitosamente.", "Catálogo Actualizado")
-                LimpiarFormulario()
-                RefrescarGrilla()
-            End If
+            Try
+                Dim exito As Boolean = Data.PlatoDAO.Actualizar(_idPlatoSeleccionado, nombre, categoria, precioValido, tiempo, disponible, descripcion)
+                If exito Then
+                    MostrarMensajeExito("Plato actualizado exitosamente.", "Catálogo Actualizado")
+                    LimpiarFormulario()
+                    RefrescarGrilla()
+                Else
+                    MostrarMensajeError("No se pudo actualizar en el servidor: Registro no encontrado.", "Error en Servidor")
+                End If
+            Catch ex As Exception
+                MostrarMensajeError($"No se pudo actualizar en el servidor: {ex.Message}", "Error en Servidor")
+            End Try
         End Sub
 
         Private Sub btnEliminarPlato_Click(sender As Object, e As EventArgs) Handles btnEliminarPlato.Click
@@ -152,9 +206,13 @@ Namespace Views.Catalogo
             End If
 
             If ConfirmarAccion("¿Está seguro de eliminar el plato seleccionado del catálogo?", "Confirmar Eliminación") Then
-                Data.PlatoDAO.Eliminar(_idPlatoSeleccionado)
-                LimpiarFormulario()
-                RefrescarGrilla()
+                Try
+                    Data.PlatoDAO.Eliminar(_idPlatoSeleccionado)
+                    LimpiarFormulario()
+                    RefrescarGrilla()
+                Catch ex As Exception
+                    MostrarMensajeError($"No se pudo eliminar en el servidor: {ex.Message}", "Error en Servidor")
+                End Try
             End If
         End Sub
 

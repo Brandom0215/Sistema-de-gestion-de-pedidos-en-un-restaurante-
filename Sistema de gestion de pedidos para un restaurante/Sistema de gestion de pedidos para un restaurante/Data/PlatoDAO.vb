@@ -60,17 +60,17 @@ Namespace Data
         End Function
 
         ''' <summary>
-        ''' Obtiene el ID del plato según su nombre en el catálogo. Retorna 1 si no se encuentra especificado.
+        ''' Obtiene el ID del plato según su nombre en el catálogo. Retorna 0 si no se encuentra.
         ''' </summary>
         Public Function ObtenerIdPorNombre(nombre As String) As Integer
-            If String.IsNullOrWhiteSpace(nombre) Then Return 1
+            If String.IsNullOrWhiteSpace(nombre) Then Return 0
             Dim lista = _servicioPlatos.ObtenerTodos()
             For Each p In lista
                 If String.Equals(p.Nombre, nombre.Trim(), StringComparison.OrdinalIgnoreCase) Then
                     Return p.ID
                 End If
             Next
-            Return 1
+            Return 0
         End Function
 
     End Module
