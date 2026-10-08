@@ -7,20 +7,12 @@ Imports Npgsql
 
 Namespace Data
     ''' <summary>
-    ''' Objeto de Acceso a Datos (DAO) en memoria centralizado para la gestión de pedidos,
-    ''' comanda de cocina KDS bajo la Ley de FIFO, cobros en caja y facturación electrónica digital.
-    ''' Mantiene sincronizadas la cabecera (pedidos) y el detalle de ítems/menú (detalle_pedidos),
-    ''' reflejando el esquema de base de datos relacional.
+    ''' Objeto de Acceso a Datos (DAO) centralizado para la gestión de pedidos en PostgreSQL.
+    ''' PostgreSQL es la ÚNICA fuente de verdad.
     ''' </summary>
     Public Module PedidoDAO
 
-        Private ReadOnly _tablaPedidos As DataTable
-        Private ReadOnly _tablaDetallePedidos As DataTable
-        Private _ultimoId As Integer = 0
-        Private _ultimoIdDetalle As Integer = 0
-        Private _contadorFacturas As Integer = 1000
-
-        ' Suscripciones de eventos para reactividad en tiempo real (KDS, Caja, Facturación)
+        ' Suscripciones de eventos para reactividad en la UI local
         Private ReadOnly _listenersPedidoRegistrado As New List(Of Action(Of Integer))()
         Private ReadOnly _listenersPedidoModificado As New List(Of Action(Of Integer))()
 
@@ -62,191 +54,6 @@ Namespace Data
             Next
         End Sub
 
-#Region "RESPALDO_LOCAL_CONTINGENCIA (Fácil de remover cuando el servidor UTP esté siempre disponible)"
-        Sub New()
-            ' 1. Tabla Cabecera de Pedidos (equivalente a 'pedidos')
-            _tablaPedidos = New DataTable("Pedidos")
-            _tablaPedidos.Columns.Add("ID", GetType(Integer))
-            _tablaPedidos.Columns.Add("Cliente", GetType(String))
-            _tablaPedidos.Columns.Add("Mesa", GetType(String))
-            _tablaPedidos.Columns.Add("PlatoPrincipal", GetType(String))
-            _tablaPedidos.Columns.Add("Acompanamientos", GetType(String))
-            _tablaPedidos.Columns.Add("TipoServicio", GetType(String))
-            _tablaPedidos.Columns.Add("FechaHora", GetType(String))
-            _tablaPedidos.Columns.Add("FechaCobro", GetType(String))
-            _tablaPedidos.Columns.Add("PrecioUnitario", GetType(Decimal))
-            _tablaPedidos.Columns.Add("Subtotal", GetType(Decimal))
-            _tablaPedidos.Columns.Add("Impuesto", GetType(Decimal))
-            _tablaPedidos.Columns.Add("Total", GetType(Decimal))
-            _tablaPedidos.Columns.Add("Estado", GetType(String)) ' PENDIENTE, PAGADO
-            _tablaPedidos.Columns.Add("EstadoCocina", GetType(String)) ' RECIBIDO, EN_PREPARACION, LISTO, ENTREGADO
-            _tablaPedidos.Columns.Add("MetodoPago", GetType(String)) ' Efectivo, Tarjeta POS, Transferencia / QR
-            _tablaPedidos.Columns.Add("MontoRecibido", GetType(Decimal))
-            _tablaPedidos.Columns.Add("Cambio", GetType(Decimal))
-            _tablaPedidos.Columns.Add("Facturado", GetType(Boolean))
-            _tablaPedidos.Columns.Add("NumeroFactura", GetType(String))
-            _tablaPedidos.Columns.Add("RUC_Cedula", GetType(String))
-            _tablaPedidos.Columns.Add("RazonSocial", GetType(String))
-            _tablaPedidos.Columns.Add("DireccionFiscal", GetType(String))
-            _tablaPedidos.Columns.Add("TelefonoCliente", GetType(String))
-            _tablaPedidos.Columns.Add("CorreoCliente", GetType(String))
-
-            ' 2. Tabla Detalle de Pedidos (equivalente a 'detalle_pedidos' en BD)
-            _tablaDetallePedidos = New DataTable("DetallePedidos")
-            _tablaDetallePedidos.Columns.Add("ID", GetType(Integer))
-            _tablaDetallePedidos.Columns.Add("IdPedido", GetType(Integer))
-            _tablaDetallePedidos.Columns.Add("Plato", GetType(String))
-            _tablaDetallePedidos.Columns.Add("Cantidad", GetType(Integer))
-            _tablaDetallePedidos.Columns.Add("PrecioUnitario", GetType(Decimal))
-            _tablaDetallePedidos.Columns.Add("Subtotal", GetType(Decimal))
-            _tablaDetallePedidos.Columns.Add("Acompanamientos", GetType(String))
-            _tablaDetallePedidos.Columns.Add("EsAlertaCeliaco", GetType(Boolean))
-            _tablaDetallePedidos.Columns.Add("MensajeAlerta", GetType(String))
-
-            ' Cargar pedidos iniciales ordenados cronológicamente respetando la Ley de FIFO
-            ' (El más antiguo llegó hace 18 min -> Posición FIFO #1)
-            CargarDatosDemostracionPanamenos()
-        End Sub
-
-        Private Sub CargarDatosDemostracionPanamenos()
-            ' Pedido #1: Llegó hace 18 minutos (FIFO #1)
-            Dim id1 = RegistrarPedidoDemo("Carlos Mendoza", "Mesa 04", "En Mesa", "PAGADO", "Tarjeta POS", "EN_PREPARACION", DateTime.Now.AddMinutes(-18))
-            AgregarItemDetalle(id1, "Sancocho Panameño de Gallina Criolla", 1, 7.50D, "Con arroz blanco y culantro")
-            AgregarItemDetalle(id1, "Chicha de Nance", 1, 2.00D, "Bebida típica artesanal")
-            FinalizarCalculoCabecera(id1)
-
-            ' Pedido #2: Llegó hace 12 minutos (FIFO #2)
-            Dim id2 = RegistrarPedidoDemo("María Fernández", "Mesa 09", "En Mesa", "PENDIENTE", "", "RECIBIDO", DateTime.Now.AddMinutes(-12))
-            AgregarItemDetalle(id2, "Pescado Frito con Patacones", 1, 10.50D, "Patacones crocantes", True, "CELÍACO: Estrictamente Sin Gluten")
-            FinalizarCalculoCabecera(id2)
-
-            ' Pedido #3: Llegó hace 7 minutos (FIFO #3)
-            Dim id3 = RegistrarPedidoDemo("Roberto Gómez", "Mesa 02", "En Mesa", "PENDIENTE", "", "EN_PREPARACION", DateTime.Now.AddMinutes(-7))
-            AgregarItemDetalle(id3, "Ropa Vieja con Arroz con Guandú", 1, 8.50D, "Plátano tentación")
-            AgregarItemDetalle(id3, "Chicha de Limón c/ Raspadura", 1, 1.75D, "Bebida típica")
-            FinalizarCalculoCabecera(id3)
-
-            ' Pedido #4: Llegó hace 2 minutos (FIFO #4)
-            Dim id4 = RegistrarPedidoDemo("Ana Lucía Torres", "Llevar", "Para Llevar", "PAGADO", "Efectivo", "RECIBIDO", DateTime.Now.AddMinutes(-2))
-            AgregarItemDetalle(id4, "Hojaldre con Queso Blanco y Salchicha", 2, 3.50D, "Empacado térmico")
-            AgregarItemDetalle(id4, "Soda Nacional", 1, 1.50D, "Bebida fría")
-            FinalizarCalculoCabecera(id4)
-        End Sub
-
-        Private Function RegistrarPedidoDemo(cliente As String, mesa As String, servicio As String,
-                                             estadoPago As String, metodoPago As String,
-                                             estadoCocina As String, horaRegistro As DateTime) As Integer
-            _ultimoId += 1
-            Dim dr As DataRow = _tablaPedidos.NewRow()
-            dr("ID") = _ultimoId
-            dr("Cliente") = cliente
-            dr("Mesa") = mesa
-            dr("PlatoPrincipal") = ""
-            dr("Acompanamientos") = ""
-            dr("TipoServicio") = servicio
-            dr("FechaHora") = horaRegistro.ToString("yyyy-MM-dd HH:mm:ss")
-            dr("FechaCobro") = If(estadoPago = "PAGADO", horaRegistro.ToString("yyyy-MM-dd HH:mm:ss"), "")
-            dr("PrecioUnitario") = 0D
-            dr("Subtotal") = 0D
-            dr("Impuesto") = 0D
-            dr("Total") = 0D
-            dr("Estado") = estadoPago
-            dr("EstadoCocina") = estadoCocina
-            dr("MetodoPago") = metodoPago
-            dr("MontoRecibido") = 0D
-            dr("Cambio") = 0D
-            dr("Facturado") = False
-            dr("NumeroFactura") = ""
-            dr("RUC_Cedula") = ""
-            dr("RazonSocial") = ""
-            dr("DireccionFiscal") = ""
-            dr("TelefonoCliente") = ""
-            dr("CorreoCliente") = ""
-            _tablaPedidos.Rows.Add(dr)
-            Return _ultimoId
-        End Function
-
-        Private Sub AgregarItemDetalle(idPedido As Integer, plato As String, cantidad As Integer,
-                                       precioUnitario As Decimal, notas As String,
-                                       Optional esCeliaco As Boolean = False,
-                                       Optional mensajeAlerta As String = "")
-            _ultimoIdDetalle += 1
-            Dim subtotal As Decimal = Math.Round(cantidad * precioUnitario, 2)
-
-            Dim strPlatoLimpio As String = If(String.IsNullOrWhiteSpace(plato), "Plato del Menú", plato.Trim())
-
-            If ConexionBD.DebeUsarPostgreSQL() Then
-                Try
-                    Dim idPlatoCatalogo As Integer = PlatoDAO.ObtenerIdPorNombre(strPlatoLimpio)
-                    Dim sqlDetalle As String = "INSERT INTO detalle_pedidos (id_pedido, id_plato, nombre_plato, cantidad, precio_unitario, acompanamientos) " &
-                                               "VALUES (@idPed, @idPlato, @plato, @cant, @precio, @acomp);"
-                    Dim pIdPed As New NpgsqlParameter("@idPed", idPedido)
-                    Dim pIdPlato As New NpgsqlParameter("@idPlato", idPlatoCatalogo)
-                    Dim pPlato As New NpgsqlParameter("@plato", strPlatoLimpio)
-                    Dim pCant As New NpgsqlParameter("@cant", cantidad)
-                    Dim pPrecio As New NpgsqlParameter("@precio", precioUnitario)
-                    Dim pAcomp As New NpgsqlParameter("@acomp", notas.Trim())
-                    ConexionBD.EjecutarComando(sqlDetalle, pIdPed, pIdPlato, pPlato, pCant, pPrecio, pAcomp)
-                Catch ex As Exception
-                    Try
-                        Dim idPlatoCatalogo As Integer = PlatoDAO.ObtenerIdPorNombre(strPlatoLimpio)
-                        Dim sqlFallback As String = "INSERT INTO detalle_pedidos (id_pedido, id_plato, cantidad, precio_unitario, acompanamientos) " &
-                                                    "VALUES (@idPed, @idPlato, @cant, @precio, @acomp);"
-                        Dim pIdPed As New NpgsqlParameter("@idPed", idPedido)
-                        Dim pIdPlato As New NpgsqlParameter("@idPlato", idPlatoCatalogo)
-                        Dim pCant As New NpgsqlParameter("@cant", cantidad)
-                        Dim pPrecio As New NpgsqlParameter("@precio", precioUnitario)
-                        Dim pAcomp As New NpgsqlParameter("@acomp", notas.Trim())
-                        ConexionBD.EjecutarComando(sqlFallback, pIdPed, pIdPlato, pCant, pPrecio, pAcomp)
-                    Catch ex2 As Exception
-                        ConexionBD.RegistrarFalloServidor($"Error al registrar detalle en servidor: {ex2.Message}")
-                    End Try
-                End Try
-            End If
-
-            Dim drDet As DataRow = _tablaDetallePedidos.NewRow()
-            drDet("ID") = _ultimoIdDetalle
-            drDet("IdPedido") = idPedido
-            drDet("Plato") = plato.Trim()
-            drDet("Cantidad") = cantidad
-            drDet("PrecioUnitario") = precioUnitario
-            drDet("Subtotal") = subtotal
-            drDet("Acompanamientos") = notas.Trim()
-            drDet("EsAlertaCeliaco") = esCeliaco
-            drDet("MensajeAlerta") = mensajeAlerta.Trim()
-            _tablaDetallePedidos.Rows.Add(drDet)
-        End Sub
-
-        Private Sub FinalizarCalculoCabecera(idPedido As Integer)
-            Dim drPedido = ObtenerPedidoPorId(idPedido)
-            If drPedido Is Nothing Then Return
-
-            Dim rowsDetalles = _tablaDetallePedidos.Select($"IdPedido = {idPedido}")
-            Dim decTotal As Decimal = 0D
-            Dim listaPlatos As New List(Of String)()
-            Dim listaAcomp As New List(Of String)()
-
-            For Each d In rowsDetalles
-                decTotal += Convert.ToDecimal(d("Subtotal"))
-                Dim cant = Convert.ToInt32(d("Cantidad"))
-                Dim nombre = d("Plato").ToString()
-                listaPlatos.Add($"{cant}x {nombre}")
-                Dim ac = d("Acompanamientos").ToString()
-                If Not String.IsNullOrWhiteSpace(ac) Then listaAcomp.Add(ac)
-            Next
-
-            drPedido("PlatoPrincipal") = String.Join(" + ", listaPlatos)
-            drPedido("Acompanamientos") = If(listaAcomp.Count > 0, String.Join(", ", listaAcomp), "Sin notas adicionales")
-            drPedido("Total") = decTotal
-            drPedido("PrecioUnitario") = decTotal
-            drPedido("Subtotal") = Math.Round(decTotal / 1.07D, 2)
-            drPedido("Impuesto") = Math.Round(decTotal - CDec(drPedido("Subtotal")), 2)
-            If drPedido("Estado").ToString() = "PAGADO" Then
-                drPedido("MontoRecibido") = decTotal
-            End If
-        End Sub
-#End Region
-
         Private Function NormalizarTipoServicio(servicio As String) As String
             If String.IsNullOrWhiteSpace(servicio) Then Return "En Mesa"
             If servicio.IndexOf("Llevar", StringComparison.OrdinalIgnoreCase) >= 0 Then Return "Para Llevar"
@@ -274,328 +81,179 @@ Namespace Data
         End Function
 
         ''' <summary>
-        ''' Sincroniza un conjunto de registros obtenidos desde PostgreSQL con la tabla local en memoria.
-        ''' </summary>
-        Private Sub SincronizarTablaPedidosDesdeBD(dtBD As DataTable)
-            If dtBD Is Nothing Then Return
-            SyncLock _tablaPedidos
-                For Each rowBD As DataRow In dtBD.Rows
-                    Dim id As Integer = Convert.ToInt32(rowBD("ID"))
-                    If id > _ultimoId Then _ultimoId = id
-
-                    Dim filaExistente As DataRow = Nothing
-                    For Each r As DataRow In _tablaPedidos.Rows
-                        If Convert.ToInt32(r("ID")) = id Then
-                            filaExistente = r
-                            Exit For
-                        End If
-                    Next
-
-                    If filaExistente Is Nothing Then
-                        filaExistente = _tablaPedidos.NewRow()
-                        filaExistente("ID") = id
-                        _tablaPedidos.Rows.Add(filaExistente)
-                    End If
-
-                    For Each col As DataColumn In dtBD.Columns
-                        If _tablaPedidos.Columns.Contains(col.ColumnName) AndAlso rowBD(col) IsNot DBNull.Value Then
-                            Try
-                                filaExistente(col.ColumnName) = rowBD(col)
-                            Catch
-                            End Try
-                        End If
-                    Next
-                Next
-            End SyncLock
-        End Sub
-
-        ''' <summary>
-        ''' Sincroniza las líneas de detalle obtenidas desde PostgreSQL con la tabla local.
-        ''' </summary>
-        Private Sub SincronizarTablaDetallesDesdeBD(dtDetalleBD As DataTable)
-            If dtDetalleBD Is Nothing Then Return
-            SyncLock _tablaDetallePedidos
-                For Each rowBD As DataRow In dtDetalleBD.Rows
-                    Dim idDet As Integer = Convert.ToInt32(rowBD("ID"))
-                    If idDet > _ultimoIdDetalle Then _ultimoIdDetalle = idDet
-
-                    Dim filaExistente As DataRow = Nothing
-                    For Each r As DataRow In _tablaDetallePedidos.Rows
-                        If Convert.ToInt32(r("ID")) = idDet Then
-                            filaExistente = r
-                            Exit For
-                        End If
-                    Next
-
-                    If filaExistente Is Nothing Then
-                        filaExistente = _tablaDetallePedidos.NewRow()
-                        filaExistente("ID") = idDet
-                        _tablaDetallePedidos.Rows.Add(filaExistente)
-                    End If
-
-                    For Each col As DataColumn In dtDetalleBD.Columns
-                        If _tablaDetallePedidos.Columns.Contains(col.ColumnName) AndAlso rowBD(col) IsNot DBNull.Value Then
-                            Try
-                                filaExistente(col.ColumnName) = rowBD(col)
-                            Catch
-                            End Try
-                        End If
-                    Next
-
-                    Dim strPlato As String = If(filaExistente("Plato") IsNot DBNull.Value, filaExistente("Plato").ToString(), "")
-                    Dim blnCeliaco As Boolean = strPlato.IndexOf("CELÍACO", StringComparison.OrdinalIgnoreCase) >= 0 OrElse strPlato.IndexOf("SIN GLUTEN", StringComparison.OrdinalIgnoreCase) >= 0
-                    filaExistente("EsAlertaCeliaco") = blnCeliaco
-                    filaExistente("MensajeAlerta") = If(blnCeliaco, "CELÍACO: Estrictamente Sin Gluten", "")
-                Next
-            End SyncLock
-        End Sub
-
-        ''' <summary>
-        ''' Obtiene la tabla completa de pedidos registrados. Consulta PostgreSQL si está activo; si no, retorna el registro local.
+        ''' Obtiene la tabla completa de pedidos directamente desde PostgreSQL.
         ''' </summary>
         Public Function ObtenerTodos() As DataTable
-            If ConexionBD.DebeUsarPostgreSQL() Then
-                Try
-                    Dim sql As String =
-                        "SELECT " &
-                        "  p.id_pedido AS ""ID"", " &
-                        "  p.nombre_cliente AS ""Cliente"", " &
-                        "  p.mesa_o_servicio AS ""Mesa"", " &
-                        "  COALESCE((SELECT STRING_AGG(COALESCE(dp.nombre_plato, pl.nombre_plato, 'Plato del Menú'), ' + ') FROM detalle_pedidos dp LEFT JOIN platos pl ON dp.id_plato = pl.id_plato WHERE dp.id_pedido = p.id_pedido), 'Plato del Menú') AS ""PlatoPrincipal"", " &
-                        "  COALESCE((SELECT STRING_AGG(dp.acompanamientos, ', ') FROM detalle_pedidos dp WHERE dp.id_pedido = p.id_pedido AND dp.acompanamientos IS NOT NULL AND dp.acompanamientos <> ''), 'Sin notas adicionales') AS ""Acompanamientos"", " &
-                        "  p.tipo_servicio AS ""TipoServicio"", " &
-                        "  TO_CHAR(p.fecha_hora, 'YYYY-MM-DD HH24:MI:SS') AS ""FechaHora"", " &
-                        "  COALESCE(TO_CHAR(p.fecha_cobro, 'YYYY-MM-DD HH24:MI:SS'), '') AS ""FechaCobro"", " &
-                        "  p.total AS ""PrecioUnitario"", " &
-                        "  ROUND(p.total / 1.07, 2) AS ""Subtotal"", " &
-                        "  ROUND(p.total - ROUND(p.total / 1.07, 2), 2) AS ""Impuesto"", " &
-                        "  p.total AS ""Total"", " &
-                        "  UPPER(p.estado) AS ""Estado"", " &
-                        "  COALESCE(p.estado_cocina, 'RECIBIDO') AS ""EstadoCocina"", " &
-                        "  COALESCE(p.metodo_pago, 'Efectivo') AS ""MetodoPago"", " &
-                        "  COALESCE(p.monto_recibido, 0.00) AS ""MontoRecibido"", " &
-                        "  COALESCE(p.cambio, 0.00) AS ""Cambio"", " &
-                        "  COALESCE(p.facturado, (UPPER(p.estado) = 'PAGADO')) AS ""Facturado"", " &
-                        "  COALESCE(p.numero_factura, '') AS ""NumeroFactura"", " &
-                        "  COALESCE(p.ruc_cedula, '8-800-1234') AS ""RUC_Cedula"", " &
-                        "  COALESCE(p.razon_social, p.nombre_cliente) AS ""RazonSocial"", " &
-                        "  COALESCE(p.direccion_fiscal, 'Ciudad de Panamá') AS ""DireccionFiscal"", " &
-                        "  COALESCE(p.telefono_cliente, '+507 6200-1122') AS ""TelefonoCliente"", " &
-                        "  COALESCE(p.correo_cliente, 'cliente@restaurante.com') AS ""CorreoCliente"" " &
-                        "FROM pedidos p " &
-                        "ORDER BY p.id_pedido DESC;"
+            Dim sql As String =
+                "SELECT " &
+                "  p.id_pedido AS ""ID"", " &
+                "  p.nombre_cliente AS ""Cliente"", " &
+                "  p.mesa_o_servicio AS ""Mesa"", " &
+                "  COALESCE((SELECT STRING_AGG(COALESCE(dp.nombre_plato, pl.nombre_plato, 'Plato del Menú'), ' + ') FROM detalle_pedidos dp LEFT JOIN platos pl ON dp.id_plato = pl.id_plato WHERE dp.id_pedido = p.id_pedido), 'Plato del Menú') AS ""PlatoPrincipal"", " &
+                "  COALESCE((SELECT STRING_AGG(dp.acompanamientos, ', ') FROM detalle_pedidos dp WHERE dp.id_pedido = p.id_pedido AND dp.acompanamientos IS NOT NULL AND dp.acompanamientos <> ''), 'Sin notas adicionales') AS ""Acompanamientos"", " &
+                "  p.tipo_servicio AS ""TipoServicio"", " &
+                "  TO_CHAR(p.fecha_hora, 'YYYY-MM-DD HH24:MI:SS') AS ""FechaHora"", " &
+                "  COALESCE(TO_CHAR(p.fecha_cobro, 'YYYY-MM-DD HH24:MI:SS'), '') AS ""FechaCobro"", " &
+                "  p.total AS ""PrecioUnitario"", " &
+                "  ROUND(p.total / 1.07, 2) AS ""Subtotal"", " &
+                "  ROUND(p.total - ROUND(p.total / 1.07, 2), 2) AS ""Impuesto"", " &
+                "  p.total AS ""Total"", " &
+                "  UPPER(p.estado) AS ""Estado"", " &
+                "  COALESCE(p.estado_cocina, 'RECIBIDO') AS ""EstadoCocina"", " &
+                "  COALESCE(p.metodo_pago, 'Efectivo') AS ""MetodoPago"", " &
+                "  COALESCE(p.monto_recibido, 0.00) AS ""MontoRecibido"", " &
+                "  COALESCE(p.cambio, 0.00) AS ""Cambio"", " &
+                "  COALESCE(p.facturado, (UPPER(p.estado) = 'PAGADO')) AS ""Facturado"", " &
+                "  COALESCE(p.numero_factura, '') AS ""NumeroFactura"", " &
+                "  COALESCE(p.ruc_cedula, '8-800-1234') AS ""RUC_Cedula"", " &
+                "  COALESCE(p.razon_social, p.nombre_cliente) AS ""RazonSocial"", " &
+                "  COALESCE(p.direccion_fiscal, 'Ciudad de Panamá') AS ""DireccionFiscal"", " &
+                "  COALESCE(p.telefono_cliente, '+507 6200-1122') AS ""TelefonoCliente"", " &
+                "  COALESCE(p.correo_cliente, 'cliente@restaurante.com') AS ""CorreoCliente"" " &
+                "FROM pedidos p " &
+                "ORDER BY p.id_pedido DESC;"
 
-                    Dim dtPG = ConexionBD.EjecutarConsultaDataTable(sql)
-                    If dtPG IsNot Nothing AndAlso dtPG.Columns.Count > 0 Then
-                        SincronizarTablaPedidosDesdeBD(dtPG)
-
-                        ' Cargar también los detalles del pedido desde PostgreSQL
-                        Try
-                            Dim sqlDetalles As String =
-                                "SELECT " &
-                                "  dp.id_detalle AS ""ID"", " &
-                                "  dp.id_pedido AS ""IdPedido"", " &
-                                "  COALESCE(dp.nombre_plato, pl.nombre_plato, 'Plato del Menú') AS ""Plato"", " &
-                                "  dp.cantidad AS ""Cantidad"", " &
-                                "  dp.precio_unitario AS ""PrecioUnitario"", " &
-                                "  dp.subtotal AS ""Subtotal"", " &
-                                "  COALESCE(dp.acompanamientos, '') AS ""Acompanamientos"" " &
-                                "FROM detalle_pedidos dp " &
-                                "LEFT JOIN platos pl ON dp.id_plato = pl.id_plato;"
-
-                            Dim dtDetallesPG = ConexionBD.EjecutarConsultaDataTable(sqlDetalles)
-                            If dtDetallesPG IsNot Nothing Then
-                                SincronizarTablaDetallesDesdeBD(dtDetallesPG)
-                            End If
-                        Catch
-                        End Try
-
-                        Return dtPG
-                    End If
-                Catch ex As Exception
-                    ConexionBD.RegistrarFalloServidor(ex.Message)
-                End Try
-            End If
-
-            Return _tablaPedidos.Copy()
+            Return ConexionBD.EjecutarConsultaDataTable(sql)
         End Function
 
         ''' <summary>
-        ''' Obtiene la tabla completa de detalles de pedidos registrados.
+        ''' Obtiene la tabla completa de detalles de pedidos desde PostgreSQL.
         ''' </summary>
         Public Function ObtenerDetallesTodos() As DataTable
-            Return _tablaDetallePedidos.Copy()
+            Dim sql As String =
+                "SELECT " &
+                "  dp.id_detalle AS ""ID"", " &
+                "  dp.id_pedido AS ""IdPedido"", " &
+                "  COALESCE(dp.nombre_plato, pl.nombre_plato, 'Plato del Menú') AS ""Plato"", " &
+                "  dp.cantidad AS ""Cantidad"", " &
+                "  dp.precio_unitario AS ""PrecioUnitario"", " &
+                "  dp.subtotal AS ""Subtotal"", " &
+                "  COALESCE(dp.acompanamientos, '') AS ""Acompanamientos"" " &
+                "FROM detalle_pedidos dp " &
+                "LEFT JOIN platos pl ON dp.id_plato = pl.id_plato " &
+                "ORDER BY dp.id_detalle ASC;"
+
+            Return ConexionBD.EjecutarConsultaDataTable(sql)
         End Function
 
         ''' <summary>
-        ''' Obtiene únicamente los pedidos con estado PENDIENTE para su cobro en Caja.
-        ''' Consulta activamente la BD PostgreSQL del servidor si está habilitada, con respaldo local.
+        ''' Obtiene únicamente los pedidos con estado PENDIENTE desde PostgreSQL.
         ''' </summary>
         Public Function ObtenerPedidosPendientes() As DataTable
-            If ConexionBD.DebeUsarPostgreSQL() Then
-                Try
-                    Dim sql As String =
-                        "SELECT " &
-                        "  p.id_pedido AS ""ID"", " &
-                        "  p.nombre_cliente AS ""Cliente"", " &
-                        "  p.mesa_o_servicio AS ""Mesa"", " &
-                        "  COALESCE((SELECT STRING_AGG(COALESCE(dp.nombre_plato, pl.nombre_plato, 'Plato del Menú'), ' + ') FROM detalle_pedidos dp LEFT JOIN platos pl ON dp.id_plato = pl.id_plato WHERE dp.id_pedido = p.id_pedido), 'Plato del Menú') AS ""PlatoPrincipal"", " &
-                        "  COALESCE((SELECT STRING_AGG(dp.acompanamientos, ', ') FROM detalle_pedidos dp WHERE dp.id_pedido = p.id_pedido AND dp.acompanamientos IS NOT NULL AND dp.acompanamientos <> ''), 'Sin notas adicionales') AS ""Acompanamientos"", " &
-                        "  p.tipo_servicio AS ""TipoServicio"", " &
-                        "  TO_CHAR(p.fecha_hora, 'YYYY-MM-DD HH24:MI:SS') AS ""FechaHora"", " &
-                        "  '' AS ""FechaCobro"", " &
-                        "  p.total AS ""PrecioUnitario"", " &
-                        "  ROUND(p.total / 1.07, 2) AS ""Subtotal"", " &
-                        "  ROUND(p.total - ROUND(p.total / 1.07, 2), 2) AS ""Impuesto"", " &
-                        "  p.total AS ""Total"", " &
-                        "  UPPER(p.estado) AS ""Estado"", " &
-                        "  COALESCE(p.estado_cocina, 'RECIBIDO') AS ""EstadoCocina"", " &
-                        "  COALESCE(p.metodo_pago, 'Efectivo') AS ""MetodoPago"", " &
-                        "  COALESCE(p.monto_recibido, 0.00) AS ""MontoRecibido"", " &
-                        "  COALESCE(p.cambio, 0.00) AS ""Cambio"", " &
-                        "  FALSE AS ""Facturado"", " &
-                        "  '' AS ""NumeroFactura"", " &
-                        "  '' AS ""RUC_Cedula"", " &
-                        "  '' AS ""RazonSocial"", " &
-                        "  '' AS ""DireccionFiscal"", " &
-                        "  '' AS ""TelefonoCliente"", " &
-                        "  '' AS ""CorreoCliente"" " &
-                        "FROM pedidos p " &
-                        "WHERE UPPER(p.estado) = 'PENDIENTE' " &
-                        "ORDER BY p.id_pedido ASC;"
+            Dim sql As String =
+                "SELECT " &
+                "  p.id_pedido AS ""ID"", " &
+                "  p.nombre_cliente AS ""Cliente"", " &
+                "  p.mesa_o_servicio AS ""Mesa"", " &
+                "  COALESCE((SELECT STRING_AGG(COALESCE(dp.nombre_plato, pl.nombre_plato, 'Plato del Menú'), ' + ') FROM detalle_pedidos dp LEFT JOIN platos pl ON dp.id_plato = pl.id_plato WHERE dp.id_pedido = p.id_pedido), 'Plato del Menú') AS ""PlatoPrincipal"", " &
+                "  COALESCE((SELECT STRING_AGG(dp.acompanamientos, ', ') FROM detalle_pedidos dp WHERE dp.id_pedido = p.id_pedido AND dp.acompanamientos IS NOT NULL AND dp.acompanamientos <> ''), 'Sin notas adicionales') AS ""Acompanamientos"", " &
+                "  p.tipo_servicio AS ""TipoServicio"", " &
+                "  TO_CHAR(p.fecha_hora, 'YYYY-MM-DD HH24:MI:SS') AS ""FechaHora"", " &
+                "  '' AS ""FechaCobro"", " &
+                "  p.total AS ""PrecioUnitario"", " &
+                "  ROUND(p.total / 1.07, 2) AS ""Subtotal"", " &
+                "  ROUND(p.total - ROUND(p.total / 1.07, 2), 2) AS ""Impuesto"", " &
+                "  p.total AS ""Total"", " &
+                "  UPPER(p.estado) AS ""Estado"", " &
+                "  COALESCE(p.estado_cocina, 'RECIBIDO') AS ""EstadoCocina"", " &
+                "  COALESCE(p.metodo_pago, 'Efectivo') AS ""MetodoPago"", " &
+                "  COALESCE(p.monto_recibido, 0.00) AS ""MontoRecibido"", " &
+                "  COALESCE(p.cambio, 0.00) AS ""Cambio"", " &
+                "  FALSE AS ""Facturado"", " &
+                "  '' AS ""NumeroFactura"", " &
+                "  '' AS ""RUC_Cedula"", " &
+                "  '' AS ""RazonSocial"", " &
+                "  '' AS ""DireccionFiscal"", " &
+                "  '' AS ""TelefonoCliente"", " &
+                "  '' AS ""CorreoCliente"" " &
+                "FROM pedidos p " &
+                "WHERE UPPER(p.estado) = 'PENDIENTE' " &
+                "ORDER BY p.id_pedido ASC;"
 
-                    Dim dtPG = ConexionBD.EjecutarConsultaDataTable(sql)
-                    If dtPG IsNot Nothing AndAlso dtPG.Columns.Count > 0 Then
-                        SincronizarTablaPedidosDesdeBD(dtPG)
-                        Return dtPG
-                    End If
-                Catch ex As Exception
-                    ConexionBD.RegistrarFalloServidor(ex.Message)
-                End Try
-            End If
-
-            Dim vista As New DataView(_tablaPedidos) With {
-                .RowFilter = "Estado = 'PENDIENTE'"
-            }
-            Return vista.ToTable()
+            Return ConexionBD.EjecutarConsultaDataTable(sql)
         End Function
 
         ''' <summary>
-        ''' Obtiene pedidos cobrados/pagados elegibles para visualización y facturación.
-        ''' Consulta activamente la BD PostgreSQL del servidor si está habilitada, con respaldo local.
+        ''' Obtiene pedidos cobrados/pagados desde PostgreSQL.
         ''' </summary>
         Public Function ObtenerPedidosPagados() As DataTable
-            If ConexionBD.DebeUsarPostgreSQL() Then
-                Try
-                    Dim sql As String =
-                        "SELECT " &
-                        "  p.id_pedido AS ""ID"", " &
-                        "  p.nombre_cliente AS ""Cliente"", " &
-                        "  p.mesa_o_servicio AS ""Mesa"", " &
-                        "  COALESCE((SELECT STRING_AGG(COALESCE(dp.nombre_plato, pl.nombre_plato, 'Plato del Menú'), ' + ') FROM detalle_pedidos dp LEFT JOIN platos pl ON dp.id_plato = pl.id_plato WHERE dp.id_pedido = p.id_pedido), 'Plato del Menú') AS ""PlatoPrincipal"", " &
-                        "  COALESCE((SELECT STRING_AGG(dp.acompanamientos, ', ') FROM detalle_pedidos dp WHERE dp.id_pedido = p.id_pedido AND dp.acompanamientos IS NOT NULL AND dp.acompanamientos <> ''), 'Sin notas adicionales') AS ""Acompanamientos"", " &
-                        "  p.tipo_servicio AS ""TipoServicio"", " &
-                        "  TO_CHAR(p.fecha_hora, 'YYYY-MM-DD HH24:MI:SS') AS ""FechaHora"", " &
-                        "  COALESCE(TO_CHAR(p.fecha_cobro, 'YYYY-MM-DD HH24:MI:SS'), TO_CHAR(p.fecha_hora, 'YYYY-MM-DD HH24:MI:SS')) AS ""FechaCobro"", " &
-                        "  p.total AS ""PrecioUnitario"", " &
-                        "  ROUND(p.total / 1.07, 2) AS ""Subtotal"", " &
-                        "  ROUND(p.total - ROUND(p.total / 1.07, 2), 2) AS ""Impuesto"", " &
-                        "  p.total AS ""Total"", " &
-                        "  'PAGADO' AS ""Estado"", " &
-                        "  COALESCE(p.estado_cocina, 'RECIBIDO') AS ""EstadoCocina"", " &
-                        "  COALESCE(p.metodo_pago, 'Efectivo') AS ""MetodoPago"", " &
-                        "  COALESCE(p.monto_recibido, p.total) AS ""MontoRecibido"", " &
-                        "  COALESCE(p.cambio, 0.00) AS ""Cambio"", " &
-                        "  COALESCE(p.facturado, TRUE) AS ""Facturado"", " &
-                        "  COALESCE(p.numero_factura, CONCAT('FAC-2026-', (1000 + p.id_pedido)::text)) AS ""NumeroFactura"", " &
-                        "  COALESCE(p.ruc_cedula, '8-800-1234') AS ""RUC_Cedula"", " &
-                        "  COALESCE(p.razon_social, p.nombre_cliente) AS ""RazonSocial"", " &
-                        "  COALESCE(p.direccion_fiscal, 'Ciudad de Panamá') AS ""DireccionFiscal"", " &
-                        "  COALESCE(p.telefono_cliente, '+507 6200-1122') AS ""TelefonoCliente"", " &
-                        "  COALESCE(p.correo_cliente, 'cliente@restaurante.com') AS ""CorreoCliente"" " &
-                        "FROM pedidos p " &
-                        "WHERE UPPER(p.estado) = 'PAGADO' " &
-                        "ORDER BY p.id_pedido DESC;"
+            Dim sql As String =
+                "SELECT " &
+                "  p.id_pedido AS ""ID"", " &
+                "  p.nombre_cliente AS ""Cliente"", " &
+                "  p.mesa_o_servicio AS ""Mesa"", " &
+                "  COALESCE((SELECT STRING_AGG(COALESCE(dp.nombre_plato, pl.nombre_plato, 'Plato del Menú'), ' + ') FROM detalle_pedidos dp LEFT JOIN platos pl ON dp.id_plato = pl.id_plato WHERE dp.id_pedido = p.id_pedido), 'Plato del Menú') AS ""PlatoPrincipal"", " &
+                "  COALESCE((SELECT STRING_AGG(dp.acompanamientos, ', ') FROM detalle_pedidos dp WHERE dp.id_pedido = p.id_pedido AND dp.acompanamientos IS NOT NULL AND dp.acompanamientos <> ''), 'Sin notas adicionales') AS ""Acompanamientos"", " &
+                "  p.tipo_servicio AS ""TipoServicio"", " &
+                "  TO_CHAR(p.fecha_hora, 'YYYY-MM-DD HH24:MI:SS') AS ""FechaHora"", " &
+                "  COALESCE(TO_CHAR(p.fecha_cobro, 'YYYY-MM-DD HH24:MI:SS'), TO_CHAR(p.fecha_hora, 'YYYY-MM-DD HH24:MI:SS')) AS ""FechaCobro"", " &
+                "  p.total AS ""PrecioUnitario"", " &
+                "  ROUND(p.total / 1.07, 2) AS ""Subtotal"", " &
+                "  ROUND(p.total - ROUND(p.total / 1.07, 2), 2) AS ""Impuesto"", " &
+                "  p.total AS ""Total"", " &
+                "  'PAGADO' AS ""Estado"", " &
+                "  COALESCE(p.estado_cocina, 'RECIBIDO') AS ""EstadoCocina"", " &
+                "  COALESCE(p.metodo_pago, 'Efectivo') AS ""MetodoPago"", " &
+                "  COALESCE(p.monto_recibido, p.total) AS ""MontoRecibido"", " &
+                "  COALESCE(p.cambio, 0.00) AS ""Cambio"", " &
+                "  COALESCE(p.facturado, TRUE) AS ""Facturado"", " &
+                "  COALESCE(p.numero_factura, CONCAT('FAC-2026-', (1000 + p.id_pedido)::text)) AS ""NumeroFactura"", " &
+                "  COALESCE(p.ruc_cedula, '8-800-1234') AS ""RUC_Cedula"", " &
+                "  COALESCE(p.razon_social, p.nombre_cliente) AS ""RazonSocial"", " &
+                "  COALESCE(p.direccion_fiscal, 'Ciudad de Panamá') AS ""DireccionFiscal"", " &
+                "  COALESCE(p.telefono_cliente, '+507 6200-1122') AS ""TelefonoCliente"", " &
+                "  COALESCE(p.correo_cliente, 'cliente@restaurante.com') AS ""CorreoCliente"" " &
+                "FROM pedidos p " &
+                "WHERE UPPER(p.estado) = 'PAGADO' " &
+                "ORDER BY p.id_pedido DESC;"
 
-                    Dim dtPG = ConexionBD.EjecutarConsultaDataTable(sql)
-                    If dtPG IsNot Nothing AndAlso dtPG.Columns.Count > 0 Then
-                        SincronizarTablaPedidosDesdeBD(dtPG)
-                        Return dtPG
-                    End If
-                Catch ex As Exception
-                    ConexionBD.RegistrarFalloServidor(ex.Message)
-                End Try
-            End If
-
-            Dim vista As New DataView(_tablaPedidos) With {
-                .RowFilter = "Estado = 'PAGADO'"
-            }
-            Return vista.ToTable()
+            Return ConexionBD.EjecutarConsultaDataTable(sql)
         End Function
 
         ''' <summary>
-        ''' Busca un pedido por su identificador único. Si está habilitado PostgreSQL y no existe en caché, consulta la BD.
+        ''' Busca un pedido por su identificador único en PostgreSQL.
         ''' </summary>
         Public Function ObtenerPedidoPorId(id As Integer) As DataRow
-            For Each row As DataRow In _tablaPedidos.Rows
-                If Convert.ToInt32(row("ID")) = id Then
-                    Return row
-                End If
-            Next
+            Dim sql As String =
+                "SELECT " &
+                "  p.id_pedido AS ""ID"", " &
+                "  p.nombre_cliente AS ""Cliente"", " &
+                "  p.mesa_o_servicio AS ""Mesa"", " &
+                "  COALESCE((SELECT STRING_AGG(COALESCE(dp.nombre_plato, pl.nombre_plato, 'Plato del Menú'), ' + ') FROM detalle_pedidos dp LEFT JOIN platos pl ON dp.id_plato = pl.id_plato WHERE dp.id_pedido = p.id_pedido), 'Plato del Menú') AS ""PlatoPrincipal"", " &
+                "  COALESCE((SELECT STRING_AGG(dp.acompanamientos, ', ') FROM detalle_pedidos dp WHERE dp.id_pedido = p.id_pedido AND dp.acompanamientos IS NOT NULL AND dp.acompanamientos <> ''), 'Sin notas adicionales') AS ""Acompanamientos"", " &
+                "  p.tipo_servicio AS ""TipoServicio"", " &
+                "  TO_CHAR(p.fecha_hora, 'YYYY-MM-DD HH24:MI:SS') AS ""FechaHora"", " &
+                "  COALESCE(TO_CHAR(p.fecha_cobro, 'YYYY-MM-DD HH24:MI:SS'), TO_CHAR(p.fecha_hora, 'YYYY-MM-DD HH24:MI:SS')) AS ""FechaCobro"", " &
+                "  p.total AS ""PrecioUnitario"", " &
+                "  ROUND(p.total / 1.07, 2) AS ""Subtotal"", " &
+                "  ROUND(p.total - ROUND(p.total / 1.07, 2), 2) AS ""Impuesto"", " &
+                "  p.total AS ""Total"", " &
+                "  UPPER(p.estado) AS ""Estado"", " &
+                "  COALESCE(p.estado_cocina, 'RECIBIDO') AS ""EstadoCocina"", " &
+                "  COALESCE(p.metodo_pago, 'Efectivo') AS ""MetodoPago"", " &
+                "  COALESCE(p.monto_recibido, p.total) AS ""MontoRecibido"", " &
+                "  COALESCE(p.cambio, 0.00) AS ""Cambio"", " &
+                "  COALESCE(p.facturado, (UPPER(p.estado) = 'PAGADO')) AS ""Facturado"", " &
+                "  COALESCE(p.numero_factura, CONCAT('FAC-2026-', (1000 + p.id_pedido)::text)) AS ""NumeroFactura"", " &
+                "  COALESCE(p.ruc_cedula, '8-800-1234') AS ""RUC_Cedula"", " &
+                "  COALESCE(p.razon_social, p.nombre_cliente) AS ""RazonSocial"", " &
+                "  COALESCE(p.direccion_fiscal, 'Ciudad de Panamá') AS ""DireccionFiscal"", " &
+                "  COALESCE(p.telefono_cliente, '+507 6200-1122') AS ""TelefonoCliente"", " &
+                "  COALESCE(p.correo_cliente, 'cliente@restaurante.com') AS ""CorreoCliente"" " &
+                "FROM pedidos p " &
+                "WHERE p.id_pedido = @id LIMIT 1;"
 
-            If ConexionBD.DebeUsarPostgreSQL() Then
-                Try
-                    Dim sql As String =
-                        "SELECT " &
-                        "  p.id_pedido AS ""ID"", " &
-                        "  p.nombre_cliente AS ""Cliente"", " &
-                        "  p.mesa_o_servicio AS ""Mesa"", " &
-                        "  COALESCE((SELECT STRING_AGG(COALESCE(dp.nombre_plato, pl.nombre_plato, 'Plato del Menú'), ' + ') FROM detalle_pedidos dp LEFT JOIN platos pl ON dp.id_plato = pl.id_plato WHERE dp.id_pedido = p.id_pedido), 'Plato del Menú') AS ""PlatoPrincipal"", " &
-                        "  COALESCE((SELECT STRING_AGG(dp.acompanamientos, ', ') FROM detalle_pedidos dp WHERE dp.id_pedido = p.id_pedido AND dp.acompanamientos IS NOT NULL AND dp.acompanamientos <> ''), 'Sin notas adicionales') AS ""Acompanamientos"", " &
-                        "  p.tipo_servicio AS ""TipoServicio"", " &
-                        "  TO_CHAR(p.fecha_hora, 'YYYY-MM-DD HH24:MI:SS') AS ""FechaHora"", " &
-                        "  COALESCE(TO_CHAR(p.fecha_cobro, 'YYYY-MM-DD HH24:MI:SS'), TO_CHAR(p.fecha_hora, 'YYYY-MM-DD HH24:MI:SS')) AS ""FechaCobro"", " &
-                        "  p.total AS ""PrecioUnitario"", " &
-                        "  ROUND(p.total / 1.07, 2) AS ""Subtotal"", " &
-                        "  ROUND(p.total - ROUND(p.total / 1.07, 2), 2) AS ""Impuesto"", " &
-                        "  p.total AS ""Total"", " &
-                        "  UPPER(p.estado) AS ""Estado"", " &
-                        "  COALESCE(p.estado_cocina, 'RECIBIDO') AS ""EstadoCocina"", " &
-                        "  COALESCE(p.metodo_pago, 'Efectivo') AS ""MetodoPago"", " &
-                        "  COALESCE(p.monto_recibido, p.total) AS ""MontoRecibido"", " &
-                        "  COALESCE(p.cambio, 0.00) AS ""Cambio"", " &
-                        "  COALESCE(p.facturado, (UPPER(p.estado) = 'PAGADO')) AS ""Facturado"", " &
-                        "  COALESCE(p.numero_factura, CONCAT('FAC-2026-', (1000 + p.id_pedido)::text)) AS ""NumeroFactura"", " &
-                        "  COALESCE(p.ruc_cedula, '8-800-1234') AS ""RUC_Cedula"", " &
-                        "  COALESCE(p.razon_social, p.nombre_cliente) AS ""RazonSocial"", " &
-                        "  COALESCE(p.direccion_fiscal, 'Ciudad de Panamá') AS ""DireccionFiscal"", " &
-                        "  COALESCE(p.telefono_cliente, '+507 6200-1122') AS ""TelefonoCliente"", " &
-                        "  COALESCE(p.correo_cliente, 'cliente@restaurante.com') AS ""CorreoCliente"" " &
-                        "FROM pedidos p " &
-                        "WHERE p.id_pedido = @id LIMIT 1;"
-
-                    Dim pId As New NpgsqlParameter("@id", id)
-                    Dim dt = ConexionBD.EjecutarConsultaDataTable(sql, pId)
-                    If dt IsNot Nothing AndAlso dt.Rows.Count > 0 Then
-                        SincronizarTablaPedidosDesdeBD(dt)
-                        For Each row As DataRow In _tablaPedidos.Rows
-                            If Convert.ToInt32(row("ID")) = id Then
-                                Return row
-                            End If
-                        Next
-                    End If
-                Catch ex As Exception
-                    ConexionBD.RegistrarFalloServidor(ex.Message)
-                End Try
+            Dim pId As New NpgsqlParameter("@id", id)
+            Dim dt = ConexionBD.EjecutarConsultaDataTable(sql, pId)
+            If dt IsNot Nothing AndAlso dt.Rows.Count > 0 Then
+                Return dt.Rows(0)
             End If
 
             Return Nothing
         End Function
 
         ''' <summary>
-        ''' Registra un pedido completo desde el Módulo de Cliente con su desglose exacto
-        ''' de platos del menú, cantidades, extras y total general calculado.
-        ''' Despacha de inmediato la notificación en tiempo real a Cocina (KDS).
+        ''' Registra un pedido completo en PostgreSQL usando una única transacción relacional.
         ''' </summary>
         Public Function GuardarPedidoCompleto(cliente As String,
                                               mesa As String,
@@ -607,460 +265,382 @@ Namespace Data
                                               Optional metodoPago As String = "",
                                               Optional estadoCocina As String = "RECIBIDO",
                                               Optional correoCliente As String = "") As Integer
-            Try
-                _ultimoId += 1
-                Dim idNuevo As Integer = _ultimoId
 
-                Dim strCliente As String = If(String.IsNullOrWhiteSpace(cliente), "Cliente General", cliente.Trim())
-                Dim strMesa As String = If(String.IsNullOrWhiteSpace(mesa), "Mesa 01", mesa.Trim())
-                Dim strServicio As String = If(String.IsNullOrWhiteSpace(servicio), "En Mesa", servicio.Trim())
-                Dim strCorreo As String = If(String.IsNullOrWhiteSpace(correoCliente), "cliente@restaurante.com", correoCliente.Trim())
+            Dim strCliente As String = If(String.IsNullOrWhiteSpace(cliente), "Cliente General", cliente.Trim())
+            Dim strMesa As String = If(String.IsNullOrWhiteSpace(mesa), "Mesa 01", mesa.Trim())
+            Dim strServicio As String = NormalizarTipoServicio(servicio)
+            Dim strCorreo As String = If(String.IsNullOrWhiteSpace(correoCliente), "cliente@restaurante.com", correoCliente.Trim())
+            Dim strEstado As String = If(estadoPago.Equals("PAGADO", StringComparison.OrdinalIgnoreCase), "Pagado", "Pendiente")
+            Dim strEstadoCocina As String = If(String.IsNullOrWhiteSpace(estadoCocina), "RECIBIDO", estadoCocina.Trim().ToUpper())
+            Dim strMetodo As String = If(String.IsNullOrWhiteSpace(metodoPago), "Efectivo", metodoPago.Trim())
 
-                ' Si PostgreSQL está activo, persistir en la base de datos y obtener el ID generado
-                If ConexionBD.DebeUsarPostgreSQL() Then
+            Using conn As NpgsqlConnection = ConexionBD.CrearConexion()
+                conn.Open()
+                Using trans As NpgsqlTransaction = conn.BeginTransaction()
                     Try
-                        Dim sqlPG As String = "INSERT INTO pedidos (nombre_cliente, mesa_o_servicio, tipo_servicio, estado, estado_cocina, total, monto_recibido, cambio, metodo_pago, correo_cliente) " &
-                                              "VALUES (@cliente, @mesa, @servicio, @estado, @estadoCocina, @total, @monto, @cambio, @metodo, @correo) RETURNING id_pedido;"
-                        Dim strServicioNorm As String = NormalizarTipoServicio(strServicio)
-                        Dim pCliente As New NpgsqlParameter("@cliente", strCliente)
-                        Dim pMesa As New NpgsqlParameter("@mesa", strMesa)
-                        Dim pServicio As New NpgsqlParameter("@servicio", strServicioNorm)
-                        Dim pEstado As New NpgsqlParameter("@estado", If(estadoPago.Equals("PAGADO", StringComparison.OrdinalIgnoreCase), "Pagado", "Pendiente"))
-                        Dim pEstadoCocina As New NpgsqlParameter("@estadoCocina", If(String.IsNullOrWhiteSpace(estadoCocina), "RECIBIDO", estadoCocina.Trim().ToUpper()))
-                        Dim pTotal As New NpgsqlParameter("@total", total)
-                        Dim pMonto As New NpgsqlParameter("@monto", If(estadoPago.Equals("PAGADO", StringComparison.OrdinalIgnoreCase), total, 0D))
-                        Dim pCambio As New NpgsqlParameter("@cambio", 0D)
-                        Dim pMetodo As New NpgsqlParameter("@metodo", If(String.IsNullOrWhiteSpace(metodoPago), "Efectivo", metodoPago))
-                        Dim pCorreo As New NpgsqlParameter("@correo", strCorreo)
+                        Dim sqlCabecera As String =
+                            "INSERT INTO pedidos (nombre_cliente, mesa_o_servicio, tipo_servicio, estado, estado_cocina, total, monto_recibido, cambio, metodo_pago, correo_cliente) " &
+                            "VALUES (@cliente, @mesa, @servicio, @estado, @estadoCocina, @total, @monto, @cambio, @metodo, @correo) RETURNING id_pedido;"
 
-                        Using conn = ConexionBD.CrearConexion()
-                            conn.Open()
-                            Using cmd As New NpgsqlCommand(sqlPG, conn)
-                                cmd.Parameters.AddRange({pCliente, pMesa, pServicio, pEstado, pEstadoCocina, pTotal, pMonto, pCambio, pMetodo, pCorreo})
-                                Dim res = cmd.ExecuteScalar()
-                                If res IsNot Nothing AndAlso Not DBNull.Value.Equals(res) Then
-                                    idNuevo = Convert.ToInt32(res)
-                                    If idNuevo > _ultimoId Then _ultimoId = idNuevo
+                        Dim idNuevo As Integer = 0
+                        Using cmdCab As New NpgsqlCommand(sqlCabecera, conn, trans)
+                            cmdCab.Parameters.AddWithValue("@cliente", strCliente)
+                            cmdCab.Parameters.AddWithValue("@mesa", strMesa)
+                            cmdCab.Parameters.AddWithValue("@servicio", strServicio)
+                            cmdCab.Parameters.AddWithValue("@estado", strEstado)
+                            cmdCab.Parameters.AddWithValue("@estadoCocina", strEstadoCocina)
+                            cmdCab.Parameters.AddWithValue("@total", total)
+                            cmdCab.Parameters.AddWithValue("@monto", If(strEstado = "Pagado", total, 0D))
+                            cmdCab.Parameters.AddWithValue("@cambio", 0D)
+                            cmdCab.Parameters.AddWithValue("@metodo", strMetodo)
+                            cmdCab.Parameters.AddWithValue("@correo", strCorreo)
 
-                                    MessageBox.Show(
-                                        $"Confirmación de Base de Datos PostgreSQL:{Environment.NewLine}{Environment.NewLine}" &
-                                        $"¡El pedido #{idNuevo} de '{strCliente}' se ha insertado correctamente en el servidor PostgreSQL (10.196.68.15)!{Environment.NewLine}{Environment.NewLine}" &
-                                        $"Tablas afectadas: 'pedidos' y 'detalle_pedidos'{Environment.NewLine}" &
-                                        $"Total: ${total:N2} | Estado: {estadoPago}",
-                                        "Inserción en Servidor Exitosa",
-                                        MessageBoxButtons.OK,
-                                        MessageBoxIcon.Information
-                                    )
-                                End If
-                            End Using
+                            Dim res = cmdCab.ExecuteScalar()
+                            idNuevo = Convert.ToInt32(res)
                         End Using
+
+                        Dim sqlDetalle As String =
+                            "INSERT INTO detalle_pedidos (id_pedido, id_plato, nombre_plato, cantidad, precio_unitario, acompanamientos) " &
+                            "VALUES (@idPed, (SELECT id_plato FROM platos WHERE LOWER(nombre_plato) = LOWER(@plato) LIMIT 1), @plato, @cant, @precio, @acomp);"
+
+                        ' 1. Líneas de carrito
+                        If tablaCarrito IsNot Nothing AndAlso tablaCarrito.Rows.Count > 0 Then
+                            For Each r As DataRow In tablaCarrito.Rows
+                                Dim strPlato As String = r("Plato").ToString().Trim()
+                                Dim intCant As Integer = Convert.ToInt32(r("Cant"))
+                                Dim decPrecio As Decimal = Convert.ToDecimal(r("Precio"))
+
+                                Using cmdDet As New NpgsqlCommand(sqlDetalle, conn, trans)
+                                    cmdDet.Parameters.AddWithValue("@idPed", idNuevo)
+                                    cmdDet.Parameters.AddWithValue("@plato", strPlato)
+                                    cmdDet.Parameters.AddWithValue("@cant", intCant)
+                                    cmdDet.Parameters.AddWithValue("@precio", decPrecio)
+                                    cmdDet.Parameters.AddWithValue("@acomp", "")
+                                    cmdDet.ExecuteNonQuery()
+                                End Using
+                            Next
+                        End If
+
+                        ' 2. Líneas de extras / bebidas
+                        If listaExtras IsNot Nothing AndAlso listaExtras.Count > 0 Then
+                            For Each t In listaExtras
+                                Dim strExtraNombre As String = t.Item1.Trim()
+                                Dim intExtraCant As Integer = t.Item2
+                                Dim decExtraPrecio As Decimal = t.Item3
+
+                                Using cmdDet As New NpgsqlCommand(sqlDetalle, conn, trans)
+                                    cmdDet.Parameters.AddWithValue("@idPed", idNuevo)
+                                    cmdDet.Parameters.AddWithValue("@plato", strExtraNombre)
+                                    cmdDet.Parameters.AddWithValue("@cant", intExtraCant)
+                                    cmdDet.Parameters.AddWithValue("@precio", decExtraPrecio)
+                                    cmdDet.Parameters.AddWithValue("@acomp", "Bebida / Acompañamiento")
+                                    cmdDet.ExecuteNonQuery()
+                                End Using
+                            Next
+                        End If
+
+                        trans.Commit()
+                        DispararPedidoRegistrado(idNuevo)
+                        Return idNuevo
                     Catch ex As Exception
+                        trans.Rollback()
                         ConexionBD.RegistrarFalloServidor(ex.Message)
-                        MessageBox.Show(
-                            $"Error al Insertar en Servidor PostgreSQL (10.196.68.15):{Environment.NewLine}{Environment.NewLine}" &
-                            $"{ex.Message}{Environment.NewLine}{Environment.NewLine}" &
-                            $"El pedido se procesará temporalmente en la memoria local.",
-                            "Alerta de Inserción en Servidor",
-                            MessageBoxButtons.OK,
-                            MessageBoxIcon.Warning
-                        )
+                        Throw
                     End Try
-                End If
-
-                Dim listaResumenPlatos As New List(Of String)()
-
-                ' 1. Insertar líneas detalladas del carrito
-                If tablaCarrito IsNot Nothing AndAlso tablaCarrito.Rows.Count > 0 Then
-                    For Each r As DataRow In tablaCarrito.Rows
-                        Dim strPlato As String = r("Plato").ToString()
-                        Dim intCant As Integer = Convert.ToInt32(r("Cant"))
-                        Dim decPrecio As Decimal = Convert.ToDecimal(r("Precio"))
-
-                        Dim blnCeliaco As Boolean = strPlato.IndexOf("CELÍACO", StringComparison.OrdinalIgnoreCase) >= 0 OrElse
-                                                   strPlato.IndexOf("SIN GLUTEN", StringComparison.OrdinalIgnoreCase) >= 0
-
-                        AgregarItemDetalle(idNuevo, strPlato, intCant, decPrecio, "", blnCeliaco, If(blnCeliaco, "CELÍACO: Estrictamente Sin Gluten", ""))
-                        listaResumenPlatos.Add($"{intCant}x {strPlato}")
-                    Next
-                End If
-
-                ' 2. Insertar líneas detalladas de extras y bebidas
-                Dim listaNotasExtras As New List(Of String)()
-                If listaExtras IsNot Nothing AndAlso listaExtras.Count > 0 Then
-                    For Each t In listaExtras
-                        Dim strExtraNombre As String = t.Item1
-                        Dim intExtraCant As Integer = t.Item2
-                        Dim decExtraPrecio As Decimal = t.Item3
-
-                        AgregarItemDetalle(idNuevo, strExtraNombre, intExtraCant, decExtraPrecio, "Bebida / Acompañamiento")
-                        listaNotasExtras.Add($"{intExtraCant}x {strExtraNombre}")
-                    Next
-                End If
-
-                ' 3. Insertar Cabecera en _tablaPedidos
-                Dim dr As DataRow = _tablaPedidos.NewRow()
-                dr("ID") = idNuevo
-                dr("Cliente") = strCliente
-                dr("Mesa") = strMesa
-                dr("PlatoPrincipal") = If(listaResumenPlatos.Count > 0, String.Join(" + ", listaResumenPlatos), "Plato del Menú")
-                dr("Acompanamientos") = If(listaNotasExtras.Count > 0, String.Join(", ", listaNotasExtras), "Sin Extras")
-                dr("TipoServicio") = strServicio
-                dr("FechaHora") = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")
-                dr("FechaCobro") = If(estadoPago = "PAGADO", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"), "")
-                dr("PrecioUnitario") = total
-                dr("Subtotal") = Math.Round(total / 1.07D, 2)
-                dr("Impuesto") = Math.Round(total - CDec(dr("Subtotal")), 2)
-                dr("Total") = total
-                dr("Estado") = estadoPago
-                dr("EstadoCocina") = estadoCocina
-                dr("MetodoPago") = If(String.IsNullOrWhiteSpace(metodoPago), "Pago en Caja (Efectivo / Tarjeta)", metodoPago)
-                dr("MontoRecibido") = If(estadoPago = "PAGADO", total, 0D)
-                dr("Cambio") = 0D
-                dr("Facturado") = False
-                dr("NumeroFactura") = ""
-                dr("RUC_Cedula") = ""
-                dr("RazonSocial") = ""
-                dr("DireccionFiscal") = ""
-                dr("TelefonoCliente") = ""
-                dr("CorreoCliente") = strCorreo
-
-                _tablaPedidos.Rows.Add(dr)
-
-                ' 4. Notificar a observadores en tiempo real (KDS Cocina)
-                DispararPedidoRegistrado(idNuevo)
-
-                Return idNuevo
-            Catch ex As Exception
-                Return -1
-            End Try
+                End Using
+            End Using
         End Function
 
         ''' <summary>
-        ''' Sobrecarga de compatibilidad para registrar un pedido.
-        ''' Retorna True si la operación fue exitosa.
+        ''' Sobrecarga de compatibilidad para guardar un pedido simple en PostgreSQL.
         ''' </summary>
         Public Function Guardar(cliente As String, mesa As String, plato As String, acomp As String, servicio As String,
                                 Optional total As Decimal = 0D,
                                 Optional estadoPago As String = "PENDIENTE",
                                 Optional metodoPago As String = "",
                                 Optional estadoCocina As String = "RECIBIDO") As Boolean
-            Try
-                _ultimoId += 1
-                Dim idNuevo As Integer = _ultimoId
 
-                Dim strCliente As String = If(String.IsNullOrWhiteSpace(cliente), "Cliente General", cliente.Trim())
-                Dim strMesa As String = If(String.IsNullOrWhiteSpace(mesa), "Mesa 01", mesa.Trim())
-                Dim strPlato As String = If(String.IsNullOrWhiteSpace(plato), "Plato del Menú", plato.Trim())
-                Dim strAcomp As String = If(String.IsNullOrWhiteSpace(acomp), "Sin acompañamiento", acomp.Trim())
-                Dim strServicio As String = If(String.IsNullOrWhiteSpace(servicio), "En Mesa", servicio.Trim())
+            Dim strCliente As String = If(String.IsNullOrWhiteSpace(cliente), "Cliente General", cliente.Trim())
+            Dim strMesa As String = If(String.IsNullOrWhiteSpace(mesa), "Mesa 01", mesa.Trim())
+            Dim strPlato As String = If(String.IsNullOrWhiteSpace(plato), "Plato del Menú", plato.Trim())
+            Dim strAcomp As String = If(String.IsNullOrWhiteSpace(acomp), "Sin acompañamiento", acomp.Trim())
+            Dim strServicio As String = NormalizarTipoServicio(servicio)
+            Dim precioFinal As Decimal = If(total > 0D, total, ExtraerPrecioPlato(strPlato))
+            Dim strEstado As String = If(estadoPago.Equals("PAGADO", StringComparison.OrdinalIgnoreCase), "Pagado", "Pendiente")
+            Dim strEstadoCocina As String = If(String.IsNullOrWhiteSpace(estadoCocina), "RECIBIDO", estadoCocina.Trim().ToUpper())
+            Dim strMetodo As String = If(String.IsNullOrWhiteSpace(metodoPago), "Efectivo", metodoPago.Trim())
 
-                Dim precioFinal As Decimal = If(total > 0D, total, ExtraerPrecioPlato(strPlato))
-
-                If ConexionBD.DebeUsarPostgreSQL() Then
+            Using conn As NpgsqlConnection = ConexionBD.CrearConexion()
+                conn.Open()
+                Using trans As NpgsqlTransaction = conn.BeginTransaction()
                     Try
-                        Dim sqlPG As String = "INSERT INTO pedidos (nombre_cliente, mesa_o_servicio, tipo_servicio, estado, estado_cocina, total, monto_recibido, cambio, metodo_pago) " &
-                                              "VALUES (@cliente, @mesa, @servicio, @estado, @estadoCocina, @total, @monto, @cambio, @metodo) RETURNING id_pedido;"
-                        Dim strServicioNorm As String = NormalizarTipoServicio(strServicio)
-                        Dim pCliente As New NpgsqlParameter("@cliente", strCliente)
-                        Dim pMesa As New NpgsqlParameter("@mesa", strMesa)
-                        Dim pServicio As New NpgsqlParameter("@servicio", strServicioNorm)
-                        Dim pEstado As New NpgsqlParameter("@estado", If(estadoPago.Equals("PAGADO", StringComparison.OrdinalIgnoreCase), "Pagado", "Pendiente"))
-                        Dim pEstadoCocina As New NpgsqlParameter("@estadoCocina", If(String.IsNullOrWhiteSpace(estadoCocina), "RECIBIDO", estadoCocina.Trim().ToUpper()))
-                        Dim pTotal As New NpgsqlParameter("@total", precioFinal)
-                        Dim pMonto As New NpgsqlParameter("@monto", If(estadoPago.Equals("PAGADO", StringComparison.OrdinalIgnoreCase), precioFinal, 0D))
-                        Dim pCambio As New NpgsqlParameter("@cambio", 0D)
-                        Dim pMetodo As New NpgsqlParameter("@metodo", If(String.IsNullOrWhiteSpace(metodoPago), "Efectivo", metodoPago))
+                        Dim sqlCabecera As String =
+                            "INSERT INTO pedidos (nombre_cliente, mesa_o_servicio, tipo_servicio, estado, estado_cocina, total, monto_recibido, cambio, metodo_pago) " &
+                            "VALUES (@cliente, @mesa, @servicio, @estado, @estadoCocina, @total, @monto, @cambio, @metodo) RETURNING id_pedido;"
 
-                        Using conn = ConexionBD.CrearConexion()
-                            conn.Open()
-                            Using cmd As New NpgsqlCommand(sqlPG, conn)
-                                cmd.Parameters.AddRange({pCliente, pMesa, pServicio, pEstado, pEstadoCocina, pTotal, pMonto, pCambio, pMetodo})
-                                Dim res = cmd.ExecuteScalar()
-                                If res IsNot Nothing AndAlso Not DBNull.Value.Equals(res) Then
-                                    idNuevo = Convert.ToInt32(res)
-                                    If idNuevo > _ultimoId Then _ultimoId = idNuevo
-                                End If
-                            End Using
+                        Dim idNuevo As Integer = 0
+                        Using cmdCab As New NpgsqlCommand(sqlCabecera, conn, trans)
+                            cmdCab.Parameters.AddWithValue("@cliente", strCliente)
+                            cmdCab.Parameters.AddWithValue("@mesa", strMesa)
+                            cmdCab.Parameters.AddWithValue("@servicio", strServicio)
+                            cmdCab.Parameters.AddWithValue("@estado", strEstado)
+                            cmdCab.Parameters.AddWithValue("@estadoCocina", strEstadoCocina)
+                            cmdCab.Parameters.AddWithValue("@total", precioFinal)
+                            cmdCab.Parameters.AddWithValue("@monto", If(strEstado = "Pagado", precioFinal, 0D))
+                            cmdCab.Parameters.AddWithValue("@cambio", 0D)
+                            cmdCab.Parameters.AddWithValue("@metodo", strMetodo)
+                            idNuevo = Convert.ToInt32(cmdCab.ExecuteScalar())
                         End Using
+
+                        Dim sqlDetalle As String =
+                            "INSERT INTO detalle_pedidos (id_pedido, id_plato, nombre_plato, cantidad, precio_unitario, acompanamientos) " &
+                            "VALUES (@idPed, (SELECT id_plato FROM platos WHERE LOWER(nombre_plato) = LOWER(@plato) LIMIT 1), @plato, 1, @precio, @acomp);"
+
+                        Using cmdDet As New NpgsqlCommand(sqlDetalle, conn, trans)
+                            cmdDet.Parameters.AddWithValue("@idPed", idNuevo)
+                            cmdDet.Parameters.AddWithValue("@plato", strPlato)
+                            cmdDet.Parameters.AddWithValue("@precio", precioFinal)
+                            cmdDet.Parameters.AddWithValue("@acomp", strAcomp)
+                            cmdDet.ExecuteNonQuery()
+                        End Using
+
+                        trans.Commit()
+                        DispararPedidoRegistrado(idNuevo)
+                        Return True
                     Catch ex As Exception
+                        trans.Rollback()
                         ConexionBD.RegistrarFalloServidor(ex.Message)
+                        Throw
                     End Try
+                End Using
+            End Using
+        End Function
+
+        ''' <summary>
+        ''' Actualiza un pedido en la base de datos PostgreSQL.
+        ''' </summary>
+        Public Function Actualizar(id As Integer, cliente As String, mesa As String, plato As String, acomp As String, servicio As String) As Boolean
+            Dim strCliente As String = cliente.Trim()
+            Dim strMesa As String = mesa.Trim()
+            Dim strPlato As String = plato.Trim()
+            Dim strAcomp As String = acomp.Trim()
+            Dim strServicio As String = NormalizarTipoServicio(servicio)
+            Dim precioFinal As Decimal = ExtraerPrecioPlato(strPlato)
+
+            Using conn As NpgsqlConnection = ConexionBD.CrearConexion()
+                conn.Open()
+                Using trans As NpgsqlTransaction = conn.BeginTransaction()
+                    Try
+                        Dim sqlCab As String =
+                            "UPDATE pedidos SET nombre_cliente = @c, mesa_o_servicio = @m, tipo_servicio = @s, total = @total WHERE id_pedido = @id;"
+                        Using cmdCab As New NpgsqlCommand(sqlCab, conn, trans)
+                            cmdCab.Parameters.AddWithValue("@c", strCliente)
+                            cmdCab.Parameters.AddWithValue("@m", strMesa)
+                            cmdCab.Parameters.AddWithValue("@s", strServicio)
+                            cmdCab.Parameters.AddWithValue("@total", precioFinal)
+                            cmdCab.Parameters.AddWithValue("@id", id)
+                            cmdCab.ExecuteNonQuery()
+                        End Using
+
+                        ' Actualizar detalles mediante DELETE + INSERT
+                        Dim sqlDel As String = "DELETE FROM detalle_pedidos WHERE id_pedido = @id;"
+                        Using cmdDel As New NpgsqlCommand(sqlDel, conn, trans)
+                            cmdDel.Parameters.AddWithValue("@id", id)
+                            cmdDel.ExecuteNonQuery()
+                        End Using
+
+                        Dim sqlIns As String =
+                            "INSERT INTO detalle_pedidos (id_pedido, id_plato, nombre_plato, cantidad, precio_unitario, acompanamientos) " &
+                            "VALUES (@id, (SELECT id_plato FROM platos WHERE LOWER(nombre_plato) = LOWER(@plato) LIMIT 1), @plato, 1, @precio, @acomp);"
+                        Using cmdIns As New NpgsqlCommand(sqlIns, conn, trans)
+                            cmdIns.Parameters.AddWithValue("@id", id)
+                            cmdIns.Parameters.AddWithValue("@plato", strPlato)
+                            cmdIns.Parameters.AddWithValue("@precio", precioFinal)
+                            cmdIns.Parameters.AddWithValue("@acomp", strAcomp)
+                            cmdIns.ExecuteNonQuery()
+                        End Using
+
+                        trans.Commit()
+                        DispararPedidoModificado(id)
+                        Return True
+                    Catch ex As Exception
+                        trans.Rollback()
+                        ConexionBD.RegistrarFalloServidor(ex.Message)
+                        Throw
+                    End Try
+                End Using
+            End Using
+        End Function
+
+        ''' <summary>
+        ''' Elimina un pedido por ID en la base de datos PostgreSQL.
+        ''' </summary>
+        Public Function Eliminar(id As Integer) As Boolean
+            Try
+                Dim pId As New NpgsqlParameter("@id", id)
+                ConexionBD.EjecutarComando("DELETE FROM detalle_pedidos WHERE id_pedido = @id;", pId)
+                Dim pId2 As New NpgsqlParameter("@id", id)
+                Dim filas = ConexionBD.EjecutarComando("DELETE FROM pedidos WHERE id_pedido = @id;", pId2)
+                If filas > 0 Then
+                    DispararPedidoModificado(id)
+                    Return True
                 End If
-
-                Dim dr As DataRow = _tablaPedidos.NewRow()
-                dr("ID") = idNuevo
-                dr("Cliente") = strCliente
-                dr("Mesa") = strMesa
-                dr("PlatoPrincipal") = strPlato
-                dr("Acompanamientos") = strAcomp
-                dr("TipoServicio") = strServicio
-                dr("FechaHora") = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")
-                dr("FechaCobro") = If(estadoPago = "PAGADO", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"), "")
-                dr("PrecioUnitario") = precioFinal
-                dr("Subtotal") = Math.Round(precioFinal / 1.07D, 2)
-                dr("Impuesto") = Math.Round(precioFinal - CDec(dr("Subtotal")), 2)
-                dr("Total") = precioFinal
-                dr("Estado") = estadoPago
-                dr("EstadoCocina") = estadoCocina
-                dr("MetodoPago") = metodoPago
-                dr("MontoRecibido") = If(estadoPago = "PAGADO", precioFinal, 0D)
-                dr("Cambio") = 0D
-                dr("Facturado") = False
-                dr("NumeroFactura") = ""
-                dr("RUC_Cedula") = ""
-                dr("RazonSocial") = ""
-                dr("DireccionFiscal") = ""
-                dr("TelefonoCliente") = ""
-                dr("CorreoCliente") = ""
-
-                _tablaPedidos.Rows.Add(dr)
-
-                ' Crear línea en detalle_pedidos
-                Dim blnCeliaco As Boolean = strAcomp.IndexOf("CELÍACO", StringComparison.OrdinalIgnoreCase) >= 0 OrElse
-                                           strPlato.IndexOf("CELÍACO", StringComparison.OrdinalIgnoreCase) >= 0
-                AgregarItemDetalle(idNuevo, strPlato, 1, precioFinal, strAcomp, blnCeliaco, If(blnCeliaco, "CELÍACO: Estrictamente Sin Gluten", ""))
-
-                DispararPedidoRegistrado(idNuevo)
-                Return True
-            Catch ex As Exception
                 Return False
+            Catch ex As Exception
+                ConexionBD.RegistrarFalloServidor(ex.Message)
+                Throw
             End Try
         End Function
 
         ''' <summary>
-        ''' Actualiza la información de un pedido existente por ID.
-        ''' </summary>
-        Public Function Actualizar(id As Integer, cliente As String, mesa As String, plato As String, acomp As String, servicio As String) As Boolean
-            For Each row As DataRow In _tablaPedidos.Rows
-                If Convert.ToInt32(row("ID")) = id Then
-                    row("Cliente") = cliente.Trim()
-                    row("Mesa") = mesa.Trim()
-                    row("PlatoPrincipal") = plato.Trim()
-                    row("Acompanamientos") = acomp.Trim()
-                    row("TipoServicio") = servicio.Trim()
-
-                    Dim precioFinal As Decimal = ExtraerPrecioPlato(plato)
-                    row("PrecioUnitario") = precioFinal
-                    row("Subtotal") = Math.Round(precioFinal / 1.07D, 2)
-                    row("Impuesto") = Math.Round(precioFinal - CDec(row("Subtotal")), 2)
-                    row("Total") = precioFinal
-
-                    DispararPedidoModificado(id)
-                    Return True
-                End If
-            Next
-            Return False
-        End Function
-
-        ''' <summary>
-        ''' Elimina un pedido por ID de la tabla en memoria y en la base de datos PostgreSQL.
-        ''' </summary>
-        Public Function Eliminar(id As Integer) As Boolean
-            If ConexionBD.DebeUsarPostgreSQL() Then
-                Try
-                    ' Eliminar detalles y cabecera en PostgreSQL
-                    Dim pIdDet As New NpgsqlParameter("@id", id)
-                    ConexionBD.EjecutarComando("DELETE FROM detalle_pedidos WHERE id_pedido = @id;", pIdDet)
-
-                    Dim pIdPed As New NpgsqlParameter("@id", id)
-                    ConexionBD.EjecutarComando("DELETE FROM pedidos WHERE id_pedido = @id;", pIdPed)
-                Catch ex As Exception
-                    ConexionBD.RegistrarFalloServidor(ex.Message)
-                End Try
-            End If
-
-            For i As Integer = _tablaPedidos.Rows.Count - 1 To 0 Step -1
-                If Convert.ToInt32(_tablaPedidos.Rows(i)("ID")) = id Then
-                    _tablaPedidos.Rows.RemoveAt(i)
-
-                    ' Eliminar detalles en cascada
-                    For j As Integer = _tablaDetallePedidos.Rows.Count - 1 To 0 Step -1
-                        If Convert.ToInt32(_tablaDetallePedidos.Rows(j)("IdPedido")) = id Then
-                            _tablaDetallePedidos.Rows.RemoveAt(j)
-                        End If
-                    Next
-
-                    DispararPedidoModificado(id)
-                    Return True
-                End If
-            Next
-            Return False
-        End Function
-
-        ''' <summary>
-        ''' Confirma el pago de un pedido en Caja (RF-011, CU-006) y lo sincroniza para cocina y BD PostgreSQL.
+        ''' Confirma el pago de un pedido en Caja actualizando directamente PostgreSQL.
         ''' </summary>
         Public Function ConfirmarCobro(id As Integer, metodoPago As String, montoRecibido As Decimal, cambio As Decimal) As Boolean
-            Dim exitoBD As Boolean = False
-            If ConexionBD.DebeUsarPostgreSQL() Then
-                Try
-                    Dim sql As String = "UPDATE pedidos SET estado = 'Pagado', metodo_pago = @metodo, monto_recibido = @monto, cambio = @cambio, fecha_cobro = CURRENT_TIMESTAMP WHERE id_pedido = @id;"
-                    Dim p1 As New NpgsqlParameter("@metodo", metodoPago)
-                    Dim p2 As New NpgsqlParameter("@monto", montoRecibido)
-                    Dim p3 As New NpgsqlParameter("@cambio", cambio)
-                    Dim p4 As New NpgsqlParameter("@id", id)
-                    Dim filas = ConexionBD.EjecutarComando(sql, p1, p2, p3, p4)
-                    exitoBD = (filas > 0)
-                Catch ex As Exception
-                    ' Respaldo si no existe la columna fecha_cobro en el esquema de BD
-                    Try
-                        Dim sqlBasico As String = "UPDATE pedidos SET estado = 'Pagado', metodo_pago = @metodo, monto_recibido = @monto, cambio = @cambio WHERE id_pedido = @id;"
-                        Dim p1 As New NpgsqlParameter("@metodo", metodoPago)
-                        Dim p2 As New NpgsqlParameter("@monto", montoRecibido)
-                        Dim p3 As New NpgsqlParameter("@cambio", cambio)
-                        Dim p4 As New NpgsqlParameter("@id", id)
-                        Dim filas = ConexionBD.EjecutarComando(sqlBasico, p1, p2, p3, p4)
-                        exitoBD = (filas > 0)
-                    Catch ex2 As Exception
-                        ConexionBD.RegistrarFalloServidor(ex2.Message)
-                    End Try
-                End Try
-            End If
+            Try
+                Dim sql As String = "UPDATE pedidos SET estado = 'Pagado', metodo_pago = @metodo, monto_recibido = @monto, cambio = @cambio, fecha_cobro = CURRENT_TIMESTAMP WHERE id_pedido = @id;"
+                Dim p1 As New NpgsqlParameter("@metodo", metodoPago.Trim())
+                Dim p2 As New NpgsqlParameter("@monto", montoRecibido)
+                Dim p3 As New NpgsqlParameter("@cambio", cambio)
+                Dim p4 As New NpgsqlParameter("@id", id)
+                Dim filas = ConexionBD.EjecutarComando(sql, p1, p2, p3, p4)
 
-            ' Sincronizar en memoria para actualización inmediata de vistas y cocina KDS
-            Dim encontradoMemoria As Boolean = False
-            For Each row As DataRow In _tablaPedidos.Rows
-                If Convert.ToInt32(row("ID")) = id Then
-                    row("Estado") = "PAGADO"
-                    row("FechaCobro") = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")
-                    row("MetodoPago") = metodoPago
-                    row("MontoRecibido") = montoRecibido
-                    row("Cambio") = cambio
-                    encontradoMemoria = True
-                    Exit For
+                If filas > 0 Then
+                    DispararPedidoModificado(id)
+                    DispararPedidoRegistrado(id)
+                    Return True
                 End If
-            Next
-
-            DispararPedidoModificado(id)
-            DispararPedidoRegistrado(id)
-            Return (exitoBD OrElse encontradoMemoria)
+                Return False
+            Catch ex As Exception
+                ConexionBD.RegistrarFalloServidor(ex.Message)
+                Throw
+            End Try
         End Function
 
         ''' <summary>
-        ''' Registra los datos fiscales y genera el número correlativo fiscal único de factura.
-        ''' Sincroniza tanto en la base de datos PostgreSQL como en la memoria local.
+        ''' Registra los datos fiscales y genera el correlativo usando la secuencia seq_factura de PostgreSQL.
         ''' </summary>
         Public Function RegistrarFactura(id As Integer, rucCedula As String, razonSocial As String, direccion As String, telefono As String, correo As String) As String
-            _contadorFacturas += 1
-            Dim correlativo = $"FAC-2026-{_contadorFacturas}"
-
-            If ConexionBD.DebeUsarPostgreSQL() Then
-                Try
-                    Dim sql As String = "UPDATE pedidos SET facturado = TRUE, numero_factura = @num, ruc_cedula = @ruc, razon_social = @razon, direccion_fiscal = @dir, telefono_cliente = @tel, correo_cliente = @correo WHERE id_pedido = @id;"
-                    Dim p1 As New NpgsqlParameter("@num", correlativo)
-                    Dim p2 As New NpgsqlParameter("@ruc", rucCedula.Trim())
-                    Dim p3 As New NpgsqlParameter("@razon", razonSocial.Trim())
-                    Dim p4 As New NpgsqlParameter("@dir", direccion.Trim())
-                    Dim p5 As New NpgsqlParameter("@tel", telefono.Trim())
-                    Dim p6 As New NpgsqlParameter("@correo", correo.Trim())
-                    Dim p7 As New NpgsqlParameter("@id", id)
-                    ConexionBD.EjecutarComando(sql, p1, p2, p3, p4, p5, p6, p7)
-                Catch ex As Exception
-                    ConexionBD.UltimoMensajeEstado = $"Error al actualizar datos fiscales en PostgreSQL: {ex.Message}"
-                End Try
-            End If
-
-            For Each row As DataRow In _tablaPedidos.Rows
-                If Convert.ToInt32(row("ID")) = id Then
-                    If CBool(row("Facturado")) AndAlso Not String.IsNullOrEmpty(row("NumeroFactura").ToString()) Then
-                        Return row("NumeroFactura").ToString()
+            Try
+                ' 1. Si ya está facturado en la BD, retornar el número existente
+                Dim dtExistente = ConexionBD.EjecutarConsultaDataTable("SELECT facturado, numero_factura FROM pedidos WHERE id_pedido = @id;", New NpgsqlParameter("@id", id))
+                If dtExistente IsNot Nothing AndAlso dtExistente.Rows.Count > 0 Then
+                    Dim row = dtExistente.Rows(0)
+                    If row("facturado") IsNot DBNull.Value AndAlso CBool(row("facturado")) AndAlso Not String.IsNullOrWhiteSpace(row("numero_factura").ToString()) Then
+                        Return row("numero_factura").ToString()
                     End If
-
-                    row("Facturado") = True
-                    row("NumeroFactura") = correlativo
-                    row("RUC_Cedula") = rucCedula.Trim()
-                    row("RazonSocial") = razonSocial.Trim()
-                    row("DireccionFiscal") = direccion.Trim()
-                    row("TelefonoCliente") = telefono.Trim()
-                    row("CorreoCliente") = correo.Trim()
-                    DispararPedidoModificado(id)
-                    Return correlativo
                 End If
-            Next
 
-            DispararPedidoModificado(id)
-            Return correlativo
+                ' 2. Obtener el siguiente valor de la secuencia seq_factura
+                Dim numSeq As Long = 1001
+                Dim dtSeq = ConexionBD.EjecutarConsultaDataTable("SELECT nextval('seq_factura');")
+                If dtSeq IsNot Nothing AndAlso dtSeq.Rows.Count > 0 Then
+                    numSeq = Convert.ToInt64(dtSeq.Rows(0)(0))
+                End If
+
+                Dim correlativo As String = $"FAC-2026-{numSeq}"
+
+                Dim sql As String = "UPDATE pedidos SET facturado = TRUE, numero_factura = @num, ruc_cedula = @ruc, razon_social = @razon, direccion_fiscal = @dir, telefono_cliente = @tel, correo_cliente = @correo WHERE id_pedido = @id;"
+                Dim p1 As New NpgsqlParameter("@num", correlativo)
+                Dim p2 As New NpgsqlParameter("@ruc", rucCedula.Trim())
+                Dim p3 As New NpgsqlParameter("@razon", razonSocial.Trim())
+                Dim p4 As New NpgsqlParameter("@dir", direccion.Trim())
+                Dim p5 As New NpgsqlParameter("@tel", telefono.Trim())
+                Dim p6 As New NpgsqlParameter("@correo", correo.Trim())
+                Dim p7 As New NpgsqlParameter("@id", id)
+
+                ConexionBD.EjecutarComando(sql, p1, p2, p3, p4, p5, p6, p7)
+
+                DispararPedidoModificado(id)
+                Return correlativo
+            Catch ex As Exception
+                ConexionBD.RegistrarFalloServidor(ex.Message)
+                Throw
+            End Try
         End Function
 
         ''' <summary>
-        ''' Obtiene el próximo correlativo fiscal estimado.
+        ''' Obtiene el próximo correlativo fiscal estimado consultando el estado actual de seq_factura sin consumirla.
         ''' </summary>
         Public Function ObtenerProximoNumeroFactura() As String
-            Return $"FAC-2026-{_contadorFacturas + 1}"
+            Try
+                Dim sql As String = "SELECT COALESCE((SELECT last_value FROM seq_factura), 1000) + 1;"
+                Dim dt = ConexionBD.EjecutarConsultaDataTable(sql)
+                If dt IsNot Nothing AndAlso dt.Rows.Count > 0 Then
+                    Dim proxVal = Convert.ToInt64(dt.Rows(0)(0))
+                    Return $"FAC-2026-{proxVal}"
+                End If
+            Catch ex As Exception
+            End Try
+            Return "FAC-2026-1001"
         End Function
 
         ''' <summary>
-        ''' Actualiza el estado de la comanda en cocina (RECIBIDO, EN_PREPARACION, LISTO, ENTREGADO).
-        ''' Regla de integridad: No se permite marcar como ENTREGADO si el pedido no está PAGADO.
-        ''' Persiste de forma inmediata en PostgreSQL y en memoria local.
+        ''' Actualiza el estado de cocina en PostgreSQL con validación de regla de negocio.
         ''' </summary>
         Public Function ActualizarEstadoCocina(id As Integer, nuevoEstadoCocina As String) As Boolean
             Dim estadoCocinaNormalizado As String = nuevoEstadoCocina.Trim().ToUpper()
 
-            ' 1. Verificar estado actual de pago antes de permitir ENTREGADO
-            Dim pedidoRow As DataRow = ObtenerPedidoPorId(id)
-            If pedidoRow IsNot Nothing Then
-                Dim estadoPago = pedidoRow("Estado").ToString().ToUpper()
-                If estadoCocinaNormalizado = "ENTREGADO" AndAlso estadoPago <> "PAGADO" Then
-                    ' Bloqueo estricto: Todo producto debe ser pagado antes de ser entregado o despachado
-                    Return False
-                End If
-            End If
+            Try
+                Dim sql As String =
+                    "UPDATE pedidos " &
+                    "SET estado_cocina = @estadoCocina " &
+                    "WHERE id_pedido = @id " &
+                    "  AND (@estadoCocina <> 'ENTREGADO' OR UPPER(estado) = 'PAGADO');"
 
-            ' 2. Persistir en la base de datos PostgreSQL si está conectada
-            If ConexionBD.DebeUsarPostgreSQL() Then
-                Try
-                    Dim sql As String = "UPDATE pedidos SET estado_cocina = @estadoCocina WHERE id_pedido = @id;"
-                    Dim pEstado As New NpgsqlParameter("@estadoCocina", estadoCocinaNormalizado)
-                    Dim pId As New NpgsqlParameter("@id", id)
-                    ConexionBD.EjecutarComando(sql, pEstado, pId)
-                Catch ex As Exception
-                    ConexionBD.RegistrarFalloServidor(ex.Message)
-                End Try
-            End If
+                Dim pEstado As New NpgsqlParameter("@estadoCocina", estadoCocinaNormalizado)
+                Dim pId As New NpgsqlParameter("@id", id)
 
-            ' 3. Sincronizar en memoria y notificar a los observadores reactivos
-            For Each row As DataRow In _tablaPedidos.Rows
-                If Convert.ToInt32(row("ID")) = id Then
-                    row("EstadoCocina") = estadoCocinaNormalizado
+                Dim filas = ConexionBD.EjecutarComando(sql, pEstado, pId)
+                If filas > 0 Then
                     DispararPedidoModificado(id)
                     Return True
                 End If
-            Next
-
-            DispararPedidoModificado(id)
-            Return True
+                Return False
+            Catch ex As Exception
+                ConexionBD.RegistrarFalloServidor(ex.Message)
+                Throw
+            End Try
         End Function
 
         ''' <summary>
-        ''' Obtiene todas las órdenes del repositorio mapeadas al modelo de comanda de cocina CcnPedidoModel.
-        ''' Incluye el desglose individual de platos desde _tablaDetallePedidos.
+        ''' Obtiene las comandas activas de cocina consultando directamente PostgreSQL.
         ''' </summary>
         Public Function ObtenerComandasCocina() As List(Of Models.CcnPedidoModel)
-            If ConexionBD.DebeUsarPostgreSQL() Then
-                ' Asegurar sincronización activa de pedidos desde la base de datos
-                ObtenerTodos()
-            End If
-
             Dim lista As New List(Of Models.CcnPedidoModel)()
 
-            For Each row As DataRow In _tablaPedidos.Rows
-                Dim id As Integer = Convert.ToInt32(row("ID"))
-                Dim strEstadoPago As String = If(row("Estado") IsNot DBNull.Value, row("Estado").ToString().ToUpper(), "PENDIENTE")
-                Dim strMetodo As String = If(row("MetodoPago") IsNot DBNull.Value, row("MetodoPago").ToString(), "Pendiente")
+            Dim sqlCabecera As String =
+                "SELECT " &
+                "  p.id_pedido, " &
+                "  p.nombre_cliente, " &
+                "  p.mesa_o_servicio, " &
+                "  p.tipo_servicio, " &
+                "  UPPER(p.estado) AS estado_pago, " &
+                "  COALESCE(p.estado_cocina, 'RECIBIDO') AS estado_cocina, " &
+                "  COALESCE(p.metodo_pago, 'Efectivo') AS metodo_pago, " &
+                "  p.fecha_hora, " &
+                "  COALESCE(p.facturado, FALSE) AS facturado, " &
+                "  COALESCE(p.numero_factura, '') AS numero_factura " &
+                "FROM pedidos p " &
+                "ORDER BY p.id_pedido ASC;"
 
-                ' El pedido se visualiza en Cocina KDS. Si está PENDIENTE de pago, la comanda
-                ' muestra el indicador [NO PAGADO (Cobrar en Caja)] y bloquea la entrega hasta que Caja confirme cobro.
+            Dim dtCab = ConexionBD.EjecutarConsultaDataTable(sqlCabecera)
+            If dtCab Is Nothing OrElse dtCab.Rows.Count = 0 Then Return lista
 
+            Dim dtDet = ObtenerDetallesTodos()
+
+            For Each row As DataRow In dtCab.Rows
+                Dim id As Integer = Convert.ToInt32(row("id_pedido"))
+                Dim strEstadoPago As String = row("estado_pago").ToString()
+                Dim strMetodo As String = row("metodo_pago").ToString()
                 Dim strCodigo As String = $"#08-{1040 + id}"
-                Dim strMesa As String = If(row("Mesa") IsNot DBNull.Value, row("Mesa").ToString(), "Mesa 01")
-                Dim strCliente As String = If(row("Cliente") IsNot DBNull.Value, row("Cliente").ToString(), "Cliente General")
-                Dim strServicio As String = If(row("TipoServicio") IsNot DBNull.Value, row("TipoServicio").ToString(), "Comer en el Sitio")
+                Dim strMesa As String = row("mesa_o_servicio").ToString()
+                Dim strCliente As String = row("nombre_cliente").ToString()
+                Dim strServicio As String = row("tipo_servicio").ToString()
                 Dim blnPagado As Boolean = (strEstadoPago = "PAGADO")
-                Dim blnFacturado As Boolean = (row("Facturado") IsNot DBNull.Value AndAlso CBool(row("Facturado")))
-                Dim strNumFactura As String = If(row("NumeroFactura") IsNot DBNull.Value, row("NumeroFactura").ToString(), "")
+                Dim blnFacturado As Boolean = CBool(row("facturado"))
+                Dim strNumFactura As String = row("numero_factura").ToString()
 
-                Dim strEstadoCocina As String = If(_tablaPedidos.Columns.Contains("EstadoCocina") AndAlso row("EstadoCocina") IsNot DBNull.Value, row("EstadoCocina").ToString().ToUpper(), "RECIBIDO")
+                Dim strEstadoCocina As String = row("estado_cocina").ToString().ToUpper()
                 Dim enumEstado As Models.CcnEstadoPedidoEnum = Models.CcnEstadoPedidoEnum.Recibido
                 Select Case strEstadoCocina
                     Case "EN_PREPARACION", "ENPREPARACION"
@@ -1074,17 +654,8 @@ Namespace Data
                 End Select
 
                 Dim dtHora As DateTime = DateTime.Now
-                If row("FechaHora") IsNot DBNull.Value Then
-                    Dim strHora As String = row("FechaHora").ToString()
-                    Dim parsedDt As DateTime
-                    If DateTime.TryParse(strHora, parsedDt) Then
-                        dtHora = parsedDt
-                    Else
-                        Dim ts As TimeSpan
-                        If TimeSpan.TryParse(strHora, ts) Then
-                            dtHora = DateTime.Today.Add(ts)
-                        End If
-                    End If
+                If row("fecha_hora") IsNot DBNull.Value Then
+                    DateTime.TryParse(row("fecha_hora").ToString(), dtHora)
                 End If
 
                 Dim objComanda As New Models.CcnPedidoModel(
@@ -1094,26 +665,18 @@ Namespace Data
                 objComanda.BlnFacturado = blnFacturado
                 objComanda.StrNumeroFactura = strNumFactura
 
-                ' Cargar platos detallados desde _tablaDetallePedidos
-                Dim rowsDetalle = _tablaDetallePedidos.Select($"IdPedido = {id}")
-                If rowsDetalle.Length > 0 Then
+                ' Cargar ítems detallados de este pedido
+                If dtDet IsNot Nothing Then
+                    Dim rowsDetalle = dtDet.Select($"IdPedido = {id}")
                     For Each r In rowsDetalle
                         Dim cant = Convert.ToInt32(r("Cantidad"))
                         Dim plato = r("Plato").ToString()
                         Dim precioUnit = Convert.ToDecimal(r("PrecioUnitario"))
-                        Dim acomp = If(r("Acompanamientos") IsNot DBNull.Value, r("Acompanamientos").ToString(), "")
-                        Dim celiaco = (r("EsAlertaCeliaco") IsNot DBNull.Value AndAlso CBool(r("EsAlertaCeliaco")))
-                        Dim msgAlerta = If(r("MensajeAlerta") IsNot DBNull.Value, r("MensajeAlerta").ToString(), "")
+                        Dim acomp = r("Acompanamientos").ToString()
+                        Dim celiaco = (plato.IndexOf("CELÍACO", StringComparison.OrdinalIgnoreCase) >= 0 OrElse plato.IndexOf("SIN GLUTEN", StringComparison.OrdinalIgnoreCase) >= 0)
 
-                        objComanda.LstDetallePlatos.Add(New Models.CcnItemPedidoModel(cant, plato, acomp, precioUnit, celiaco, msgAlerta))
+                        objComanda.LstDetallePlatos.Add(New Models.CcnItemPedidoModel(cant, plato, acomp, precioUnit, celiaco, If(celiaco, "CELÍACO: Estrictamente Sin Gluten", "")))
                     Next
-                Else
-                    Dim strPlato As String = If(row("PlatoPrincipal") IsNot DBNull.Value, row("PlatoPrincipal").ToString(), "Plato del Menú")
-                    Dim strAcomp As String = If(row("Acompanamientos") IsNot DBNull.Value, row("Acompanamientos").ToString(), "")
-                    Dim decPrecio As Decimal = If(row("Total") IsNot DBNull.Value, Convert.ToDecimal(row("Total")), 15.0D)
-                    Dim blnCelíaco As Boolean = strAcomp.IndexOf("CELÍACO", StringComparison.OrdinalIgnoreCase) >= 0 OrElse strPlato.IndexOf("CELÍACO", StringComparison.OrdinalIgnoreCase) >= 0
-
-                    objComanda.LstDetallePlatos.Add(New Models.CcnItemPedidoModel(1, strPlato, strAcomp, decPrecio, blnCelíaco, If(blnCelíaco, "CELÍACO: Estrictamente Sin Gluten", "")))
                 End If
 
                 lista.Add(objComanda)
