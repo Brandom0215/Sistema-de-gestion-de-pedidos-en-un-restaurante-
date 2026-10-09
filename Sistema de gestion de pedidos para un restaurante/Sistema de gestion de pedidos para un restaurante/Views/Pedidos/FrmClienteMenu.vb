@@ -48,6 +48,7 @@ Namespace Views.Pedidos
 
         Private Sub FrmClienteMenu_Load(sender As Object, e As EventArgs) Handles MyBase.Load
             AplicarTemaVisual()
+            ConfigurarValidacionesEntrada()
             InicializarEstructuraCarrito()
             CargarCategorias()
             CargarTiposServicio()
@@ -64,6 +65,17 @@ Namespace Views.Pedidos
 
             txtMesa.Text = "Mesa 01"
             CalcularTotalGeneral()
+        End Sub
+
+        ''' <summary>
+        ''' Configura validaciones en tiempo real (KeyPress) y límites de longitud (MaxLength)
+        ''' para los campos del cliente, evitando desbordamientos en la BD y caracteres no permitidos.
+        ''' </summary>
+        Private Sub ConfigurarValidacionesEntrada()
+            ValidadorEntrada.ConfigurarCampoNombreCliente(txtNombreCliente, 40)
+            ValidadorEntrada.ConfigurarCampoCorreo(txtCorreoCliente, 100)
+            ValidadorEntrada.ConfigurarCampoMesa(txtMesa, 30)
+            ValidadorEntrada.ConfigurarCampoBusqueda(txtBuscarPlato, 50)
         End Sub
 
         Protected Overrides Sub AplicarTemaVisual()
@@ -468,22 +480,22 @@ Namespace Views.Pedidos
             End If
 
             Dim nombreCliente As String = txtNombreCliente.Text.Trim()
-            If String.IsNullOrWhiteSpace(nombreCliente) Then
-                MostrarMensajeAdvertencia("Por favor ingrese su nombre para registrar el pedido.", "Nombre Requerido")
+            If Not ValidadorEntrada.EsNombreClienteValido(nombreCliente) Then
+                MostrarMensajeAdvertencia("Por favor ingrese un nombre de cliente válido (entre 2 y 40 caracteres, solo letras).", "Nombre Inválido")
                 txtNombreCliente.Focus()
                 Return
             End If
 
             Dim correoCliente As String = txtCorreoCliente.Text.Trim()
-            If String.IsNullOrWhiteSpace(correoCliente) OrElse Not correoCliente.Contains("@") OrElse Not correoCliente.Contains(".") Then
-                MostrarMensajeAdvertencia("Por favor ingrese un correo electrónico válido para la facturación digital.", "Correo Inválido")
+            If Not ValidadorEntrada.EsCorreoValido(correoCliente) Then
+                MostrarMensajeAdvertencia("Por favor ingrese un correo electrónico válido para la facturación digital (ej: cliente@gmail.com).", "Correo Inválido")
                 txtCorreoCliente.Focus()
                 Return
             End If
 
             Dim mesaODireccion As String = txtMesa.Text.Trim()
-            If String.IsNullOrWhiteSpace(mesaODireccion) Then
-                MostrarMensajeAdvertencia("Por favor ingrese el número de mesa o identificador de entrega.", "Mesa Requerida")
+            If Not ValidadorEntrada.EsMesaValida(mesaODireccion) Then
+                MostrarMensajeAdvertencia("Por favor ingrese una mesa o identificador de entrega válido (entre 1 y 30 caracteres).", "Mesa Inválida")
                 txtMesa.Focus()
                 Return
             End If

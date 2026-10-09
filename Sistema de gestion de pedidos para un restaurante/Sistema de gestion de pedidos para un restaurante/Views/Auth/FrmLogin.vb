@@ -23,6 +23,8 @@ Namespace Views.Auth
 
         Private Sub FrmLogin_Load(sender As Object, e As EventArgs) Handles MyBase.Load
             AplicarTemaVisual()
+            txtUsuario.MaxLength = 50
+            txtPassword.MaxLength = 50
             txtUsuario.Text = ""
             txtPassword.Text = ""
         End Sub

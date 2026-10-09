@@ -202,6 +202,154 @@ Namespace Services
                                         End Sub
         End Sub
 
+        ''' <summary>
+        ''' Configura un TextBox para identificador de Mesa o Tipo de Entrega (ej: "Mesa 01", "Barra 2", "Para Llevar").
+        ''' Restringe a 30 caracteres (VARCHAR(30) en BD).
+        ''' </summary>
+        Public Sub ConfigurarCampoMesa(txt As TextBox, Optional maxLength As Integer = 30)
+            If txt Is Nothing Then Return
+            txt.MaxLength = maxLength
+            AddHandler txt.KeyPress, Sub(s, e) PermitirSoloMesa(txt, e)
+            AddHandler txt.TextChanged, Sub(s, e)
+                                            Dim texto = txt.Text
+                                            If String.IsNullOrEmpty(texto) Then Return
+                                            Dim filtrado = New String(texto.Where(Function(c) Char.IsLetterOrDigit(c) OrElse " -_#/".Contains(c)).ToArray())
+                                            If filtrado.Length > txt.MaxLength Then
+                                                filtrado = filtrado.Substring(0, txt.MaxLength)
+                                            End If
+                                            If filtrado <> texto Then
+                                                Dim pos = Math.Min(txt.SelectionStart, filtrado.Length)
+                                                txt.Text = filtrado
+                                                txt.SelectionStart = pos
+                                            End If
+                                        End Sub
+        End Sub
+
+        ''' <summary>
+        ''' Configura un TextBox para contraseña (límite de longitud y bloqueo de espacios).
+        ''' </summary>
+        Public Sub ConfigurarCampoPassword(txt As TextBox, Optional maxLength As Integer = 50)
+            If txt Is Nothing Then Return
+            txt.MaxLength = maxLength
+            AddHandler txt.KeyPress, Sub(s, e)
+                                         If Char.IsControl(e.KeyChar) Then Return
+                                         If e.KeyChar = " "c Then e.Handled = True
+                                     End Sub
+            AddHandler txt.TextChanged, Sub(s, e)
+                                            Dim texto = txt.Text
+                                            If String.IsNullOrEmpty(texto) Then Return
+                                            Dim filtrado = texto.Replace(" ", "")
+                                            If filtrado.Length > txt.MaxLength Then
+                                                filtrado = filtrado.Substring(0, txt.MaxLength)
+                                            End If
+                                            If filtrado <> texto Then
+                                                Dim pos = Math.Min(txt.SelectionStart, filtrado.Length)
+                                                txt.Text = filtrado
+                                                txt.SelectionStart = pos
+                                            End If
+                                        End Sub
+        End Sub
+
+        ''' <summary>
+        ''' Configura un TextBox para nombre de productos/platos (letras, dígitos, espacios y puntuación común de menú).
+        ''' Restringe a 100 caracteres (VARCHAR(100) en BD).
+        ''' </summary>
+        Public Sub ConfigurarCampoNombrePlato(txt As TextBox, Optional maxLength As Integer = 100)
+            If txt Is Nothing Then Return
+            txt.MaxLength = maxLength
+            AddHandler txt.KeyPress, Sub(s, e)
+                                         If Char.IsControl(e.KeyChar) Then Return
+                                         If txt.SelectionLength = 0 AndAlso txt.Text.Length >= txt.MaxLength Then
+                                             e.Handled = True
+                                             Return
+                                         End If
+                                         If e.KeyChar = "'"c OrElse e.KeyChar = ";"c OrElse e.KeyChar = """"c Then
+                                             e.Handled = True
+                                             Return
+                                         End If
+                                     End Sub
+            AddHandler txt.TextChanged, Sub(s, e)
+                                            Dim texto = txt.Text
+                                            If String.IsNullOrEmpty(texto) Then Return
+                                            Dim filtrado = New String(texto.Where(Function(c) c <> "'"c AndAlso c <> ";"c AndAlso c <> """"c).ToArray())
+                                            If filtrado.Length > txt.MaxLength Then
+                                                filtrado = filtrado.Substring(0, txt.MaxLength)
+                                            End If
+                                            If filtrado <> texto Then
+                                                Dim pos = Math.Min(txt.SelectionStart, filtrado.Length)
+                                                txt.Text = filtrado
+                                                txt.SelectionStart = pos
+                                            End If
+                                        End Sub
+        End Sub
+
+        ''' <summary>
+        ''' Configura un TextBox para tiempo de preparación (ej: "15 min", "10-20 min").
+        ''' Restringe a 20 caracteres (VARCHAR(20) en BD).
+        ''' </summary>
+        Public Sub ConfigurarCampoTiempoCoccion(txt As TextBox, Optional maxLength As Integer = 20)
+            If txt Is Nothing Then Return
+            txt.MaxLength = maxLength
+            AddHandler txt.KeyPress, Sub(s, e)
+                                         If Char.IsControl(e.KeyChar) Then Return
+                                         If txt.SelectionLength = 0 AndAlso txt.Text.Length >= txt.MaxLength Then
+                                             e.Handled = True
+                                             Return
+                                         End If
+                                         If Char.IsLetterOrDigit(e.KeyChar) OrElse " -./~".Contains(e.KeyChar) Then
+                                             Return
+                                         Else
+                                             e.Handled = True
+                                         End If
+                                     End Sub
+            AddHandler txt.TextChanged, Sub(s, e)
+                                            Dim texto = txt.Text
+                                            If String.IsNullOrEmpty(texto) Then Return
+                                            Dim filtrado = New String(texto.Where(Function(c) Char.IsLetterOrDigit(c) OrElse " -./~".Contains(c)).ToArray())
+                                            If filtrado.Length > txt.MaxLength Then
+                                                filtrado = filtrado.Substring(0, txt.MaxLength)
+                                            End If
+                                            If filtrado <> texto Then
+                                                Dim pos = Math.Min(txt.SelectionStart, filtrado.Length)
+                                                txt.Text = filtrado
+                                                txt.SelectionStart = pos
+                                            End If
+                                        End Sub
+        End Sub
+
+        ''' <summary>
+        ''' Configura un TextBox multilínea para descripción general de platos o notas.
+        ''' Restringe a 250 caracteres.
+        ''' </summary>
+        Public Sub ConfigurarCampoDescripcion(txt As TextBox, Optional maxLength As Integer = 250)
+            If txt Is Nothing Then Return
+            txt.MaxLength = maxLength
+            AddHandler txt.KeyPress, Sub(s, e)
+                                         If Char.IsControl(e.KeyChar) Then Return
+                                         If txt.SelectionLength = 0 AndAlso txt.Text.Length >= txt.MaxLength Then
+                                             e.Handled = True
+                                             Return
+                                         End If
+                                         If e.KeyChar = "'"c OrElse e.KeyChar = ";"c Then
+                                             e.Handled = True
+                                             Return
+                                         End If
+                                     End Sub
+            AddHandler txt.TextChanged, Sub(s, e)
+                                            Dim texto = txt.Text
+                                            If String.IsNullOrEmpty(texto) Then Return
+                                            Dim filtrado = New String(texto.Where(Function(c) c <> "'"c AndAlso c <> ";"c).ToArray())
+                                            If filtrado.Length > txt.MaxLength Then
+                                                filtrado = filtrado.Substring(0, txt.MaxLength)
+                                            End If
+                                            If filtrado <> texto Then
+                                                Dim pos = Math.Min(txt.SelectionStart, filtrado.Length)
+                                                txt.Text = filtrado
+                                                txt.SelectionStart = pos
+                                            End If
+                                        End Sub
+        End Sub
+
         ' =========================================================================
         ' 2. BLOQUEO EN TIEMPO REAL POR TECLADO (KeyPress)
         ' =========================================================================
@@ -414,6 +562,24 @@ Namespace Services
             End If
         End Sub
 
+        ''' <summary>
+        ''' Permite caracteres alfanuméricos, espacios, guiones y símbolos habituales para mesas (ej: "Mesa 01", "Barra #2").
+        ''' </summary>
+        Public Sub PermitirSoloMesa(txt As TextBox, e As KeyPressEventArgs)
+            If Char.IsControl(e.KeyChar) Then Return
+            If txt.SelectionLength = 0 AndAlso txt.Text.Length >= txt.MaxLength Then
+                e.Handled = True
+                Return
+            End If
+            If Char.IsLetterOrDigit(e.KeyChar) Then Return
+            Select Case e.KeyChar
+                Case " "c, "-"c, "_"c, "#"c, "/"c
+                    Return
+                Case Else
+                    e.Handled = True
+            End Select
+        End Sub
+
         ' =========================================================================
         ' 3. VALIDACIONES LÓGICAS EN CÓDIGO (Reglas de Negocio)
         ' =========================================================================
@@ -566,6 +732,33 @@ Namespace Services
             If String.IsNullOrWhiteSpace(direccion) Then Return permitirVacio
             Dim limpio As String = direccion.Trim()
             Return (limpio.Length >= 3 AndAlso limpio.Length <= 80)
+        End Function
+
+        ''' <summary>
+        ''' Valida que el identificador de mesa o servicio tenga entre 1 y 30 caracteres.
+        ''' </summary>
+        Public Function EsMesaValida(mesa As String) As Boolean
+            If String.IsNullOrWhiteSpace(mesa) Then Return False
+            Dim limpio = mesa.Trim()
+            Return (limpio.Length >= 1 AndAlso limpio.Length <= 30)
+        End Function
+
+        ''' <summary>
+        ''' Valida que la contraseña cumpla con una longitud mínima y máxima segura.
+        ''' </summary>
+        Public Function EsPasswordValido(password As String, Optional minLength As Integer = 4, Optional maxLength As Integer = 50) As Boolean
+            If String.IsNullOrWhiteSpace(password) Then Return False
+            Dim limpio = password.Trim()
+            Return (limpio.Length >= minLength AndAlso limpio.Length <= maxLength)
+        End Function
+
+        ''' <summary>
+        ''' Valida que el nombre del plato tenga al menos 2 caracteres y una longitud válida (máx 100).
+        ''' </summary>
+        Public Function EsNombrePlatoValido(nombre As String) As Boolean
+            If String.IsNullOrWhiteSpace(nombre) Then Return False
+            Dim limpio = nombre.Trim()
+            Return (limpio.Length >= 2 AndAlso limpio.Length <= 100)
         End Function
 
     End Module
