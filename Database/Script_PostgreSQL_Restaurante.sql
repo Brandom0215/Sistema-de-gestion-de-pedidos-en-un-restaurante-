@@ -429,3 +429,10 @@ SELECT setval('asientos_contables_id_asiento_seq', 4, true);
 SELECT setval('asiento_detalles_id_detalle_seq', (SELECT COALESCE(MAX(id_detalle), 1) FROM asiento_detalles), true);
 SELECT setval('movimientos_caja_id_movimiento_seq', 3, true);
 SELECT setval('empleados_id_empleado_seq', 7, true);
+
+-- 10. PERMISOS Y PRIVILEGIOS DE ACCESO PARA USUARIO_RESTAURANTE
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO usuario_restaurante;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO usuario_restaurante;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO usuario_restaurante;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO usuario_restaurante;
+

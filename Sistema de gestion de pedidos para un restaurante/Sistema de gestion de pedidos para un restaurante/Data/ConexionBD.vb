@@ -40,7 +40,7 @@ Namespace Data
         Public Property Host As String
             Get
                 If Not String.IsNullOrWhiteSpace(_hostCustom) Then Return _hostCustom
-                Return ObtenValorConfig("DB_HOST", "10.196.68.15")
+                Return ObtenValorConfig("DB_HOST", "")
             End Get
             Set(value As String)
                 _hostCustom = value
@@ -79,7 +79,7 @@ Namespace Data
         Public Property Usuario As String
             Get
                 If Not String.IsNullOrWhiteSpace(_usuarioCustom) Then Return _usuarioCustom
-                Return ObtenValorConfig("DB_USER", "usuario_restaurante")
+                Return ObtenValorConfig("DB_USER","")
             End Get
             Set(value As String)
                 _usuarioCustom = value
@@ -92,7 +92,7 @@ Namespace Data
         Public Property Clave As String
             Get
                 If Not String.IsNullOrWhiteSpace(_claveCustom) Then Return _claveCustom
-                Return ObtenValorConfig("DB_PASS", "")
+                Return ObtenValorConfig("DB_PASS","")
             End Get
             Set(value As String)
                 _claveCustom = value
@@ -105,7 +105,7 @@ Namespace Data
         Public Property TimeoutSegundos As Integer
             Get
                 If _timeoutCustom.HasValue Then Return _timeoutCustom.Value
-                Return ObtenValorEnteroConfig("DB_TIMEOUT", 10)
+                Return ObtenValorEnteroConfig("DB_TIMEOUT",10)
             End Get
             Set(value As Integer)
                 _timeoutCustom = value
@@ -130,9 +130,9 @@ Namespace Data
 
             If Not String.IsNullOrWhiteSpace(dirBase) Then
                 posiblesRutas.Add(IO.Path.Combine(dirBase, ".env"))
-                ' Buscar hasta 5 niveles arriba (para salir de bin/Debug/net10.0-windows)
+                ' Buscar hasta 7 niveles arriba (para salir de bin/Debug/net10.0-windows y llegar a la raiz)
                 Dim dirPadre As IO.DirectoryInfo = IO.Directory.GetParent(dirBase)
-                For i As Integer = 1 To 5
+                For i As Integer = 1 To 7
                     If dirPadre IsNot Nothing Then
                         posiblesRutas.Add(IO.Path.Combine(dirPadre.FullName, ".env"))
                         dirPadre = dirPadre.Parent
@@ -375,17 +375,23 @@ Namespace Data
         ''' </summary>
         Public Function EjecutarConsultaDataTable(sql As String, ParamArray parametros() As NpgsqlParameter) As DataTable
             Dim dt As New DataTable()
-            Using conn As NpgsqlConnection = CrearConexion()
-                conn.Open()
-                Using cmd As New NpgsqlCommand(sql, conn)
-                    If parametros IsNot Nothing Then
-                        cmd.Parameters.AddRange(parametros)
-                    End If
-                    Using da As New NpgsqlDataAdapter(cmd)
-                        da.Fill(dt)
+            Try
+                Using conn As NpgsqlConnection = CrearConexion()
+                    conn.Open()
+                    Using cmd As New NpgsqlCommand(sql, conn)
+                        If parametros IsNot Nothing Then
+                            cmd.Parameters.AddRange(parametros)
+                        End If
+                        Using da As New NpgsqlDataAdapter(cmd)
+                            da.Fill(dt)
+                        End Using
                     End Using
                 End Using
-            End Using
+            Catch ex As Exception
+                UltimoMensajeEstado = $"Error SQL: {ex.Message}"
+                Console.WriteLine($"[ERROR POSTGRESQL] {ex.Message}")
+                Throw
+            End Try
             Return dt
         End Function
 
@@ -393,15 +399,21 @@ Namespace Data
         ''' Ejecuta un comando SQL de acción (INSERT, UPDATE, DELETE) en PostgreSQL.
         ''' </summary>
         Public Function EjecutarComando(sql As String, ParamArray parametros() As NpgsqlParameter) As Integer
-            Using conn As NpgsqlConnection = CrearConexion()
-                conn.Open()
-                Using cmd As New NpgsqlCommand(sql, conn)
-                    If parametros IsNot Nothing Then
-                        cmd.Parameters.AddRange(parametros)
-                    End If
-                    Return cmd.ExecuteNonQuery()
+            Try
+                Using conn As NpgsqlConnection = CrearConexion()
+                    conn.Open()
+                    Using cmd As New NpgsqlCommand(sql, conn)
+                        If parametros IsNot Nothing Then
+                            cmd.Parameters.AddRange(parametros)
+                        End If
+                        Return cmd.ExecuteNonQuery()
+                    End Using
                 End Using
-            End Using
+            Catch ex As Exception
+                UltimoMensajeEstado = $"Error SQL: {ex.Message}"
+                Console.WriteLine($"[ERROR POSTGRESQL] {ex.Message}")
+                Throw
+            End Try
         End Function
 
         ''' <summary>
