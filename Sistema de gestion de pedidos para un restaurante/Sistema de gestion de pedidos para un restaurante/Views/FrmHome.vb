@@ -143,6 +143,7 @@ Namespace Views
                 btnNavFacturacion.Visible = False
                 btnNavMetricas.Visible = False
                 btnNavCatalogo.Visible = False
+                btnNavContabilidad.Visible = False
             Else
                 ' En Modo Personal (Staff) se oculta el botón de acceso y se habilita Cerrar Sesión
                 btnAccesoPersonal.Visible = False
@@ -158,6 +159,7 @@ Namespace Views
                         btnNavFacturacion.Visible = False
                         btnNavMetricas.Visible = False
                         btnNavCatalogo.Visible = False
+                        btnNavContabilidad.Visible = False
                     Case Models.RolUsuarioEnum.Cajero
                         ' CAJERO TIENE ACCESO EXCLUSIVO A CAJA/COBROS E HISTORIAL DE FACTURAS (SIN TOMA DE PEDIDOS)
                         btnNavCliente.Visible = False
@@ -168,15 +170,17 @@ Namespace Views
                         btnNavFacturacion.Text = "  Historial de Facturas"
                         btnNavMetricas.Visible = False
                         btnNavCatalogo.Visible = False
+                        btnNavContabilidad.Visible = False
                     Case Else
-                        ' ADMINISTRADOR: ÚNICAMENTE MÉTRICAS/INGRESOS Y GESTIÓN DE MENÚ/PLATOS
-                        ' Todos los demás apartados (Pedidos, Cocina, Caja/Cobros, Facturas) se quitan de su vista
+                        ' ADMINISTRADOR: MÉTRICAS/INGRESOS, CONTABILIDAD FISCAL DGI Y GESTIÓN DE MENÚ/PLATOS
                         btnNavCliente.Visible = False
                         btnNavCocina.Visible = False
                         btnNavCobroAdmin.Visible = False
                         btnNavFacturacion.Visible = False
                         btnNavMetricas.Visible = True
                         btnNavMetricas.Text = "  Métricas & Ingresos"
+                        btnNavContabilidad.Visible = True
+                        btnNavContabilidad.Text = "  Contabilidad"
                         btnNavCatalogo.Visible = True
                         btnNavCatalogo.Text = "  Menú & Platos"
                 End Select
@@ -190,7 +194,7 @@ Namespace Views
         ''' </summary>
         Private Sub ReorganizarBotonesMenu()
             Dim intPosicionY As Integer = 110
-            Dim arrBotones = {btnNavCliente, btnNavCocina, btnNavCobroAdmin, btnNavFacturacion, btnNavMetricas, btnNavCatalogo}
+            Dim arrBotones = {btnNavCliente, btnNavCocina, btnNavCobroAdmin, btnNavFacturacion, btnNavMetricas, btnNavContabilidad, btnNavCatalogo}
             For Each btn In arrBotones
                 If btn IsNot Nothing AndAlso btn.Visible Then
                     btn.Location = New Point(6, intPosicionY)
@@ -356,7 +360,7 @@ Namespace Views
             If btnAccesoPersonal IsNot Nothing Then ThemeConfig.EstilizarBotonPrimario(btnAccesoPersonal)
             If btnCerrarSesion IsNot Nothing Then ThemeConfig.EstilizarBotonEliminar(btnCerrarSesion)
 
-            Dim botonesNav = {btnNavCliente, btnNavCocina, btnNavCobroAdmin, btnNavFacturacion, btnNavMetricas, btnNavCatalogo}
+            Dim botonesNav = {btnNavCliente, btnNavCocina, btnNavCobroAdmin, btnNavFacturacion, btnNavMetricas, btnNavContabilidad, btnNavCatalogo}
             For Each btn In botonesNav
                 If btn IsNot Nothing Then
                     ThemeConfig.EstilizarBotonNavegacion(btn, False)
@@ -368,7 +372,7 @@ Namespace Views
         Private Sub SeleccionarBotonNavegacion(btnSeleccionado As Button, tituloModulo As String)
             If btnSeleccionado Is Nothing Then Return
 
-            Dim botonesNav = {btnNavCliente, btnNavCocina, btnNavCobroAdmin, btnNavFacturacion, btnNavMetricas, btnNavCatalogo}
+            Dim botonesNav = {btnNavCliente, btnNavCocina, btnNavCobroAdmin, btnNavFacturacion, btnNavMetricas, btnNavContabilidad, btnNavCatalogo}
             For Each btn In botonesNav
                 If btn IsNot Nothing Then
                     ThemeConfig.EstilizarBotonNavegacion(btn, False)
@@ -412,6 +416,11 @@ Namespace Views
         Private Sub btnNavMetricas_Click(sender As Object, e As EventArgs) Handles btnNavMetricas.Click
             SeleccionarBotonNavegacion(btnNavMetricas, "Métricas & Rendimiento del Negocio")
             AbrirFormularioEnPanel(Of Dashboards.FrmDashboardGeneral)()
+        End Sub
+
+        Private Sub btnNavContabilidad_Click(sender As Object, e As EventArgs) Handles btnNavContabilidad.Click
+            SeleccionarBotonNavegacion(btnNavContabilidad, "Contabilidad y Cumplimiento Fiscal DGI (NIIF PYMES)")
+            AbrirFormularioEnPanel(Of Contabilidad.FrmModuloContable)()
         End Sub
 
         Private Sub btnNavCatalogo_Click(sender As Object, e As EventArgs) Handles btnNavCatalogo.Click

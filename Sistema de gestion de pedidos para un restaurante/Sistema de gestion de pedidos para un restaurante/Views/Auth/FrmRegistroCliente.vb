@@ -1,5 +1,6 @@
 Imports System.Drawing
 Imports System.Windows.Forms
+Imports Sistema_de_gestion_de_pedidos_para_un_restaurante.Services
 Imports Sistema_de_gestion_de_pedidos_para_un_restaurante.Theme
 
 Namespace Views.Auth
@@ -15,6 +16,17 @@ Namespace Views.Auth
 
         Private Sub FrmRegistroCliente_Load(sender As Object, e As EventArgs) Handles MyBase.Load
             AplicarTemaVisual()
+            ConfigurarValidacionesEntrada()
+        End Sub
+
+        ''' <summary>
+        ''' Configura validaciones de entrada en tiempo real y límites de longitud para proteger la BD.
+        ''' </summary>
+        Private Sub ConfigurarValidacionesEntrada()
+            ValidadorEntrada.ConfigurarCampoNombreCliente(txtNombreCompleto, 40)
+            ValidadorEntrada.ConfigurarCampoTelefono(txtTelefono, 30)
+            ValidadorEntrada.ConfigurarCampoCorreo(txtCorreo, 50)
+            ValidadorEntrada.ConfigurarCampoPassword(txtPassword, 50)
         End Sub
 
         Protected Overrides Sub AplicarTemaVisual()
@@ -38,28 +50,33 @@ Namespace Views.Auth
         Public Property NombreClienteRegistrado As String = String.Empty
 
         Private Sub btnRegistrar_Click(sender As Object, e As EventArgs) Handles btnRegistrar.Click
-            If String.IsNullOrWhiteSpace(txtNombreCompleto.Text) Then
-                MostrarMensajeAdvertencia("Por favor, ingrese su nombre completo.", "Registro de Cliente")
+            Dim nombreCliente As String = txtNombreCompleto.Text.Trim()
+            If Not ValidadorEntrada.EsNombreClienteValido(nombreCliente) Then
+                MostrarMensajeAdvertencia("Por favor, ingrese un nombre completo válido (entre 2 y 40 caracteres, solo letras).", "Registro de Cliente")
                 txtNombreCompleto.Focus()
                 Return
             End If
 
-            If String.IsNullOrWhiteSpace(txtCorreo.Text) Then
-                MostrarMensajeAdvertencia("Por favor, ingrese su correo electrónico o usuario.", "Registro de Cliente")
+            Dim telefonoCliente As String = txtTelefono.Text.Trim()
+            If Not ValidadorEntrada.EsTelefonoValido(telefonoCliente, False) Then
+                MostrarMensajeAdvertencia("Por favor, ingrese un número de teléfono válido (entre 7 y 15 dígitos numéricos).", "Registro de Cliente")
+                txtTelefono.Focus()
+                Return
+            End If
+
+            Dim correoCliente As String = txtCorreo.Text.Trim()
+            If Not ValidadorEntrada.EsCorreoValido(correoCliente) Then
+                MostrarMensajeAdvertencia("Por favor, ingrese un correo electrónico válido (ej: usuario@gmail.com).", "Registro de Cliente")
                 txtCorreo.Focus()
                 Return
             End If
 
-            If String.IsNullOrWhiteSpace(txtPassword.Text) Then
-                MostrarMensajeAdvertencia("Por favor, cree una contraseña de acceso.", "Registro de Cliente")
+            Dim passwordCliente As String = txtPassword.Text.Trim()
+            If Not ValidadorEntrada.EsPasswordValido(passwordCliente, 4, 50) Then
+                MostrarMensajeAdvertencia("La contraseña debe contener al menos 4 caracteres.", "Registro de Cliente")
                 txtPassword.Focus()
                 Return
             End If
-
-            Dim nombreCliente As String = txtNombreCompleto.Text.Trim()
-            Dim telefonoCliente As String = txtTelefono.Text.Trim()
-            Dim correoCliente As String = txtCorreo.Text.Trim()
-            Dim passwordCliente As String = txtPassword.Text.Trim()
 
             Dim exito As Boolean = Data.UsuarioDAO.RegistrarCliente(nombreCliente, telefonoCliente, correoCliente, passwordCliente)
             If Not exito Then

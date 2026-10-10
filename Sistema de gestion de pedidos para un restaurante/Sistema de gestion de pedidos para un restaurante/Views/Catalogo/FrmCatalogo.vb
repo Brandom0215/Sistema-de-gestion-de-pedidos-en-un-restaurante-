@@ -1,6 +1,7 @@
 Imports System.Data
 Imports System.Drawing
 Imports System.Windows.Forms
+Imports Sistema_de_gestion_de_pedidos_para_un_restaurante.Services
 Imports Sistema_de_gestion_de_pedidos_para_un_restaurante.Theme
 
 Namespace Views.Catalogo
@@ -22,10 +23,23 @@ Namespace Views.Catalogo
 
         Private Sub FrmCatalogo_Load(sender As Object, e As EventArgs) Handles MyBase.Load
             AplicarTemaVisual()
+            ConfigurarValidacionesEntrada()
             CargarCategorias()
             RefrescarGrilla()
 
             _tmrAutoRefresh = New Timer() With {.Interval = 3000, .Enabled = True}
+        End Sub
+
+        ''' <summary>
+        ''' Configura validaciones en tiempo real (KeyPress) y límites de longitud (MaxLength)
+        ''' para los campos del catálogo de platos, protegiendo la base de datos contra desbordamientos.
+        ''' </summary>
+        Private Sub ConfigurarValidacionesEntrada()
+            ValidadorEntrada.ConfigurarCampoNombrePlato(txtNombrePlato, 100)
+            ValidadorEntrada.ConfigurarCampoMoneda(txtPrecio, 10, 7, 2)
+            ValidadorEntrada.ConfigurarCampoTiempoCoccion(txtTiempoCoccion, 20)
+            ValidadorEntrada.ConfigurarCampoDescripcion(txtDescripcion, 250)
+            ValidadorEntrada.ConfigurarCampoBusqueda(txtBuscarPlato, 50)
         End Sub
 
         Private Sub FrmCatalogo_FormClosed(sender As Object, e As FormClosedEventArgs) Handles MyBase.FormClosed
@@ -129,22 +143,32 @@ Namespace Views.Catalogo
         ' =========================================================================
 
         Private Sub btnGuardarPlato_Click(sender As Object, e As EventArgs) Handles btnGuardarPlato.Click
-            If String.IsNullOrWhiteSpace(txtNombrePlato.Text) Then
-                MostrarMensajeAdvertencia("Por favor, ingrese el nombre del plato.", "Validación")
+            Dim nombre As String = txtNombrePlato.Text.Trim()
+            If Not ValidadorEntrada.EsNombrePlatoValido(nombre) Then
+                MostrarMensajeAdvertencia("Por favor, ingrese un nombre de plato válido (entre 2 y 100 caracteres).", "Validación")
                 txtNombrePlato.Focus()
                 Return
             End If
 
+            If cboCategoria.SelectedIndex < 0 OrElse String.IsNullOrWhiteSpace(cboCategoria.Text) Then
+                MostrarMensajeAdvertencia("Por favor, seleccione una categoría para el plato.", "Validación")
+                cboCategoria.Focus()
+                Return
+            End If
+
             Dim precioValido As Decimal = 0D
-            If Not Decimal.TryParse(txtPrecio.Text.Trim(), precioValido) OrElse precioValido <= 0 Then
-                MostrarMensajeAdvertencia("Por favor, ingrese un precio válido mayor a 0.", "Validación")
+            If Not ValidadorEntrada.EsMontoValido(txtPrecio.Text, precioValido, 0.01D, 9999.99D) Then
+                MostrarMensajeAdvertencia("Por favor, ingrese un precio válido mayor a 0 (ej: 8.50).", "Validación")
                 txtPrecio.Focus()
                 Return
             End If
 
-            Dim nombre As String = txtNombrePlato.Text.Trim()
             Dim categoria As String = cboCategoria.SelectedItem.ToString()
             Dim tiempo As String = txtTiempoCoccion.Text.Trim()
+            If String.IsNullOrWhiteSpace(tiempo) Then
+                tiempo = "15 min"
+            End If
+
             Dim disponible As Boolean = chkDisponible.Checked
             Dim descripcion As String = txtDescripcion.Text.Trim()
 
@@ -168,20 +192,32 @@ Namespace Views.Catalogo
                 Return
             End If
 
-            If String.IsNullOrWhiteSpace(txtNombrePlato.Text) Then
-                MostrarMensajeAdvertencia("El nombre del plato no puede estar vacío.", "Validación")
+            Dim nombre As String = txtNombrePlato.Text.Trim()
+            If Not ValidadorEntrada.EsNombrePlatoValido(nombre) Then
+                MostrarMensajeAdvertencia("El nombre del plato no es válido (entre 2 y 100 caracteres).", "Validación")
+                txtNombrePlato.Focus()
+                Return
+            End If
+
+            If cboCategoria.SelectedIndex < 0 OrElse String.IsNullOrWhiteSpace(cboCategoria.Text) Then
+                MostrarMensajeAdvertencia("Por favor, seleccione una categoría para el plato.", "Validación")
+                cboCategoria.Focus()
                 Return
             End If
 
             Dim precioValido As Decimal = 0D
-            If Not Decimal.TryParse(txtPrecio.Text.Trim(), precioValido) OrElse precioValido <= 0 Then
-                MostrarMensajeAdvertencia("Ingrese un precio válido.", "Validación")
+            If Not ValidadorEntrada.EsMontoValido(txtPrecio.Text, precioValido, 0.01D, 9999.99D) Then
+                MostrarMensajeAdvertencia("Ingrese un precio numérico válido mayor a 0 (ej: 8.50).", "Validación")
+                txtPrecio.Focus()
                 Return
             End If
 
-            Dim nombre As String = txtNombrePlato.Text.Trim()
             Dim categoria As String = cboCategoria.SelectedItem.ToString()
             Dim tiempo As String = txtTiempoCoccion.Text.Trim()
+            If String.IsNullOrWhiteSpace(tiempo) Then
+                tiempo = "15 min"
+            End If
+
             Dim disponible As Boolean = chkDisponible.Checked
             Dim descripcion As String = txtDescripcion.Text.Trim()
 

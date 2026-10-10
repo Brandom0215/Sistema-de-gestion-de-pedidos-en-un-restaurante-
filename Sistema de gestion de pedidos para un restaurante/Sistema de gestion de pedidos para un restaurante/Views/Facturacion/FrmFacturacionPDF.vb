@@ -46,6 +46,7 @@ Namespace Views.Facturacion
 
         Private Sub FrmFacturacionPDF_Load(sender As Object, e As EventArgs) Handles MyBase.Load
             AplicarTemaVisual()
+            ConfigurarValidacionesEntrada()
             InicializarControlesConexionBD()
             CargarPedidosPagados()
 
@@ -54,6 +55,19 @@ Namespace Views.Facturacion
             ConexionBD.SuscribirModoConexionCambiado(AddressOf OnModoConexionCambiadoDesdeBD)
 
             _tmrAutoRefresh = New Timer() With {.Interval = 3000, .Enabled = True}
+        End Sub
+
+        ''' <summary>
+        ''' Configura validaciones de entrada en tiempo real (KeyPress) y límites de longitud (MaxLength)
+        ''' para los campos fiscales de facturación y búsqueda.
+        ''' </summary>
+        Private Sub ConfigurarValidacionesEntrada()
+            ValidadorEntrada.ConfigurarCampoBusqueda(txtBuscar, 50)
+            ValidadorEntrada.ConfigurarCampoRucCedula(txtRucCedula, 30)
+            ValidadorEntrada.ConfigurarCampoRazonSocial(txtRazonSocial, 40)
+            ValidadorEntrada.ConfigurarCampoTelefono(txtTelefono, 30)
+            ValidadorEntrada.ConfigurarCampoCorreo(txtCorreo, 100)
+            ValidadorEntrada.ConfigurarCampoDireccion(txtDireccion, 80)
         End Sub
 
         Private Sub FrmFacturacionPDF_FormClosed(sender As Object, e As FormClosedEventArgs) Handles MyBase.FormClosed
@@ -466,6 +480,16 @@ Namespace Views.Facturacion
             Dim correo = If(row("CorreoCliente") IsNot DBNull.Value AndAlso Not String.IsNullOrWhiteSpace(row("CorreoCliente").ToString()), row("CorreoCliente").ToString(), "cliente@restaurante.com")
             Dim dir = If(row("DireccionFiscal") IsNot DBNull.Value AndAlso Not String.IsNullOrWhiteSpace(row("DireccionFiscal").ToString()), row("DireccionFiscal").ToString(), "Ciudad de Panamá")
 
+            ' Garantizar que el nombre cargado por defecto no contenga dígitos (ej: si venía como "Mesa 01")
+            If Not ValidadorEntrada.EsNombreClienteValido(razon) Then
+                Dim razonSinDigitos = New String(razon.Where(Function(c) Not Char.IsDigit(c)).ToArray()).Trim()
+                If ValidadorEntrada.EsNombreClienteValido(razonSinDigitos) Then
+                    razon = razonSinDigitos
+                Else
+                    razon = "Consumidor Final"
+                End If
+            End If
+
             txtRucCedula.Text = ruc
             txtRazonSocial.Text = razon
             txtTelefono.Text = tel
@@ -486,7 +510,7 @@ Namespace Views.Facturacion
                 txtDireccion.ReadOnly = False
                 txtTelefono.ReadOnly = False
                 txtCorreo.ReadOnly = False
-                btnImprimir.Text = "🖨️ Imprimir Recibo"
+                btnImprimir.Text = "🖨️ Emitir & Imprimir"
             End If
         End Sub
 
@@ -690,14 +714,9 @@ Namespace Views.Facturacion
         ' =========================================================================
 
         Private Sub btnEnviarCorreo_Click(sender As Object, e As EventArgs) Handles btnEnviarCorreo.Click
-            If Not ValidarFormulario() Then Return
+            If Not ValidarFormulario(True) Then Return
 
             Dim correoCliente = txtCorreo.Text.Trim()
-            If String.IsNullOrWhiteSpace(correoCliente) OrElse Not correoCliente.Contains("@") OrElse Not correoCliente.Contains(".") Then
-                MessageBox.Show("Por favor, ingrese un correo electrónico válido para enviar la factura (ej: cliente@dominio.com).", "Correo Inválido", MessageBoxButtons.OK, MessageBoxIcon.Warning)
-                txtCorreo.Focus()
-                Return
-            End If
 
             Try
                 Dim rutaArchivo = AsegurarEmisionFactura()
@@ -832,21 +851,41 @@ Namespace Views.Facturacion
             End Try
         End Sub
 
-        Private Function ValidarFormulario() As Boolean
+        Private Function ValidarFormulario(Optional requiereCorreo As Boolean = False) As Boolean
             If _idPedidoSeleccionado <= 0 OrElse _pedidoSeleccionadoRow Is Nothing Then
                 MessageBox.Show("Por favor, seleccione un pedido cobrado de la lista.", "Selección Requerida", MessageBoxButtons.OK, MessageBoxIcon.Warning)
                 Return False
             End If
 
-            If String.IsNullOrWhiteSpace(txtRucCedula.Text) Then
-                MessageBox.Show("Por favor ingrese la cédula o RUC del cliente.", "Datos del Cliente", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+            If Not ValidadorEntrada.EsRucCedulaValida(txtRucCedula.Text) Then
+                MessageBox.Show("Por favor ingrese una cédula o RUC válido (mínimo 3 caracteres, ej: 8-800-1234).", "Cédula / RUC Requerido", MessageBoxButtons.OK, MessageBoxIcon.Warning)
                 txtRucCedula.Focus()
                 Return False
             End If
 
-            If String.IsNullOrWhiteSpace(txtRazonSocial.Text) Then
-                MessageBox.Show("Por favor ingrese el nombre del cliente.", "Datos del Cliente", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+            If Not ValidadorEntrada.EsRazonSocialValida(txtRazonSocial.Text) Then
+                MessageBox.Show("Por favor ingrese un nombre de cliente válido (entre 2 y 40 caracteres, solo letras).", "Nombre de Cliente Requerido", MessageBoxButtons.OK, MessageBoxIcon.Warning)
                 txtRazonSocial.Focus()
+                Return False
+            End If
+
+            If Not String.IsNullOrWhiteSpace(txtTelefono.Text) AndAlso Not ValidadorEntrada.EsTelefonoValido(txtTelefono.Text, True) Then
+                MessageBox.Show("El teléfono ingresado no tiene un formato válido (debe contener entre 7 y 15 dígitos numéricos).", "Teléfono Inválido", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                txtTelefono.Focus()
+                Return False
+            End If
+
+            If requiereCorreo OrElse Not String.IsNullOrWhiteSpace(txtCorreo.Text) Then
+                If Not ValidadorEntrada.EsCorreoValido(txtCorreo.Text) Then
+                    MessageBox.Show("El correo electrónico ingresado no es válido. Por favor verifique el formato ingresado (ej: cliente@gmail.com).", "Correo Inválido", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                    txtCorreo.Focus()
+                    Return False
+                End If
+            End If
+
+            If Not ValidadorEntrada.EsDireccionValida(txtDireccion.Text, True) Then
+                MessageBox.Show("La dirección ingresada supera el límite permitido (máximo 80 caracteres).", "Dirección Inválida", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                txtDireccion.Focus()
                 Return False
             End If
 
@@ -886,12 +925,13 @@ Namespace Views.Facturacion
             txtTelefono.Clear()
             txtCorreo.Clear()
             txtDireccion.Clear()
-            txtRucCedula.ReadOnly = False
-            txtRazonSocial.ReadOnly = False
-            txtDireccion.ReadOnly = False
-            txtTelefono.ReadOnly = False
-            txtCorreo.ReadOnly = False
-            btnImprimir.Text = "🖨️ Imprimir Recibo"
+            ' Bloquear edición cuando no hay ningún pedido seleccionado
+            txtRucCedula.ReadOnly = True
+            txtRazonSocial.ReadOnly = True
+            txtDireccion.ReadOnly = True
+            txtTelefono.ReadOnly = True
+            txtCorreo.ReadOnly = True
+            btnImprimir.Text = "🖨️ Emitir / Reimprimir"
             ActualizarTicketVisual()
             If dgvPedidosFacturar.SelectedRows.Count > 0 Then
                 dgvPedidosFacturar.ClearSelection()

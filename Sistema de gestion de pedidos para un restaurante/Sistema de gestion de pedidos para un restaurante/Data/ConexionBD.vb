@@ -91,7 +91,7 @@ Namespace Data
         ''' </summary>
         Public Property Clave As String
             Get
-                If Not String.IsNullOrWhiteSace(_claveCustom) Then Return _claveCustom
+                If Not String.IsNullOrWhiteSpace(_claveCustom) Then Return _claveCustom
                 Return ObtenValorConfig("DB_PASS","")
             End Get
             Set(value As String)
@@ -414,6 +414,21 @@ Namespace Data
                 Console.WriteLine($"[ERROR POSTGRESQL] {ex.Message}")
                 Throw
             End Try
+        End Function
+
+        ''' <summary>
+        ''' Ejecuta una consulta SQL en PostgreSQL y retorna el valor escalar de la primera celda.
+        ''' </summary>
+        Public Function EjecutarEscalar(sql As String, ParamArray parametros() As NpgsqlParameter) As Object
+            Using conn As NpgsqlConnection = CrearConexion()
+                conn.Open()
+                Using cmd As New NpgsqlCommand(sql, conn)
+                    If parametros IsNot Nothing Then
+                        cmd.Parameters.AddRange(parametros)
+                    End If
+                    Return cmd.ExecuteScalar()
+                End Using
+            End Using
         End Function
 
     End Module

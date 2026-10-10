@@ -2,6 +2,7 @@ Imports System
 Imports System.Drawing
 Imports System.Windows.Forms
 Imports Sistema_de_gestion_de_pedidos_para_un_restaurante.Data
+Imports Sistema_de_gestion_de_pedidos_para_un_restaurante.Services
 Imports Sistema_de_gestion_de_pedidos_para_un_restaurante.Theme
 
 Namespace Views.Cocina
@@ -31,6 +32,7 @@ Namespace Views.Cocina
 
         Private Sub FrmCcnNuevoPedidoDialog_Load(ByVal sender As Object, ByVal e As EventArgs) Handles MyBase.Load
             AplicarTemaVisual()
+            ConfigurarValidacionesEntrada()
             CargarCatalogoPlatos()
             InicializarCombos()
 
@@ -41,6 +43,16 @@ Namespace Views.Cocina
             End If
 
             ActualizarTotalCalculado()
+        End Sub
+
+        ''' <summary>
+        ''' Configura validaciones en tiempo real (KeyPress) y límites de longitud (MaxLength)
+        ''' para los campos de la comanda manual, protegiendo la base de datos contra desbordamientos.
+        ''' </summary>
+        Private Sub ConfigurarValidacionesEntrada()
+            ValidadorEntrada.ConfigurarCampoNombreCliente(txtCcnCliente, 40)
+            ValidadorEntrada.ConfigurarCampoMesa(txtCcnMesa, 30)
+            ValidadorEntrada.ConfigurarCampoDescripcion(txtCcnNotas, 150)
         End Sub
 
         Protected Overrides Sub AplicarTemaVisual()
@@ -127,8 +139,8 @@ Namespace Views.Cocina
 
         Private Sub btnCcnGuardarPedido_Click(ByVal sender As Object, ByVal e As EventArgs) Handles btnCcnGuardarPedido.Click
             Dim strCliente As String = txtCcnCliente.Text.Trim()
-            If String.IsNullOrWhiteSpace(strCliente) Then
-                MessageBox.Show("Por favor ingrese el nombre del cliente.", "Validación", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+            If Not ValidadorEntrada.EsNombreClienteValido(strCliente) Then
+                MessageBox.Show("Por favor ingrese un nombre de cliente válido (entre 2 y 40 caracteres, solo letras).", "Validación", MessageBoxButtons.OK, MessageBoxIcon.Warning)
                 txtCcnCliente.Focus()
                 Return
             End If
@@ -137,10 +149,26 @@ Namespace Views.Cocina
             If String.IsNullOrWhiteSpace(strMesa) Then
                 strMesa = If(cboCcnTipoServicio.SelectedIndex = 1, "ENTREGAS", "Mesa 01")
             End If
+            If Not ValidadorEntrada.EsMesaValida(strMesa) Then
+                MessageBox.Show("Por favor indique una mesa o identificador de entrega válido (entre 1 y 30 caracteres).", "Validación", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                txtCcnMesa.Focus()
+                Return
+            End If
+
+            If cboCcnPlato.SelectedIndex < 0 OrElse cboCcnPlato.SelectedItem Is Nothing Then
+                MessageBox.Show("Por favor seleccione un plato del menú.", "Validación", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                cboCcnPlato.Focus()
+                Return
+            End If
 
             Dim strServicio As String = If(cboCcnTipoServicio.SelectedIndex = 1, "Para Llevar", "Comer en el Sitio")
             Dim strPlatoSeleccionado As String = cboCcnPlato.SelectedItem.ToString()
             Dim intCantidad As Integer = Convert.ToInt32(numCcnCantidad.Value)
+            If intCantidad <= 0 Then
+                MessageBox.Show("La cantidad a ordenar debe ser al menos 1.", "Validación", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                numCcnCantidad.Focus()
+                Return
+            End If
 
             ' Formar descripción del plato con su cantidad si es > 1
             Dim strPlatoFinal As String = If(intCantidad > 1, $"{intCantidad}x {strPlatoSeleccionado}", strPlatoSeleccionado)
@@ -189,7 +217,7 @@ Namespace Views.Cocina
                 Me.DialogResult = DialogResult.OK
                 Me.Close()
             Else
-                MostrarMensajeError("No se pudo registrar la comanda en memoria.", "Error")
+                MostrarMensajeError("No se pudo registrar la comanda en la base de datos.", "Error")
             End If
         End Sub
 
