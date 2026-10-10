@@ -40,6 +40,7 @@ Namespace Views
     Friend WithEvents btnNavFacturacion As System.Windows.Forms.Button
     Friend WithEvents btnNavMetricas As System.Windows.Forms.Button
     Friend WithEvents btnNavCatalogo As System.Windows.Forms.Button
+    Friend WithEvents btnNavContabilidad As System.Windows.Forms.Button
 
     Friend WithEvents pnlSidebarFooter As System.Windows.Forms.Panel
     Friend WithEvents lblEstadoBaseDatos As System.Windows.Forms.Label
@@ -81,6 +82,7 @@ Namespace Views
         Me.btnNavFacturacion = New System.Windows.Forms.Button()
         Me.btnNavMetricas = New System.Windows.Forms.Button()
         Me.btnNavCatalogo = New System.Windows.Forms.Button()
+        Me.btnNavContabilidad = New System.Windows.Forms.Button()
 
         Me.pnlSidebarFooter = New System.Windows.Forms.Panel()
         Me.lblEstadoBaseDatos = New System.Windows.Forms.Label()
@@ -112,6 +114,7 @@ Namespace Views
         ' pnlSidebar
         ' 
         Me.pnlSidebar.Controls.Add(Me.btnCerrarSesion)
+        Me.pnlSidebar.Controls.Add(Me.btnNavContabilidad)
         Me.pnlSidebar.Controls.Add(Me.btnNavCatalogo)
         Me.pnlSidebar.Controls.Add(Me.btnNavMetricas)
         Me.pnlSidebar.Controls.Add(Me.btnNavFacturacion)
@@ -273,6 +276,17 @@ Namespace Views
         Me.btnNavCatalogo.UseVisualStyleBackColor = True
         Me.btnNavCatalogo.UseMnemonic = False
         Me.btnNavCatalogo.Visible = False
+        ' 
+        ' btnNavContabilidad
+        ' 
+        Me.btnNavContabilidad.Location = New System.Drawing.Point(6, 226)
+        Me.btnNavContabilidad.Name = "btnNavContabilidad"
+        Me.btnNavContabilidad.Size = New System.Drawing.Size(238, 48)
+        Me.btnNavContabilidad.TabIndex = 7
+        Me.btnNavContabilidad.Text = "  📊 Contabilidad"
+        Me.btnNavContabilidad.UseVisualStyleBackColor = True
+        Me.btnNavContabilidad.UseMnemonic = False
+        Me.btnNavContabilidad.Visible = False
 
         ' 
         ' btnCerrarSesion

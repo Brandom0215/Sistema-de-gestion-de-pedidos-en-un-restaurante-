@@ -404,5 +404,20 @@ Namespace Data
             End Using
         End Function
 
+        ''' <summary>
+        ''' Ejecuta una consulta SQL en PostgreSQL y retorna el valor escalar de la primera celda.
+        ''' </summary>
+        Public Function EjecutarEscalar(sql As String, ParamArray parametros() As NpgsqlParameter) As Object
+            Using conn As NpgsqlConnection = CrearConexion()
+                conn.Open()
+                Using cmd As New NpgsqlCommand(sql, conn)
+                    If parametros IsNot Nothing Then
+                        cmd.Parameters.AddRange(parametros)
+                    End If
+                    Return cmd.ExecuteScalar()
+                End Using
+            End Using
+        End Function
+
     End Module
 End Namespace
