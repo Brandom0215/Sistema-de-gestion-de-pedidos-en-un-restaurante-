@@ -442,5 +442,26 @@ Namespace Theme
             End Try
         End Sub
 
+        ''' <summary>
+        ''' Aplica estilo visual moderno, colores y fuentes institucionales a un DataGridView.
+        ''' </summary>
+        Public Sub EstilizarDataGrid(dgv As DataGridView)
+            If dgv Is Nothing Then Return
+            dgv.BackgroundColor = Color.White
+            dgv.BorderStyle = BorderStyle.None
+            dgv.CellBorderStyle = DataGridViewCellBorderStyle.SingleHorizontal
+            dgv.GridColor = ColorBorder
+            dgv.DefaultCellStyle.SelectionBackColor = Color.FromArgb(240, 230, 220)
+            dgv.DefaultCellStyle.SelectionForeColor = ColorNeutralDark
+            dgv.DefaultCellStyle.Font = ObtenerFuenteCuerpo(9.0F)
+            dgv.ColumnHeadersDefaultCellStyle.BackColor = ColorSecondary
+            dgv.ColumnHeadersDefaultCellStyle.ForeColor = Color.White
+            dgv.ColumnHeadersDefaultCellStyle.Font = ObtenerFuenteSubtitulo(9.0F, FontStyle.Bold)
+            dgv.ColumnHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleLeft
+            dgv.EnableHeadersVisualStyles = False
+            dgv.RowTemplate.Height = 28
+            dgv.ColumnHeadersHeight = 32
+        End Sub
+
     End Module
 End Namespace

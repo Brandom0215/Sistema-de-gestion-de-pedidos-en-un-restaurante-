@@ -144,9 +144,10 @@ Namespace Views.Pedidos
 
         Private Sub CargarMetodosPago()
             cboMetodoPago.Items.Clear()
-            cboMetodoPago.Items.Add("Pago en Caja (Efectivo / Tarjeta)")
+            cboMetodoPago.Items.Add("Efectivo (Cobro Inmediato)")
+            cboMetodoPago.Items.Add("Tarjeta POS (Cobro Inmediato)")
             cboMetodoPago.Items.Add("Pago por QR / Yappy")
-            cboMetodoPago.Items.Add("Transferencia Bancaria")
+            cboMetodoPago.Items.Add("Pago en Caja (Pendiente)")
             cboMetodoPago.SelectedIndex = 0
         End Sub
 
@@ -517,7 +518,12 @@ Namespace Views.Pedidos
                 End If
             End Using
 
-            ' 2. Procesar según el Método de Pago Seleccionado
+            ' 2. Determinar si el pedido se procesa como PAGADO de inmediato o queda PENDIENTE
+            Dim esCobroInmediato As Boolean = metodoPago.IndexOf("Inmediato", StringComparison.OrdinalIgnoreCase) >= 0 OrElse
+                                              metodoPago.IndexOf("QR", StringComparison.OrdinalIgnoreCase) >= 0 OrElse
+                                              metodoPago.IndexOf("Yappy", StringComparison.OrdinalIgnoreCase) >= 0 OrElse
+                                              metodoPago.IndexOf("Transferencia", StringComparison.OrdinalIgnoreCase) >= 0
+
             Dim esDigital As Boolean = metodoPago.IndexOf("QR", StringComparison.OrdinalIgnoreCase) >= 0 OrElse
                                       metodoPago.IndexOf("Yappy", StringComparison.OrdinalIgnoreCase) >= 0 OrElse
                                       metodoPago.IndexOf("Transferencia", StringComparison.OrdinalIgnoreCase) >= 0
@@ -530,8 +536,10 @@ Namespace Views.Pedidos
                         Return
                     End If
                 End Using
+            End If
 
-                ' Pago confirmado por la pasarela: Registrar como PAGADO directamente
+            If esCobroInmediato Then
+                ' Registrar como PAGADO directamente y contabilizar de inmediato
                 Dim idPedidoGenerado As Integer = PedidoDAO.GuardarPedidoCompleto(
                     nombreCliente,
                     mesaODireccion,
@@ -546,8 +554,13 @@ Namespace Views.Pedidos
                 )
 
                 If idPedidoGenerado > 0 Then
-                    ' Emisión automática de factura electrónica digital PDF
+                    ' Emisión automática de factura electrónica digital
                     Dim numFactura As String = PedidoDAO.RegistrarFactura(idPedidoGenerado, "8-800-1234", nombreCliente, "Ciudad de Panamá", "+507 6200-1122", correoCliente)
+                    Try
+                        ContabilidadDAO.GenerarAsientoVenta(idPedidoGenerado, numFactura, totalFinal, metodoPago, 1, $"Venta cobrada Factura {numFactura} ({metodoPago})")
+                    Catch
+                    End Try
+
                     Try
                         Dim carpetaFacturas As String = IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "FacturasEmitidas")
                         If Not IO.Directory.Exists(carpetaFacturas) Then IO.Directory.CreateDirectory(carpetaFacturas)
@@ -560,14 +573,13 @@ Namespace Views.Pedidos
                     End Try
 
                     MostrarMensajeExito(
-                        $"¡Pago Aprobado y Transacción Exitosa por Pasarela Digital!{vbCrLf}{vbCrLf}" &
-                        $"N° Pedido: #{idPedidoGenerado}{vbCrLf}" &
-                        $"N° Factura PDF: {numFactura}{vbCrLf}" &
+                        $"¡Pedido #{idPedidoGenerado} y Venta Registrados Exitosamente!{vbCrLf}{vbCrLf}" &
                         $"Cliente: {nombreCliente}{vbCrLf}" &
-                        $"Correo: {correoCliente}{vbCrLf}" &
+                        $"N° Factura: {numFactura}{vbCrLf}" &
+                        $"Método de Pago: {metodoPago}{vbCrLf}" &
                         $"Total Cobrado: ${totalFinal:N2}{vbCrLf}{vbCrLf}" &
-                        $"⚡ Su comanda ha sido enviada automáticamente al Monitor de Cocina KDS para su preparación inmediata sin intermediarios y su factura PDF ha sido generada.",
-                        "Pago & Comanda Confirmados"
+                        $"✅ La venta fue contabilizada automáticamente en el Módulo de Contabilidad (con ITBMS 7%), y la comanda fue enviada a Cocina.",
+                        "Venta y Comanda Confirmadas"
                     )
 
                     LimpiarCarritoYExtras()
@@ -575,8 +587,7 @@ Namespace Views.Pedidos
                     MostrarMensajeAdvertencia("Ocurrió un error al registrar el pedido pagado en la base de datos.", "Error de Registro")
                 End If
             Else
-                ' B. PAGO EN CAJA (EFECTIVO / TARJETA PRESENCIAL)
-                ' Pausa de Seguridad: Se guarda como PENDIENTE. No va a cocina hasta que el cajero confirme cobro
+                ' PAGO PENDIENTE EN CAJA
                 Dim idPedidoGenerado As Integer = PedidoDAO.GuardarPedidoCompleto(
                     nombreCliente,
                     mesaODireccion,
@@ -591,15 +602,32 @@ Namespace Views.Pedidos
                 )
 
                 If idPedidoGenerado > 0 Then
-                    MostrarMensajeExito(
+                    ' Opción de cobro inmediato si se desea finalizar de una vez
+                    Dim cobrarAhora As Boolean = MessageBox.Show(
                         $"¡Pedido #{idPedidoGenerado} registrado con Pausa de Seguridad!{vbCrLf}{vbCrLf}" &
                         $"Cliente: {nombreCliente}{vbCrLf}" &
-                        $"Estado: Esperando Pago en Caja{vbCrLf}" &
                         $"Servicio: {servicio} ({mesaODireccion}){vbCrLf}" &
                         $"Total a Pagar en Caja: ${totalFinal:N2}{vbCrLf}{vbCrLf}" &
-                        $"Por favor acérquese a la caja para realizar su pago. En cuanto el cajero presione 'Confirmar Cobro', la comanda pasará automáticamente a la cocina y se emitirá la factura.",
-                        "Orden Registrada en Espera de Pago"
-                    )
+                        $"¿Desea registrar el cobro y contabilizar la venta de este pedido en este momento?",
+                        "Confirmar Cobro de Pedido",
+                        MessageBoxButtons.YesNo,
+                        MessageBoxIcon.Question
+                    ) = DialogResult.Yes
+
+                    If cobrarAhora Then
+                        PedidoDAO.ConfirmarCobro(idPedidoGenerado, metodoPago, totalFinal, 0D)
+                        MostrarMensajeExito(
+                            $"¡Cobro del Pedido #{idPedidoGenerado} registrado exitosamente!{vbCrLf}" &
+                            $"La venta fue enviada a Contabilidad y la comanda liberada a Cocina.",
+                            "Cobro y Contabilización Completados"
+                        )
+                    Else
+                        MostrarMensajeExito(
+                            $"¡Pedido #{idPedidoGenerado} registrado en Espera de Pago en Caja!{vbCrLf}{vbCrLf}" &
+                            $"Por favor acérquese a la caja para realizar su pago. En cuanto el cajero presione 'Confirmar Cobro', la comanda pasará a cocina y se contabilizará la venta.",
+                            "Orden Registrada en Espera de Pago"
+                        )
+                    End If
 
                     LimpiarCarritoYExtras()
                 Else

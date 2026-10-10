@@ -41,10 +41,10 @@ Namespace Views.Caja
         ''' </summary>
         Private Sub ConfigurarValidacionesEntrada()
             ValidadorEntrada.ConfigurarCampoRucCedula(txtRucCedula, 30)
-            ValidadorEntrada.ConfigurarCampoRazonSocial(txtRazonSocial, 40)
+            ValidadorEntrada.ConfigurarCampoRazonSocial(txtRazonSocial, 100)
             ValidadorEntrada.ConfigurarCampoTelefono(txtTelefono, 30)
             ValidadorEntrada.ConfigurarCampoCorreo(txtCorreo, 100)
-            ValidadorEntrada.ConfigurarCampoDireccion(txtDireccion, 80)
+            ValidadorEntrada.ConfigurarCampoDireccion(txtDireccion, 150)
         End Sub
 
         Private Sub AplicarTemaVisual()
@@ -148,6 +148,20 @@ Namespace Views.Caja
             ActualizarTicketVisual()
         End Sub
 
+        Private Sub txtRucCedula_Leave(sender As Object, e As EventArgs) Handles txtRucCedula.Leave
+            Dim ruc = txtRucCedula.Text.Trim()
+            If ruc.Length >= 3 Then
+                Dim clienteExistente = ClienteFiscalDAO.BuscarPorRuc(ruc)
+                If clienteExistente IsNot Nothing Then
+                    txtRazonSocial.Text = clienteExistente.RazonSocial
+                    If Not String.IsNullOrWhiteSpace(clienteExistente.Telefono) Then txtTelefono.Text = clienteExistente.Telefono
+                    If Not String.IsNullOrWhiteSpace(clienteExistente.Correo) Then txtCorreo.Text = clienteExistente.Correo
+                    If Not String.IsNullOrWhiteSpace(clienteExistente.DireccionFiscal) Then txtDireccion.Text = clienteExistente.DireccionFiscal
+                    ActualizarTicketVisual()
+                End If
+            End If
+        End Sub
+
         Private Function AsegurarEmisionFactura() As String
             Dim correlativo As String = PedidoDAO.RegistrarFactura(_idPedido, txtRucCedula.Text.Trim(),
                                                                   txtRazonSocial.Text.Trim(), txtDireccion.Text.Trim(),
@@ -171,7 +185,7 @@ Namespace Views.Caja
             End If
 
             If Not ValidadorEntrada.EsRazonSocialValida(txtRazonSocial.Text) Then
-                MessageBox.Show("Por favor indique un nombre de cliente válido (entre 2 y 40 caracteres, solo letras).", "Nombre de Cliente Requerido", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                MessageBox.Show("Por favor indique un nombre o razón social válida (entre 2 y 100 caracteres).", "Nombre / Razón Social Requerida", MessageBoxButtons.OK, MessageBoxIcon.Warning)
                 txtRazonSocial.Focus()
                 Return False
             End If
@@ -191,7 +205,7 @@ Namespace Views.Caja
             End If
 
             If Not ValidadorEntrada.EsDireccionValida(txtDireccion.Text, True) Then
-                MessageBox.Show("La dirección ingresada supera el límite permitido (máximo 80 caracteres).", "Dirección Inválida", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                MessageBox.Show("La dirección ingresada supera el límite permitido (máximo 150 caracteres).", "Dirección Inválida", MessageBoxButtons.OK, MessageBoxIcon.Warning)
                 txtDireccion.Focus()
                 Return False
             End If

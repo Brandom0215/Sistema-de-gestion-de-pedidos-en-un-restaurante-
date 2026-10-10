@@ -553,19 +553,58 @@ Namespace Services
         End Function
 
         ''' <summary>
-        ''' Alias de compatibilidad para EsNombreClienteValido.
+        ''' Valida una Razón Social o Nombre Comercial para personas jurídicas o naturales (DGI Panamá).
+        ''' Permite letras, números (para sociedades anónimas), espacios y símbolos comunes (. , - & /).
+        ''' Bloquea estrictamente comillas simples, dobles y caracteres de inyección. Longitud de 2 a 120 caracteres.
         ''' </summary>
         Public Function EsRazonSocialValida(razon As String) As Boolean
-            Return EsNombreClienteValido(razon)
+            If String.IsNullOrWhiteSpace(razon) Then Return False
+            Dim limpio As String = razon.Trim()
+            If limpio.Length < 2 OrElse limpio.Length > 120 Then Return False
+
+            ' Debe contener al menos una letra o número
+            Dim tieneLetra As Boolean = False
+            For Each c In limpio
+                If Char.IsLetter(c) Then tieneLetra = True
+                If c = "'"c OrElse c = """"c OrElse c = ";"c OrElse c = "<"c OrElse c = ">"c Then
+                    Return False
+                End If
+            Next
+            Return tieneLetra
         End Function
 
         ''' <summary>
-        ''' Valida la dirección fiscal / de entrega (hasta 80 caracteres para evitar desbordamientos, no vacía si es obligatoria).
+        ''' Sanitiza un texto eliminando caracteres potencialmente peligrosos de inyección y truncando a la longitud máxima de BD.
+        ''' </summary>
+        Public Function SanitizarTextoSeguro(texto As String, Optional maxLength As Integer = 100) As String
+            If String.IsNullOrWhiteSpace(texto) Then Return String.Empty
+            Dim limpio As String = texto.Trim()
+            limpio = limpio.Replace("'", "").Replace("""", "").Replace(";", "").Replace("<", "").Replace(">", "")
+            If limpio.Length > maxLength Then
+                limpio = limpio.Substring(0, maxLength)
+            End If
+            Return limpio.Trim()
+        End Function
+
+        ''' <summary>
+        ''' Normaliza y unifica un RUC o Cédula panameña: elimina espacios superfluos,
+        ''' convierte a mayúsculas y restringe a un formato canónico seguro (VARCHAR(30)).
+        ''' </summary>
+        Public Function NormalizarRucCedula(ruc As String) As String
+            If String.IsNullOrWhiteSpace(ruc) Then Return String.Empty
+            Dim limpio As String = ruc.Trim().ToUpperInvariant()
+            limpio = Regex.Replace(limpio, "\s+", " ")
+            limpio = SanitizarTextoSeguro(limpio, 30)
+            Return limpio
+        End Function
+
+        ''' <summary>
+        ''' Valida la dirección fiscal / de entrega (hasta 150 caracteres para evitar desbordamientos, no vacía si es obligatoria).
         ''' </summary>
         Public Function EsDireccionValida(direccion As String, Optional permitirVacio As Boolean = True) As Boolean
             If String.IsNullOrWhiteSpace(direccion) Then Return permitirVacio
             Dim limpio As String = direccion.Trim()
-            Return (limpio.Length >= 3 AndAlso limpio.Length <= 80)
+            Return (limpio.Length >= 3 AndAlso limpio.Length <= 150)
         End Function
 
     End Module

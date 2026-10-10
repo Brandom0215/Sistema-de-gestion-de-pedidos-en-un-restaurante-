@@ -13,8 +13,16 @@ Namespace Global.Sistema_de_gestion_de_pedidos_para_un_restaurante
             Application.EnableVisualStyles()
             Application.SetCompatibleTextRenderingDefault(False)
 
+            Application.SetUnhandledExceptionMode(UnhandledExceptionMode.CatchException)
+            AddHandler Application.ThreadException, Sub(s, e)
+                Console.WriteLine($"[AVISO DEL SISTEMA] {e.Exception.Message}")
+            End Sub
+
             Dim diagMsg As String = ""
             Dim esExitoso As Boolean = Data.ConexionBD.ProbarConexion(diagMsg)
+            If Not esExitoso Then
+                Data.ConexionBD.RegistrarFalloServidor(diagMsg)
+            End If
             Console.WriteLine($"[DIAGNÓSTICO POSTGRESQL] {diagMsg}")
 
             Application.Run(New FrmHome("📲 Cliente (Autoatención)", "Invitado"))
